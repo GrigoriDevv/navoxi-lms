@@ -228,6 +228,20 @@ export const navItems: NavItemDef[] = [
     group: "Aprendizagem",
   },
   {
+    label: "Questões",
+    href: "/repositorio/questoes",
+    icon: "list",
+    permissions: ["manage_content"],
+    group: "Conteúdo",
+  },
+  {
+    label: "Avaliações",
+    href: "/aprendizagem/avaliacoes",
+    icon: "check",
+    permissions: ["manage_courses", "manage_turmas"],
+    group: "Aprendizagem",
+  },
+  {
     label: "Repositório",
     href: "/repositorio",
     icon: "folder",

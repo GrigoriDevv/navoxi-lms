@@ -27,6 +27,12 @@ import type {
   Certificado,
   InteresseCurso,
   SolicitacaoMatricula,
+  Question,
+  Evaluation,
+  ContentAsset,
+  Destaque,
+  AlertRule,
+  InternalMail,
 } from "./types";
 import { hasPermission } from "./rbac";
 
@@ -93,6 +99,12 @@ interface AppState {
   solicitacoes: SolicitacaoMatricula[];
   posts: Post[];
   messages: Message[];
+  questions: Question[];
+  evaluations: Evaluation[];
+  contents: ContentAsset[];
+  destaques: Destaque[];
+  alertRules: AlertRule[];
+  internalMails: InternalMail[];
   automations: Automation[];
   auditLogs: AuditLog[];
   settings: Settings;
@@ -113,6 +125,22 @@ interface AppState {
   addInteresse: (i: Omit<InteresseCurso, "id" | "registeredAt" | "notified">) => void;
   updateCertificado: (id: string, status: Certificado["status"]) => void;
   addPost: (p: Omit<Post, "id" | "publishedAt" | "author" | "status">) => void;
+  updatePost: (id: string, data: Partial<Post>) => void;
+  addQuestion: (q: Omit<Question, "id" | "usageCount">) => void;
+  updateQuestion: (id: string, data: Partial<Question>) => void;
+  addEvaluation: (e: Omit<Evaluation, "id" | "questionCount">) => void;
+  updateEvaluation: (id: string, data: Partial<Evaluation>) => void;
+  applyEvaluation: (id: string) => void;
+  addContent: (c: Omit<ContentAsset, "id" | "downloads" | "uploadedBy" | "uploadedAt">) => void;
+  updateContent: (id: string, data: Partial<ContentAsset>) => void;
+  addDestaque: (d: Omit<Destaque, "id" | "publishedAt">) => void;
+  updateDestaque: (id: string, data: Partial<Destaque>) => void;
+  addAlertRule: (r: Omit<AlertRule, "id">) => void;
+  toggleAlertRule: (id: string) => void;
+  sendInternalMail: (m: Omit<InternalMail, "id" | "sentAt" | "read" | "fromUserId" | "fromName">) => void;
+  markMailRead: (id: string) => void;
+  addMessage: (m: Omit<Message, "id">) => void;
+  dispatchNotification: (n: Omit<Notification, "id" | "read" | "timestamp">) => void;
   toggleAutomation: (id: string) => void;
   updateSettings: (s: Partial<Settings>) => void;
   updatePreferences: (p: Partial<UserPreferences>) => void;
@@ -138,7 +166,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [interesses, setInteresses] = useState<InteresseCurso[]>(seed.interesses);
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoMatricula[]>(seed.solicitacoes);
   const [posts, setPosts] = useState<Post[]>(seed.posts);
-  const [messages] = useState<Message[]>(seed.messages);
+  const [messages, setMessages] = useState<Message[]>(seed.messages);
+  const [questions, setQuestions] = useState<Question[]>(seed.questions);
+  const [evaluations, setEvaluations] = useState<Evaluation[]>(seed.evaluations);
+  const [contents, setContents] = useState<ContentAsset[]>(seed.contents);
+  const [destaques, setDestaques] = useState<Destaque[]>(seed.destaques);
+  const [alertRules, setAlertRules] = useState<AlertRule[]>(seed.alertRules);
+  const [internalMails, setInternalMails] = useState<InternalMail[]>(seed.internalMails);
   const [automations, setAutomations] = useState<Automation[]>(seed.automations);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(seed.auditLogs);
   const [settings, setSettings] = useState<Settings>(seed.settings);
@@ -252,6 +286,170 @@ export function AppProvider({ children }: { children: ReactNode }) {
     log({ user: currentUser?.email ?? "system", action: `Publicou post '${p.title}'`, module: "Comunicação", severity: "info" });
   };
 
+  const updatePost: AppState["updatePost"] = (id, data) => {
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
+    log({ user: currentUser?.email ?? "system", action: `Atualizou post '${id}'`, module: "Comunicação", severity: "info" });
+  };
+
+  const addQuestion: AppState["addQuestion"] = (q) => {
+    const id = "q" + Math.random().toString(36).slice(2, 7);
+    const unitId =
+      currentUser && !hasPermission(currentUser.role, "view_all_units")
+        ? currentUser.unitId
+        : q.unitId;
+    setQuestions((prev) => [{ ...q, id, unitId, usageCount: 0 }, ...prev]);
+    log({ user: currentUser?.email ?? "system", action: `Cadastrou questão '${id}'`, module: "Repositório", severity: "info" });
+  };
+
+  const updateQuestion: AppState["updateQuestion"] = (id, data) => {
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...data } : q)));
+  };
+
+  const addEvaluation: AppState["addEvaluation"] = (e) => {
+    const id = "av" + Math.random().toString(36).slice(2, 7);
+    const unitId =
+      currentUser && !hasPermission(currentUser.role, "view_all_units")
+        ? currentUser.unitId
+        : e.unitId;
+    setEvaluations((prev) => [
+      { ...e, id, unitId, questionCount: e.questionIds.length },
+      ...prev,
+    ]);
+    log({ user: currentUser?.email ?? "system", action: `Criou avaliação '${e.name}'`, module: "Aprendizagem", severity: "info" });
+  };
+
+  const updateEvaluation: AppState["updateEvaluation"] = (id, data) => {
+    setEvaluations((prev) =>
+      prev.map((ev) => {
+        if (ev.id !== id) return ev;
+        const next = { ...ev, ...data };
+        if (data.questionIds) next.questionCount = data.questionIds.length;
+        return next;
+      })
+    );
+  };
+
+  const applyEvaluation: AppState["applyEvaluation"] = (id) => {
+    let appliedName = "";
+    setEvaluations((prev) =>
+      prev.map((ev) => {
+        if (ev.id === id) {
+          appliedName = ev.name;
+          return { ...ev, status: "aplicada", appliedAt: now() };
+        }
+        return ev;
+      })
+    );
+    if (appliedName) {
+      setNotifications((prev) => [
+        {
+          id: "n" + Math.random().toString(36).slice(2, 7),
+          title: `Avaliação aplicada: ${appliedName}`,
+          message: "A avaliação foi disponibilizada para a turma vinculada.",
+          type: "curso",
+          read: false,
+          timestamp: "Agora",
+          href: "/aprendizagem/avaliacoes",
+        },
+        ...prev,
+      ]);
+    }
+    log({ user: currentUser?.email ?? "system", action: `Aplicou avaliação '${id}'`, module: "Aprendizagem", severity: "info" });
+  };
+
+  const addContent: AppState["addContent"] = (c) => {
+    const id = "a" + Math.random().toString(36).slice(2, 7);
+    const unitId =
+      currentUser && !hasPermission(currentUser.role, "view_all_units")
+        ? currentUser.unitId
+        : c.unitId;
+    setContents((prev) => [
+      {
+        ...c,
+        id,
+        unitId,
+        uploadedBy: currentUser?.name ?? "Usuário",
+        uploadedAt: now().split(" ")[0],
+        downloads: 0,
+      },
+      ...prev,
+    ]);
+    log({ user: currentUser?.email ?? "system", action: `Enviou conteúdo '${c.name}'`, module: "Repositório", severity: "info" });
+  };
+
+  const updateContent: AppState["updateContent"] = (id, data) => {
+    setContents((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
+  };
+
+  const addDestaque: AppState["addDestaque"] = (d) => {
+    const id = "d" + Math.random().toString(36).slice(2, 7);
+    const unitId =
+      currentUser && !hasPermission(currentUser.role, "view_all_units")
+        ? currentUser.unitId
+        : d.unitId;
+    setDestaques((prev) => [{ ...d, id, unitId, publishedAt: now() }, ...prev]);
+    log({ user: currentUser?.email ?? "system", action: `Publicou destaque '${d.title}'`, module: "Comunicação", severity: "info" });
+  };
+
+  const updateDestaque: AppState["updateDestaque"] = (id, data) => {
+    setDestaques((prev) => prev.map((d) => (d.id === id ? { ...d, ...data } : d)));
+  };
+
+  const addAlertRule: AppState["addAlertRule"] = (r) => {
+    const id = "ar" + Math.random().toString(36).slice(2, 7);
+    const unitId =
+      currentUser && !hasPermission(currentUser.role, "view_all_units")
+        ? currentUser.unitId
+        : r.unitId;
+    setAlertRules((prev) => [{ ...r, id, unitId }, ...prev]);
+    log({ user: currentUser?.email ?? "system", action: `Criou alerta '${r.name}'`, module: "Comunicação", severity: "info" });
+  };
+
+  const toggleAlertRule: AppState["toggleAlertRule"] = (id) => {
+    setAlertRules((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
+    );
+  };
+
+  const sendInternalMail: AppState["sendInternalMail"] = (m) => {
+    const id = "im" + Math.random().toString(36).slice(2, 7);
+    setInternalMails((prev) => [
+      {
+        ...m,
+        id,
+        fromUserId: currentUser?.id ?? "system",
+        fromName: currentUser?.name ?? "Sistema",
+        read: false,
+        sentAt: now(),
+      },
+      ...prev,
+    ]);
+    log({ user: currentUser?.email ?? "system", action: `Enviou mensagem interna para '${m.toName}'`, module: "Comunicação", severity: "info" });
+  };
+
+  const markMailRead: AppState["markMailRead"] = (id) => {
+    setInternalMails((prev) => prev.map((m) => (m.id === id ? { ...m, read: true } : m)));
+  };
+
+  const addMessage: AppState["addMessage"] = (m) => {
+    const id = "m" + Math.random().toString(36).slice(2, 7);
+    setMessages((prev) => [{ ...m, id }, ...prev]);
+    log({ user: currentUser?.email ?? "system", action: `Criou campanha '${m.title}'`, module: "Comunicação", severity: "info" });
+  };
+
+  const dispatchNotification: AppState["dispatchNotification"] = (n) => {
+    setNotifications((prev) => [
+      {
+        ...n,
+        id: "n" + Math.random().toString(36).slice(2, 7),
+        read: false,
+        timestamp: "Agora",
+      },
+      ...prev,
+    ]);
+    log({ user: currentUser?.email ?? "system", action: `Disparou notificação '${n.title}'`, module: "Comunicação", severity: "info" });
+  };
+
   const addCourse: AppState["addCourse"] = (c) => {
     const id = "c" + Math.random().toString(36).slice(2, 7);
     const unitId =
@@ -361,6 +559,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       solicitacoes,
       posts,
       messages,
+      questions,
+      evaluations,
+      contents,
+      destaques,
+      alertRules,
+      internalMails,
       automations,
       auditLogs,
       settings,
@@ -380,6 +584,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addInteresse,
       updateCertificado,
       addPost,
+      updatePost,
+      addQuestion,
+      updateQuestion,
+      addEvaluation,
+      updateEvaluation,
+      applyEvaluation,
+      addContent,
+      updateContent,
+      addDestaque,
+      updateDestaque,
+      addAlertRule,
+      toggleAlertRule,
+      sendInternalMail,
+      markMailRead,
+      addMessage,
+      dispatchNotification,
       toggleAutomation,
       updateSettings,
       updatePreferences,
@@ -388,7 +608,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       log,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, posts, messages, automations, auditLogs, settings, notifications, preferences]
+    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, posts, messages, questions, evaluations, contents, destaques, alertRules, internalMails, automations, auditLogs, settings, notifications, preferences]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

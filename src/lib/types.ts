@@ -142,6 +142,7 @@ export interface ContentAsset {
   uploadedBy: string;
   uploadedAt: string;
   downloads: number;
+  usedIn: ("curso" | "biblioteca" | "avaliacao" | "comunicacao")[];
 }
 
 export interface Message {
@@ -223,10 +224,48 @@ export interface Evaluation {
   id: string;
   name: string;
   courseId: string;
+  turmaId?: string;
   unitId: UnitId;
+  questionIds: string[];
   questionCount: number;
-  status: "rascunho" | "publicada" | "encerrada";
+  status: "rascunho" | "publicada" | "encerrada" | "aplicada";
   dueDate: string;
+  appliedAt?: string;
+}
+
+export interface Destaque {
+  id: string;
+  title: string;
+  body: string;
+  unitId: UnitId;
+  visible: boolean;
+  pinned: boolean;
+  publishedAt: string;
+  expiresAt?: string;
+}
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  criteria: string;
+  channel: "email" | "push" | "sistema";
+  audience: string;
+  unitId: UnitId;
+  enabled: boolean;
+  lastTriggered?: string;
+}
+
+export interface InternalMail {
+  id: string;
+  fromUserId: string;
+  fromName: string;
+  toUserId: string;
+  toName: string;
+  subject: string;
+  body: string;
+  unitId: UnitId;
+  read: boolean;
+  sentAt: string;
 }
 
 export interface Post {

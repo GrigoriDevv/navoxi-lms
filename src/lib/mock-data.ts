@@ -21,6 +21,9 @@ import type {
   Certificado,
   InteresseCurso,
   SolicitacaoMatricula,
+  Destaque,
+  AlertRule,
+  InternalMail,
 } from "./types";
 
 const colors = ["#00a14b", "#2563eb", "#db2777", "#d97706", "#7c3aed", "#0891b2"];
@@ -127,12 +130,30 @@ export const questions: Question[] = [
   { id: "q2", text: "O código de ética se aplica a terceiros?", type: "verdadeiro", category: "Compliance", unitId: "holding", usageCount: 56 },
   { id: "q3", text: "Descreva o procedimento de bloqueio de energia.", type: "dissertativa", category: "Segurança", unitId: "celpe", usageCount: 12 },
   { id: "q4", text: "Qual o prazo para resposta ao cliente (SLA)?", type: "multipla", category: "Comercial", unitId: "coelba", usageCount: 18 },
+  { id: "q5", text: "Qual norma regula trabalhos em instalações elétricas?", type: "multipla", category: "Segurança", unitId: "celpe", usageCount: 31 },
 ];
 
 export const evaluations: Evaluation[] = [
-  { id: "av1", name: "Prova NR-10 · Módulo Final", courseId: "c1", unitId: "celpe", questionCount: 20, status: "publicada", dueDate: "2026-07-20" },
-  { id: "av2", name: "Quiz Compliance", courseId: "c2", unitId: "holding", questionCount: 10, status: "publicada", dueDate: "2026-12-31" },
-  { id: "av3", name: "Avaliação Liderança", courseId: "c4", unitId: "celpe", questionCount: 15, status: "rascunho", dueDate: "2026-06-30" },
+  { id: "av1", name: "Prova NR-10 · Módulo Final", courseId: "c1", turmaId: "t1", unitId: "celpe", questionIds: ["q1", "q3", "q5"], questionCount: 3, status: "aplicada", dueDate: "2026-07-20", appliedAt: "2026-06-01 10:00" },
+  { id: "av2", name: "Quiz Compliance", courseId: "c2", unitId: "holding", questionIds: ["q2"], questionCount: 1, status: "publicada", dueDate: "2026-12-31" },
+  { id: "av3", name: "Avaliação Liderança", courseId: "c4", turmaId: "t2", unitId: "celpe", questionIds: ["q2", "q4"], questionCount: 2, status: "rascunho", dueDate: "2026-06-30" },
+];
+
+export const destaques: Destaque[] = [
+  { id: "d1", title: "Campanha de Segurança — Junho", body: "Reforce os procedimentos de bloqueio antes de iniciar atividades em campo.", unitId: "holding", visible: true, pinned: true, publishedAt: "2026-06-10 08:00" },
+  { id: "d2", title: "Novo curso ESG disponível", body: "Inscreva-se na trilha de Transição Energética.", unitId: "holding", visible: true, pinned: false, publishedAt: "2026-06-08 14:30" },
+  { id: "d3", title: "Manutenção programada", body: "Plataforma indisponível domingo, 14/06, das 20h às 22h.", unitId: "celpe", visible: true, pinned: true, publishedAt: "2026-06-11 09:00", expiresAt: "2026-06-15" },
+];
+
+export const alertRules: AlertRule[] = [
+  { id: "ar1", name: "Prazo LGPD", criteria: "7 dias antes do vencimento do curso", channel: "sistema", audience: "Pendentes LGPD", unitId: "holding", enabled: true, lastTriggered: "2026-06-12 09:00" },
+  { id: "ar2", name: "Turma quase lotada", criteria: "Ocupação ≥ 90% da capacidade", channel: "email", audience: "Gestores de turma", unitId: "celpe", enabled: true, lastTriggered: "2026-06-11 16:20" },
+  { id: "ar3", name: "Certificado expirando", criteria: "30 dias antes da validade", channel: "push", audience: "Colaboradores certificados", unitId: "holding", enabled: false },
+];
+
+export const internalMails: InternalMail[] = [
+  { id: "im1", fromUserId: "u2", fromName: "Bruno Ferreira", toUserId: "u4", toName: "Diego Alves", subject: "Matrícula NR-10 aprovada", body: "Sua solicitação de matrícula na turma NR-10 foi aprovada. Acesse o calendário para ver as datas.", unitId: "coelba", read: false, sentAt: "2026-06-11 10:30" },
+  { id: "im2", fromUserId: "u1", fromName: "Ana Carolina Souza", toUserId: "u2", toName: "Bruno Ferreira", subject: "Relatório mensal Celpe", body: "Segue consolidado de conclusões da unidade para revisão.", unitId: "celpe", read: true, sentAt: "2026-06-10 15:00" },
 ];
 
 export const posts: Post[] = [
@@ -150,12 +171,12 @@ export const events: CalendarEvent[] = [
 ];
 
 export const contents: ContentAsset[] = [
-  { id: "a1", name: "Manual NR-10 2026.pdf", type: "pdf", size: "4.2 MB", category: "Segurança", unitId: "celpe", uploadedBy: "Carla Mendes", uploadedAt: "2026-05-20", downloads: 842 },
-  { id: "a2", name: "Vídeo - Procedimento de Bloqueio.mp4", type: "video", size: "128 MB", category: "Segurança", unitId: "celpe", uploadedBy: "Carla Mendes", uploadedAt: "2026-05-22", downloads: 410 },
-  { id: "a3", name: "Curso LGPD (SCORM).zip", type: "scorm", size: "22 MB", category: "Compliance", unitId: "holding", uploadedBy: "Henrique Castro", uploadedAt: "2026-04-10", downloads: 1203 },
-  { id: "a4", name: "Infográfico ESG.png", type: "imagem", size: "1.1 MB", category: "ESG", unitId: "holding", uploadedBy: "Ana Carolina Souza", uploadedAt: "2026-06-01", downloads: 96 },
-  { id: "a5", name: "Política de Atendimento.pdf", type: "pdf", size: "2.8 MB", category: "Comercial", unitId: "coelba", uploadedBy: "Carla Mendes", uploadedAt: "2026-05-15", downloads: 357 },
-  { id: "a6", name: "Portal de Normas Técnicas", type: "link", size: "—", category: "Técnico", unitId: "coelce", uploadedBy: "Henrique Castro", uploadedAt: "2026-03-30", downloads: 540 },
+  { id: "a1", name: "Manual NR-10 2026.pdf", type: "pdf", size: "4.2 MB", category: "Segurança", unitId: "celpe", uploadedBy: "Carla Mendes", uploadedAt: "2026-05-20", downloads: 842, usedIn: ["curso", "biblioteca", "avaliacao"] },
+  { id: "a2", name: "Vídeo - Procedimento de Bloqueio.mp4", type: "video", size: "128 MB", category: "Segurança", unitId: "celpe", uploadedBy: "Carla Mendes", uploadedAt: "2026-05-22", downloads: 410, usedIn: ["curso", "biblioteca"] },
+  { id: "a3", name: "Curso LGPD (SCORM).zip", type: "scorm", size: "22 MB", category: "Compliance", unitId: "holding", uploadedBy: "Henrique Castro", uploadedAt: "2026-04-10", downloads: 1203, usedIn: ["curso", "biblioteca"] },
+  { id: "a4", name: "Infográfico ESG.png", type: "imagem", size: "1.1 MB", category: "ESG", unitId: "holding", uploadedBy: "Ana Carolina Souza", uploadedAt: "2026-06-01", downloads: 96, usedIn: ["comunicacao", "biblioteca"] },
+  { id: "a5", name: "Política de Atendimento.pdf", type: "pdf", size: "2.8 MB", category: "Comercial", unitId: "coelba", uploadedBy: "Carla Mendes", uploadedAt: "2026-05-15", downloads: 357, usedIn: ["curso", "avaliacao"] },
+  { id: "a6", name: "Portal de Normas Técnicas", type: "link", size: "—", category: "Técnico", unitId: "coelce", uploadedBy: "Henrique Castro", uploadedAt: "2026-03-30", downloads: 540, usedIn: ["biblioteca"] },
 ];
 
 export const messages: Message[] = [

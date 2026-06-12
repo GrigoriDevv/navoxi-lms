@@ -19,6 +19,7 @@ import { EquipeTab } from "@/components/dashboard/EquipeTab";
 import { WidgetShell } from "@/components/dashboard/WidgetShell";
 import { QuickShortcuts } from "@/components/home/QuickShortcuts";
 import { QuickActions } from "@/components/home/QuickActions";
+import { DestaquesBanner } from "@/components/home/DestaquesBanner";
 import Link from "next/link";
 
 type Tab = "dashboard" | "equipe";
@@ -131,6 +132,9 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
+
+      {/* RF-056 — Destaques visíveis na home */}
+      {tab === "dashboard" && <DestaquesBanner />}
 
       {/* RF-022 a RF-033 — Atalhos e ações rápidas (home) */}
       {tab === "dashboard" && (

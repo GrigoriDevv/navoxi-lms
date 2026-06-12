@@ -8,7 +8,6 @@ import {
   type PermissionKey,
 } from "./rbac";
 import type { Role, UnitId } from "./types";
-import { contents } from "./mock-data";
 
 export function useAuthScope() {
   const {
@@ -21,6 +20,12 @@ export function useAuthScope() {
     certificados,
     interesses,
     solicitacoes,
+    questions,
+    evaluations,
+    contents,
+    destaques,
+    alertRules,
+    internalMails,
   } = useApp();
   const role: Role = currentUser?.role ?? "aluno";
   const unitId = currentUser?.unitId;
@@ -40,7 +45,12 @@ export function useAuthScope() {
     certificados: scopeByUnit(certificados, role, unitId),
     interesses: scopeByUnit(interesses, role, unitId),
     solicitacoes: scopeByUnit(solicitacoes, role, unitId),
+    questions: scopeByUnit(questions, role, unitId),
+    evaluations: scopeByUnit(evaluations, role, unitId),
     contents: scopeByUnit(contents, role, unitId),
+    destaques: scopeByUnit(destaques, role, unitId),
+    alertRules: scopeByUnit(alertRules, role, unitId),
+    internalMails: scopeByUnit(internalMails, role, unitId),
     can: (permission: PermissionKey) => hasPermission(role, permission),
   };
 }

@@ -24,6 +24,7 @@ import type {
   Destaque,
   AlertRule,
   InternalMail,
+  ScheduledJob,
 } from "./types";
 
 const colors = ["#00a14b", "#2563eb", "#db2777", "#d97706", "#7c3aed", "#0891b2"];
@@ -219,7 +220,27 @@ export const settings: Settings = {
   certificateValidity: 24,
   approvalRequired: true,
   brandColor: "#00a14b",
+  modules: {
+    aprendizagem: true,
+    repositorio: true,
+    comunicacao: true,
+    relatorios: true,
+    administracao: true,
+    sistema: true,
+  },
+  layout: {
+    navStyle: "top",
+    density: "comfortable",
+    showDestaques: true,
+  },
 };
+
+export const scheduledJobs: ScheduledJob[] = [
+  { id: "sj1", name: "Sincronização RH (SuccessFactors)", schedule: "Diário · 06:00", module: "Integrações", action: "Importar colaboradores e unidades", enabled: true, lastRun: "2026-06-12 06:00", nextRun: "2026-06-13 06:00" },
+  { id: "sj2", name: "Lembretes de prazo de curso", schedule: "Diário · 08:00", module: "Aprendizagem", action: "Notificar pendentes de conclusão", enabled: true, lastRun: "2026-06-12 08:00", nextRun: "2026-06-13 08:00" },
+  { id: "sj3", name: "Relatório semanal de matrículas", schedule: "Semanal · Seg 07:00", module: "Relatórios", action: "Enviar digest para gestores", enabled: true, lastRun: "2026-06-09 07:00", nextRun: "2026-06-16 07:00" },
+  { id: "sj4", name: "Limpeza de sessões expiradas", schedule: "A cada 6 horas", module: "Identidade", action: "Encerrar sessões inativas", enabled: false, lastRun: "2026-06-11 18:00", nextRun: "—" },
+];
 
 export const defaultPreferences: UserPreferences = {
   theme: "light",

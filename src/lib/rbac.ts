@@ -1,4 +1,4 @@
-import type { Role } from "./types";
+import type { Role, Settings } from "./types";
 
 export const roleLabels: Record<Role, string> = {
   admin_premium: "Administrador Premium",
@@ -133,6 +133,7 @@ export interface NavItemDef {
   icon: string;
   permissions: PermissionKey[];
   group: string;
+  module?: keyof Settings["modules"];
 }
 
 export const navItems: NavItemDef[] = [
@@ -149,6 +150,7 @@ export const navItems: NavItemDef[] = [
     icon: "shield",
     permissions: ["manage_identity"],
     group: "Administração",
+    module: "administracao",
   },
   {
     label: "Administração",
@@ -156,6 +158,7 @@ export const navItems: NavItemDef[] = [
     icon: "users",
     permissions: ["manage_users_all", "manage_users_unit"],
     group: "Administração",
+    module: "administracao",
   },
   {
     label: "Catálogo",
@@ -163,6 +166,7 @@ export const navItems: NavItemDef[] = [
     icon: "grid",
     permissions: ["consume_learning"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Cursos",
@@ -170,6 +174,7 @@ export const navItems: NavItemDef[] = [
     icon: "book",
     permissions: ["manage_courses"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Turmas",
@@ -177,6 +182,7 @@ export const navItems: NavItemDef[] = [
     icon: "group",
     permissions: ["manage_turmas"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Trilhas",
@@ -184,6 +190,7 @@ export const navItems: NavItemDef[] = [
     icon: "route",
     permissions: ["manage_courses", "consume_learning"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Calendário",
@@ -191,6 +198,7 @@ export const navItems: NavItemDef[] = [
     icon: "calendar",
     permissions: ["consume_learning"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Biblioteca",
@@ -198,6 +206,7 @@ export const navItems: NavItemDef[] = [
     icon: "folder",
     permissions: ["consume_learning", "manage_content"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Salas",
@@ -205,6 +214,7 @@ export const navItems: NavItemDef[] = [
     icon: "plug",
     permissions: ["manage_turmas", "manage_courses"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Certificados",
@@ -212,6 +222,7 @@ export const navItems: NavItemDef[] = [
     icon: "check",
     permissions: ["consume_learning", "manage_courses", "manage_turmas"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Interesses",
@@ -219,6 +230,7 @@ export const navItems: NavItemDef[] = [
     icon: "trend",
     permissions: ["manage_courses", "manage_turmas", "consume_learning"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Solicitações",
@@ -226,6 +238,7 @@ export const navItems: NavItemDef[] = [
     icon: "mail",
     permissions: ["manage_turmas", "manage_users_all", "manage_users_unit"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Questões",
@@ -233,6 +246,7 @@ export const navItems: NavItemDef[] = [
     icon: "list",
     permissions: ["manage_content"],
     group: "Conteúdo",
+    module: "repositorio",
   },
   {
     label: "Avaliações",
@@ -240,6 +254,7 @@ export const navItems: NavItemDef[] = [
     icon: "check",
     permissions: ["manage_courses", "manage_turmas"],
     group: "Aprendizagem",
+    module: "aprendizagem",
   },
   {
     label: "Repositório",
@@ -247,6 +262,7 @@ export const navItems: NavItemDef[] = [
     icon: "folder",
     permissions: ["manage_content"],
     group: "Conteúdo",
+    module: "repositorio",
   },
   {
     label: "Comunicação",
@@ -254,6 +270,7 @@ export const navItems: NavItemDef[] = [
     icon: "mail",
     permissions: ["send_communications"],
     group: "Conteúdo",
+    module: "comunicacao",
   },
   {
     label: "Relatórios & Analytics",
@@ -261,6 +278,7 @@ export const navItems: NavItemDef[] = [
     icon: "chart",
     permissions: ["view_reports_all", "view_reports_unit"],
     group: "Inteligência",
+    module: "relatorios",
   },
   {
     label: "Configurações",
@@ -268,6 +286,7 @@ export const navItems: NavItemDef[] = [
     icon: "cog",
     permissions: ["manage_global_settings"],
     group: "Sistema",
+    module: "sistema",
   },
   {
     label: "Automação & Integrações",
@@ -275,6 +294,7 @@ export const navItems: NavItemDef[] = [
     icon: "plug",
     permissions: ["manage_integrations"],
     group: "Sistema",
+    module: "sistema",
   },
   {
     label: "Auditoria & Logs",
@@ -282,13 +302,19 @@ export const navItems: NavItemDef[] = [
     icon: "list",
     permissions: ["view_audit"],
     group: "Sistema",
+    module: "sistema",
   },
 ];
 
-export function getNavItemsForRole(role: Role): NavItemDef[] {
-  return navItems.filter((item) =>
-    item.permissions.some((p) => hasPermission(role, p))
-  );
+export function getNavItemsForRole(
+  role: Role,
+  modules?: Settings["modules"]
+): NavItemDef[] {
+  return navItems.filter((item) => {
+    if (!item.permissions.some((p) => hasPermission(role, p))) return false;
+    if (item.module && modules && !modules[item.module]) return false;
+    return true;
+  });
 }
 
 export const roleColor: Record<

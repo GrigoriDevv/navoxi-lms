@@ -191,6 +191,30 @@ export interface Settings {
   certificateValidity: number; // meses
   approvalRequired: boolean;
   brandColor: string;
+  modules: {
+    aprendizagem: boolean;
+    repositorio: boolean;
+    comunicacao: boolean;
+    relatorios: boolean;
+    administracao: boolean;
+    sistema: boolean;
+  };
+  layout: {
+    navStyle: "sidebar" | "top";
+    density: "comfortable" | "compact";
+    showDestaques: boolean;
+  };
+}
+
+export interface ScheduledJob {
+  id: string;
+  name: string;
+  schedule: string;
+  module: string;
+  action: string;
+  enabled: boolean;
+  lastRun?: string;
+  nextRun?: string;
 }
 
 export interface Notification {

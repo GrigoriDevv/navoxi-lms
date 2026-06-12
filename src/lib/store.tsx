@@ -33,8 +33,12 @@ import type {
   Destaque,
   AlertRule,
   InternalMail,
+  Integration,
+  Permission,
+  ScheduledJob,
 } from "./types";
 import { hasPermission } from "./rbac";
+import { applyBrandColor } from "./platform-config";
 
 const VALID_ROLES: Role[] = [
   "admin_premium",
@@ -106,6 +110,9 @@ interface AppState {
   alertRules: AlertRule[];
   internalMails: InternalMail[];
   automations: Automation[];
+  integrations: Integration[];
+  permissions: Permission[];
+  scheduledJobs: ScheduledJob[];
   auditLogs: AuditLog[];
   settings: Settings;
   notifications: Notification[];
@@ -142,6 +149,9 @@ interface AppState {
   addMessage: (m: Omit<Message, "id">) => void;
   dispatchNotification: (n: Omit<Notification, "id" | "read" | "timestamp">) => void;
   toggleAutomation: (id: string) => void;
+  updateIntegration: (id: string, data: Partial<Integration>) => void;
+  togglePermissionRole: (permId: string, role: Role) => void;
+  toggleScheduledJob: (id: string) => void;
   updateSettings: (s: Partial<Settings>) => void;
   updatePreferences: (p: Partial<UserPreferences>) => void;
   markNotificationRead: (id: string) => void;
@@ -174,6 +184,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [alertRules, setAlertRules] = useState<AlertRule[]>(seed.alertRules);
   const [internalMails, setInternalMails] = useState<InternalMail[]>(seed.internalMails);
   const [automations, setAutomations] = useState<Automation[]>(seed.automations);
+  const [integrations, setIntegrations] = useState<Integration[]>(seed.integrations);
+  const [permissions, setPermissions] = useState<Permission[]>(seed.permissions);
+  const [scheduledJobs, setScheduledJobs] = useState<ScheduledJob[]>(seed.scheduledJobs);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(seed.auditLogs);
   const [settings, setSettings] = useState<Settings>(seed.settings);
   const [notifications, setNotifications] = useState<Notification[]>(seed.notifications);
@@ -511,14 +524,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
     log({ user: currentUser?.email ?? "system", action: `Certificado '${id}' → ${status}`, module: "Aprendizagem", severity: "alerta" });
   };
 
+  useEffect(() => {
+    applyBrandColor(settings.brandColor);
+  }, [settings.brandColor]);
+
   const toggleAutomation: AppState["toggleAutomation"] = (id) => {
     setAutomations((prev) =>
       prev.map((a) => (a.id === id ? { ...a, enabled: !a.enabled } : a))
     );
   };
 
+  const updateIntegration: AppState["updateIntegration"] = (id, data) => {
+    setIntegrations((prev) => prev.map((i) => (i.id === id ? { ...i, ...data } : i)));
+    log({ user: currentUser?.email ?? "system", action: `Atualizou integração '${id}'`, module: "Integrações", severity: "info" });
+  };
+
+  const togglePermissionRole: AppState["togglePermissionRole"] = (permId, role) => {
+    setPermissions((prev) =>
+      prev.map((p) => {
+        if (p.id !== permId) return p;
+        const roles = p.roles.includes(role)
+          ? p.roles.filter((r) => r !== role)
+          : [...p.roles, role];
+        return { ...p, roles };
+      })
+    );
+    log({ user: currentUser?.email ?? "system", action: `Alterou permissão '${permId}' · ${role}`, module: "Identidade", severity: "alerta" });
+  };
+
+  const toggleScheduledJob: AppState["toggleScheduledJob"] = (id) => {
+    setScheduledJobs((prev) =>
+      prev.map((j) => (j.id === id ? { ...j, enabled: !j.enabled } : j))
+    );
+    log({ user: currentUser?.email ?? "system", action: `Alternou job agendado '${id}'`, module: "Configurações", severity: "info" });
+  };
+
   const updateSettings: AppState["updateSettings"] = (s) => {
-    setSettings((prev) => ({ ...prev, ...s }));
+    setSettings((prev) => {
+      const next = { ...prev, ...s };
+      if (s.brandColor) applyBrandColor(s.brandColor);
+      return next;
+    });
     log({ user: currentUser?.email ?? "system", action: "Atualizou parâmetros da plataforma", module: "Configurações", severity: "alerta" });
   };
 
@@ -566,6 +612,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       alertRules,
       internalMails,
       automations,
+      integrations,
+      permissions,
+      scheduledJobs,
       auditLogs,
       settings,
       notifications,
@@ -601,6 +650,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addMessage,
       dispatchNotification,
       toggleAutomation,
+      updateIntegration,
+      togglePermissionRole,
+      toggleScheduledJob,
       updateSettings,
       updatePreferences,
       markNotificationRead,
@@ -608,7 +660,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       log,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, posts, messages, questions, evaluations, contents, destaques, alertRules, internalMails, automations, auditLogs, settings, notifications, preferences]
+    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, posts, messages, questions, evaluations, contents, destaques, alertRules, internalMails, automations, integrations, permissions, scheduledJobs, auditLogs, settings, notifications, preferences]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -20,13 +20,14 @@ import { WidgetShell } from "@/components/dashboard/WidgetShell";
 import { QuickShortcuts } from "@/components/home/QuickShortcuts";
 import { QuickActions } from "@/components/home/QuickActions";
 import { DestaquesBanner } from "@/components/home/DestaquesBanner";
+import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import Link from "next/link";
 
 type Tab = "dashboard" | "equipe";
 type WidgetStatus = "ready" | "loading" | "error" | "empty";
 
 export default function DashboardPage() {
-  const { auditLogs, currentUser } = useApp();
+  const { auditLogs, currentUser, settings } = useApp();
   const { courses, turmas, users, role, unitId, unitLabel, isGlobal } = useAuthScope();
 
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -134,9 +135,12 @@ export default function DashboardPage() {
       </div>
 
       {/* RF-056 — Destaques visíveis na home */}
-      {tab === "dashboard" && <DestaquesBanner />}
+      {tab === "dashboard" && settings.layout.showDestaques && <DestaquesBanner />}
 
-      {/* RF-022 a RF-033 — Atalhos e ações rápidas (home) */}
+      {/* RF-073 — Visão administrativa */}
+      {tab === "dashboard" && <AdminOverview />}
+
+      {/* RF-072 — Atalhos em cards na home */}
       {tab === "dashboard" && (
         <div className="grid grid-cols-1 gap-6 mb-6">
           <QuickShortcuts />
@@ -144,7 +148,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* RF-007, RF-013–018 — Filtros */}
+      {/* RF-074 a RF-077 — Filtros multiunidade, categoria, público-alvo e modalidade */}
       <DashboardFiltersBar
         filters={filters}
         onChange={handleUnitFilter}

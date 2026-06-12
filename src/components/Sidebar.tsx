@@ -8,10 +8,10 @@ import { useApp } from "@/lib/store";
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { currentUser } = useApp();
+  const { currentUser, settings } = useApp();
   const role = currentUser?.role ?? "aluno";
 
-  const visible = getNavItemsForRole(role);
+  const visible = getNavItemsForRole(role, settings.modules);
   const groups = Array.from(new Set(visible.map((i) => i.group)));
 
   return (

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "@/lib/store";
-import { permissions as permData, matrixRoles } from "@/lib/mock-data";
+import { matrixRoles } from "@/lib/mock-data";
 import {
   roleLabels,
   roleDescriptions,
@@ -16,7 +16,7 @@ import { PageHeader, Card, Badge, Table, Avatar } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 
 export default function IdentidadePage() {
-  const { users, toggleUserStatus } = useApp();
+  const { users, toggleUserStatus, permissions } = useApp();
   const [tab, setTab] = useState<"perfis" | "permissoes" | "sessoes">("perfis");
 
   const roleCounts = matrixRoles.map((r) => ({
@@ -129,7 +129,7 @@ export default function IdentidadePage() {
       {tab === "permissoes" && (
         <Card className="p-2 overflow-x-auto">
           <Table head={["Permissão", "Descrição", ...matrixRoles.map((r) => roleLabels[r])]}>
-            {permData.map((p) => (
+            {permissions.map((p) => (
               <tr key={p.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{p.name}</td>
                 <td className="px-4 py-3 text-slate-500 text-xs max-w-xs">{p.description}</td>

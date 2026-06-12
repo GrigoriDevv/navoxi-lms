@@ -229,7 +229,7 @@ export const settings: Settings = {
     sistema: true,
   },
   layout: {
-    navStyle: "top",
+    navStyle: "sidebar",
     density: "comfortable",
     showDestaques: true,
   },

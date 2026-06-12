@@ -16,8 +16,7 @@ export default function AppLayout({
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const topNav = settings.layout.navStyle === "top";
-  const compact = settings.layout.density === "compact";
+  const useTopNav = settings.layout.navStyle === "top";
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 60);
@@ -37,8 +36,8 @@ export default function AppLayout({
   }
 
   return (
-    <div className={`h-screen flex overflow-hidden ${compact ? "text-[13px]" : ""}`}>
-      {!topNav && (
+    <div className="h-screen flex overflow-hidden">
+      {!useTopNav && (
         <div className="hidden lg:block">
           <Sidebar />
         </div>
@@ -58,7 +57,7 @@ export default function AppLayout({
 
       <div className="flex-1 flex flex-col min-w-0">
         <Header onMenu={() => setMobileOpen(true)} />
-        <main className={`flex-1 overflow-y-auto ${compact ? "p-3 lg:p-5" : "p-4 lg:p-8"}`}>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           <RouteGuard>{children}</RouteGuard>
         </main>
       </div>

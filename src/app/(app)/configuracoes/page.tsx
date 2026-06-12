@@ -9,8 +9,6 @@ import { PageHeader, Card, Field, inputClass, Button, Badge, Table } from "@/com
 import { Icon } from "@/components/Icon";
 import type { Role, Settings } from "@/lib/types";
 
-type Tab = "geral" | "modulos" | "interface" | "integracoes" | "permissoes" | "jobs";
-
 const statusColor = { conectado: "green", desconectado: "slate", erro: "red" } as const;
 
 export default function ConfiguracoesPage() {
@@ -24,12 +22,11 @@ export default function ConfiguracoesPage() {
     scheduledJobs,
     toggleScheduledJob,
   } = useApp();
-  const [tab, setTab] = useState<Tab>("geral");
   const [form, setForm] = useState(settings);
   const [saved, setSaved] = useState(false);
 
-  const save = (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const save = (e: React.FormEvent) => {
+    e.preventDefault();
     updateSettings(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -40,15 +37,6 @@ export default function ConfiguracoesPage() {
       <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${checked ? "left-[22px]" : "left-0.5"}`} />
     </button>
   );
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "geral", label: "Geral" },
-    { id: "modulos", label: "Módulos" },
-    { id: "interface", label: "Interface" },
-    { id: "integracoes", label: "Integrações" },
-    { id: "permissoes", label: "Permissões" },
-    { id: "jobs", label: "Jobs agendados" },
-  ];
 
   const setModule = (key: keyof Settings["modules"], enabled: boolean) => {
     const modules = { ...form.modules, [key]: enabled };
@@ -66,27 +54,13 @@ export default function ConfiguracoesPage() {
     <div>
       <PageHeader
         title="Configurações & Parametrização"
-        subtitle="Parâmetros gerais, módulos, interface, integrações, permissões e jobs (RF-065 a RF-070)"
+        subtitle="Parâmetros globais, identidade visual, políticas e regras de negócio"
       />
 
-      <div className="flex flex-wrap gap-1 mb-4 border-b border-slate-200">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
-              tab === t.id ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "geral" && (
-        <form onSubmit={save} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <form onSubmit={save} className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="p-6">
-            <h3 className="font-semibold text-slate-800 mb-4">Organização (RF-065)</h3>
+            <h3 className="font-semibold text-slate-800 mb-4">Organização</h3>
             <Field label="Nome da organização">
               <input className={inputClass} value={form.orgName} onChange={(e) => setForm({ ...form, orgName: e.target.value })} />
             </Field>
@@ -106,111 +80,102 @@ export default function ConfiguracoesPage() {
                 </select>
               </Field>
             </div>
+            <Field label="Cor da marca">
+              <div className="flex items-center gap-3">
+                <input type="color" value={form.brandColor} onChange={(e) => setForm({ ...form, brandColor: e.target.value })} className="w-12 h-10 rounded border border-slate-300" />
+                <input className={inputClass} value={form.brandColor} onChange={(e) => setForm({ ...form, brandColor: e.target.value })} />
+              </div>
+            </Field>
           </Card>
+
           <Card className="p-6">
-            <h3 className="font-semibold text-slate-800 mb-4">Segurança & regras</h3>
+            <h3 className="font-semibold text-slate-800 mb-4">Segurança & Acesso</h3>
             <Field label="Tamanho mínimo de senha">
               <input type="number" min={6} max={32} className={inputClass} value={form.passwordMinLength} onChange={(e) => setForm({ ...form, passwordMinLength: Number(e.target.value) })} />
             </Field>
             <div className="flex items-center justify-between py-3 border-t border-slate-100">
-              <div><div className="text-sm font-medium text-slate-700">MFA obrigatório</div></div>
+              <div>
+                <div className="text-sm font-medium text-slate-700">MFA obrigatório</div>
+                <div className="text-xs text-slate-400">Exigir múltiplos fatores no login</div>
+              </div>
               <Toggle checked={form.mfaRequired} onChange={(v) => setForm({ ...form, mfaRequired: v })} />
             </div>
             <div className="flex items-center justify-between py-3 border-t border-slate-100">
-              <div><div className="text-sm font-medium text-slate-700">Aprovação de matrícula</div></div>
+              <div>
+                <div className="text-sm font-medium text-slate-700">Aprovação de matrícula</div>
+                <div className="text-xs text-slate-400">Gestor aprova inscrições em cursos</div>
+              </div>
               <Toggle checked={form.approvalRequired} onChange={(v) => setForm({ ...form, approvalRequired: v })} />
             </div>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="font-semibold text-slate-800 mb-4">Regras de negócio</h3>
             <Field label="Validade do certificado (meses)">
               <input type="number" min={1} className={inputClass} value={form.certificateValidity} onChange={(e) => setForm({ ...form, certificateValidity: Number(e.target.value) })} />
             </Field>
+            <p className="text-xs text-slate-400 mt-2">
+              Define quando os colaboradores precisam refazer treinamentos obrigatórios (ex.: NR-10, Compliance).
+            </p>
           </Card>
-          <Card className="p-6 lg:col-span-2 flex items-center justify-between">
-            <p className="text-sm text-slate-500">Alterações registradas na auditoria.</p>
-            <div className="flex items-center gap-3">
-              <Button type="submit"><Icon name="check" className="w-4 h-4" />Salvar</Button>
-              {saved && <span className="text-sm text-emerald-600 font-medium">Salvo!</span>}
+
+          <Card className="p-6">
+            <h3 className="font-semibold text-slate-800 mb-4">Interface</h3>
+            <Field label="Navegação">
+              <select className={inputClass} value={form.layout.navStyle} onChange={(e) => setLayout({ navStyle: e.target.value as Settings["layout"]["navStyle"] })}>
+                <option value="sidebar">Barra lateral</option>
+                <option value="top">Menu superior com dropdowns</option>
+              </select>
+            </Field>
+            <div className="flex items-center justify-between py-3 border-t border-slate-100">
+              <div className="text-sm font-medium text-slate-700">Destaques na home</div>
+              <Toggle checked={form.layout.showDestaques} onChange={(v) => setLayout({ showDestaques: v })} />
             </div>
           </Card>
-        </form>
-      )}
 
-      {tab === "modulos" && (
-        <Card className="p-6">
-          <h3 className="font-semibold text-slate-800 mb-4">Módulos funcionais (RF-066)</h3>
-          <div className="space-y-4">
-            {moduleDefinitions.map((m) => (
-              <div key={m.key} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                <div>
-                  <div className="font-medium text-slate-800">{m.label}</div>
-                  <div className="text-xs text-slate-500">{m.description}</div>
+          <Card className="p-6 lg:col-span-2">
+            <h3 className="font-semibold text-slate-800 mb-4">Módulos funcionais</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {moduleDefinitions.map((m) => (
+                <div key={m.key} className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                  <div>
+                    <div className="text-sm font-medium text-slate-800">{m.label}</div>
+                    <div className="text-xs text-slate-400">{m.description}</div>
+                  </div>
+                  <Toggle checked={form.modules[m.key]} onChange={(v) => setModule(m.key, v)} />
                 </div>
-                <Toggle checked={form.modules[m.key]} onChange={(v) => setModule(m.key, v)} />
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <Card className="p-6">
+          <h3 className="font-semibold text-slate-800 mb-4">Integrações externas</h3>
+          <div className="space-y-3">
+            {integrations.map((i) => (
+              <div key={i.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                <span className="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 grid place-items-center shrink-0">
+                  <Icon name="plug" className="w-5 h-5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-slate-800">{i.name}</div>
+                  <div className="text-xs text-slate-400">{i.type} · última sinc.: {i.lastSync}</div>
+                </div>
+                <Badge color={statusColor[i.status]}>{i.status}</Badge>
+                <button
+                  type="button"
+                  onClick={() => updateIntegration(i.id, { status: i.status === "conectado" ? "desconectado" : "conectado", lastSync: new Date().toLocaleString("pt-BR") })}
+                  className="text-xs text-brand font-medium hover:underline shrink-0"
+                >
+                  {i.status === "conectado" ? "Desconectar" : "Conectar"}
+                </button>
               </div>
             ))}
           </div>
         </Card>
-      )}
 
-      {tab === "interface" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="p-6">
-            <h3 className="font-semibold text-slate-800 mb-4">Layout & navegação (RF-067 · RF-071)</h3>
-            <Field label="Estilo de navegação">
-              <select className={inputClass} value={form.layout.navStyle} onChange={(e) => setLayout({ navStyle: e.target.value as Settings["layout"]["navStyle"] })}>
-                <option value="top">Menu superior com dropdowns</option>
-                <option value="sidebar">Barra lateral</option>
-              </select>
-            </Field>
-            <Field label="Densidade">
-              <select className={inputClass} value={form.layout.density} onChange={(e) => setLayout({ density: e.target.value as Settings["layout"]["density"] })}>
-                <option value="comfortable">Confortável</option>
-                <option value="compact">Compacto</option>
-              </select>
-            </Field>
-            <div className="flex items-center justify-between py-3 border-t border-slate-100">
-              <div><div className="text-sm font-medium text-slate-700">Destaques na home</div></div>
-              <Toggle checked={form.layout.showDestaques} onChange={(v) => setLayout({ showDestaques: v })} />
-            </div>
-          </Card>
-          <Card className="p-6">
-            <h3 className="font-semibold text-slate-800 mb-4">Identidade visual</h3>
-            <Field label="Cor da marca">
-              <div className="flex items-center gap-3">
-                <input type="color" value={form.brandColor} onChange={(e) => { setForm({ ...form, brandColor: e.target.value }); updateSettings({ brandColor: e.target.value }); }} className="w-12 h-10 rounded border border-slate-300" />
-                <input className={inputClass} value={form.brandColor} onChange={(e) => { setForm({ ...form, brandColor: e.target.value }); updateSettings({ brandColor: e.target.value }); }} />
-              </div>
-            </Field>
-          </Card>
-        </div>
-      )}
-
-      {tab === "integracoes" && (
-        <Card className="p-2">
-          <div className="px-4 py-3"><h3 className="font-semibold text-slate-800">Integrações externas (RF-068)</h3></div>
-          <Table head={["Integração", "Tipo", "Status", "Última sync", "Ações"]}>
-            {integrations.map((i) => (
-              <tr key={i.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-800">{i.name}</td>
-                <td className="px-4 py-3 text-slate-600">{i.type}</td>
-                <td className="px-4 py-3"><Badge color={statusColor[i.status]}>{i.status}</Badge></td>
-                <td className="px-4 py-3 text-xs text-slate-500">{i.lastSync}</td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => updateIntegration(i.id, { status: i.status === "conectado" ? "desconectado" : "conectado", lastSync: new Date().toLocaleString("pt-BR") })}
-                    className="text-xs text-brand font-medium hover:underline"
-                  >
-                    {i.status === "conectado" ? "Desconectar" : "Conectar"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </Table>
-        </Card>
-      )}
-
-      {tab === "permissoes" && (
         <Card className="p-2 overflow-x-auto">
-          <div className="px-4 py-3"><h3 className="font-semibold text-slate-800">Permissões por perfil e escopo (RF-069)</h3></div>
+          <div className="px-4 py-3"><h3 className="font-semibold text-slate-800">Permissões por perfil</h3></div>
           <Table head={["Permissão", "Descrição", ...matrixRoles.map((r) => roleLabels[r])]}>
             {permissions.map((p) => (
               <tr key={p.id} className="hover:bg-slate-50">
@@ -221,7 +186,7 @@ export default function ConfiguracoesPage() {
                     <button
                       type="button"
                       onClick={() => togglePermissionRole(p.id, r)}
-                      className={`w-6 h-6 rounded-full mx-auto transition ${p.roles.includes(r) ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-300"}`}
+                      className={`w-6 h-6 rounded-full mx-auto text-xs ${p.roles.includes(r) ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-300"}`}
                     >
                       {p.roles.includes(r) ? "✓" : "·"}
                     </button>
@@ -231,15 +196,13 @@ export default function ConfiguracoesPage() {
             ))}
           </Table>
         </Card>
-      )}
 
-      {tab === "jobs" && (
         <Card className="p-2">
           <div className="px-4 py-3 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800">Execuções automáticas (RF-070)</h3>
+            <h3 className="font-semibold text-slate-800">Execuções automáticas</h3>
             <Badge color="green">{scheduledJobs.filter((j) => j.enabled).length} ativos</Badge>
           </div>
-          <Table head={["Job", "Agendamento", "Módulo", "Ação", "Última exec.", "Próxima", "Status"]}>
+          <Table head={["Job", "Agendamento", "Módulo", "Ação", "Última exec.", "Próxima", "Ativo"]}>
             {scheduledJobs.map((j) => (
               <tr key={j.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 font-medium text-slate-800">{j.name}</td>
@@ -255,7 +218,22 @@ export default function ConfiguracoesPage() {
             ))}
           </Table>
         </Card>
-      )}
+
+        <Card className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p className="text-sm text-slate-500">As alterações são aplicadas a toda a plataforma e registradas na auditoria.</p>
+          <div className="flex items-center gap-3">
+            <Button type="submit">
+              <Icon name="check" className="w-4 h-4" />
+              Salvar alterações
+            </Button>
+            {saved && (
+              <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+                <Icon name="check" className="w-4 h-4" /> Salvo!
+              </span>
+            )}
+          </div>
+        </Card>
+      </form>
     </div>
   );
 }

@@ -20,7 +20,6 @@ import { WidgetShell } from "@/components/dashboard/WidgetShell";
 import { QuickShortcuts } from "@/components/home/QuickShortcuts";
 import { QuickActions } from "@/components/home/QuickActions";
 import { DestaquesBanner } from "@/components/home/DestaquesBanner";
-import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import Link from "next/link";
 
 type Tab = "dashboard" | "equipe";
@@ -28,7 +27,7 @@ type WidgetStatus = "ready" | "loading" | "error" | "empty";
 
 export default function DashboardPage() {
   const { auditLogs, currentUser, settings } = useApp();
-  const { courses, turmas, users, role, unitId, unitLabel, isGlobal } = useAuthScope();
+  const { courses, turmas, users, role, unitId, unitLabel, isGlobal, solicitacoes, can } = useAuthScope();
 
   const [tab, setTab] = useState<Tab>("dashboard");
   const [filters, setFilters] = useState<DashboardFilters>(() =>
@@ -134,13 +133,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* RF-056 — Destaques visíveis na home */}
-      {tab === "dashboard" && settings.layout.showDestaques && <DestaquesBanner />}
-
-      {/* RF-073 — Visão administrativa */}
-      {tab === "dashboard" && <AdminOverview />}
-
-      {/* RF-072 — Atalhos em cards na home */}
+      {/* RF-022 a RF-033 — Atalhos e ações rápidas (home) */}
       {tab === "dashboard" && (
         <div className="grid grid-cols-1 gap-6 mb-6">
           <QuickShortcuts />
@@ -148,7 +141,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* RF-074 a RF-077 — Filtros multiunidade, categoria, público-alvo e modalidade */}
+      {tab === "dashboard" && settings.layout.showDestaques && <DestaquesBanner />}
+
+      {/* RF-007, RF-013–018 — Filtros */}
       <DashboardFiltersBar
         filters={filters}
         onChange={handleUnitFilter}
@@ -190,6 +185,15 @@ export default function DashboardPage() {
               color="#d97706"
             />
           </div>
+
+          {(can("manage_users_all") || can("manage_users_unit")) && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard label="Usuários no escopo" value={users.length.toString()} icon={<Icon name="users" className="w-5 h-5" />} />
+              <StatCard label="Turmas abertas" value={turmas.filter((t) => t.status !== "concluida").length.toString()} color="#2563eb" icon={<Icon name="group" className="w-5 h-5" />} />
+              <StatCard label="Solicitações pendentes" value={solicitacoes.filter((s) => s.status === "pendente").length.toString()} color="#d97706" icon={<Icon name="mail" className="w-5 h-5" />} />
+              <StatCard label="Cursos publicados" value={courses.filter((c) => c.status === "publicado").length.toString()} color="#00a14b" icon={<Icon name="book" className="w-5 h-5" />} />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* RF-019 */}

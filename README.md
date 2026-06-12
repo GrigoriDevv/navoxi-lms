@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Neoenergia LMS — MVP
 
-## Getting Started
+Plataforma corporativa de **Gestão de Aprendizagem (LMS)** da Neoenergia, construída em **Next.js 16 (App Router) + TypeScript + Tailwind CSS v4**.
 
-First, run the development server:
+Este MVP demonstra, ponta a ponta, os macroblocos funcionais previstos no escopo, com dados simulados (mock) e estado gerenciado no cliente (React Context + persistência em `localStorage`).
+
+## Macroblocos implementados
+
+| Macrobloco | Rota | Destaques |
+|---|---|---|
+| Gestão de Identidade e Controle de Acesso | `/identidade` | Perfis/RBAC, matriz de permissões, políticas de segurança, sessões |
+| Módulo Administração | `/administracao` | Gestão de usuários, busca, departamentos, cadastro de usuário |
+| Módulo Aprendizagem | `/aprendizagem/*` | Cursos, Turmas, Trilhas e Calendário acadêmico |
+| Módulo Repositório de Conteúdos | `/repositorio` | Biblioteca de mídias (vídeo, PDF, SCORM, imagem, link) |
+| Módulo Comunicação | `/comunicacao` | Campanhas multicanal (e-mail, push, mural, SMS) e métricas |
+| Módulo Relatórios e Analytics | `/relatorios` | KPIs, gráficos de matrícula, conclusão e perfis |
+| Módulo Configurações e Parametrização | `/configuracoes` | Identidade visual, segurança e regras de negócio |
+| Automação e Integrações | `/integracoes` | SSO/RH/BI, conectores e automações (toggle on/off) |
+| Auditoria e Logs | `/auditoria` | Trilha de auditoria com filtros por severidade |
+
+## Controle de acesso (RBAC)
+
+A navegação, funcionalidades e permissões são definidas pelo perfil e unidade do usuário autenticado (`src/lib/rbac.ts`).
+
+### Perfis confirmados
+
+| Perfil | Escopo |
+|---|---|
+| **Administrador Premium** | Acesso total — todas unidades, configurações globais, identidade, integrações e auditoria |
+| **Administrador de Unidade** | Escopo da própria unidade (Coelba, Celpe, Coelce, Elektro) — usuários, turmas, conteúdos, comunicação e relatórios |
+
+### Perfis complementares (a confirmar)
+
+Gestor de Conteúdo, Instrutor e Aluno já estão mapeados com permissões provisórias, marcados como **"A confirmar"** na tela de Identidade & Acesso.
+
+### Demonstração
+
+Na tela de login, use os botões de acesso rápido:
+
+- `ana.souza@neoenergia.com` → Administrador Premium (Holding)
+- `bruno.ferreira@neoenergia.com` → Administrador de Unidade (Celpe · PE)
+- `carla.mendes@neoenergia.com` → Gestor de Conteúdo *(a confirmar)*
+- `henrique.castro@neoenergia.com` → Instrutor *(a confirmar)*
+- `diego.alves@neoenergia.com` → Aluno *(a confirmar)*
+
+O perfil e a unidade vêm do cadastro do usuário — menus e dados são filtrados automaticamente.
+
+## Como executar
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# abra http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Build de produção:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build && npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Arquitetura
 
-## Learn More
+```
+src/
+├── app/
+│   ├── login/                 # Autenticação (demo)
+│   └── (app)/                 # Área autenticada (sidebar + header)
+│       ├── dashboard/
+│       ├── identidade/
+│       ├── administracao/
+│       ├── aprendizagem/{cursos,turmas,trilhas,calendario}/
+│       ├── repositorio/
+│       ├── comunicacao/
+│       ├── relatorios/
+│       ├── configuracoes/
+│       ├── integracoes/
+│       └── auditoria/
+├── components/                # UI, Sidebar, Header, Icon, charts
+└── lib/                       # types, mock-data, store (Context), nav
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Observações
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Dados são **simulados** e residem em `src/lib/mock-data.ts`.
+- Ações como criar usuário/curso, alterar configurações e ligar/desligar automações
+  são refletidas no estado e geram registros na **Auditoria**.
+- Para produção: substituir o store por uma API (ex.: Next Route Handlers + banco),
+  integrar SSO real (SAML/OIDC) e provedores de RH/BI.

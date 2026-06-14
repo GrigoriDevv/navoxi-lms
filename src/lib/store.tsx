@@ -27,6 +27,7 @@ import type {
   Certificado,
   InteresseCurso,
   SolicitacaoMatricula,
+  InscricaoCurso,
   Question,
   Evaluation,
   ContentAsset,
@@ -101,6 +102,7 @@ interface AppState {
   certificados: Certificado[];
   interesses: InteresseCurso[];
   solicitacoes: SolicitacaoMatricula[];
+  inscricoes: InscricaoCurso[];
   posts: Post[];
   messages: Message[];
   questions: Question[];
@@ -129,6 +131,8 @@ interface AppState {
   updateTrilha: (id: string, data: Partial<Trilha>) => void;
   addSala: (s: Omit<Sala, "id">) => void;
   updateSolicitacao: (id: string, status: SolicitacaoMatricula["status"]) => void;
+  inscreverCurso: (courseId: string, turmaId?: string) => "ok" | "duplicate" | "pending" | "lotada" | "login";
+  cancelarInscricao: (id: string) => void;
   addInteresse: (i: Omit<InteresseCurso, "id" | "registeredAt" | "notified">) => void;
   updateCertificado: (id: string, status: Certificado["status"]) => void;
   addPost: (p: Omit<Post, "id" | "publishedAt" | "author" | "status">) => void;
@@ -175,6 +179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [certificados, setCertificados] = useState<Certificado[]>(seed.certificados);
   const [interesses, setInteresses] = useState<InteresseCurso[]>(seed.interesses);
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoMatricula[]>(seed.solicitacoes);
+  const [inscricoes, setInscricoes] = useState<InscricaoCurso[]>(seed.inscricoes);
   const [posts, setPosts] = useState<Post[]>(seed.posts);
   const [messages, setMessages] = useState<Message[]>(seed.messages);
   const [questions, setQuestions] = useState<Question[]>(seed.questions);
@@ -353,10 +358,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return ev;
       })
     );
-    if (appliedName) {
+    if (appliedName && currentUser) {
       setNotifications((prev) => [
         {
           id: "n" + Math.random().toString(36).slice(2, 7),
+          userId: currentUser.id,
           title: `Avaliação aplicada: ${appliedName}`,
           message: "A avaliação foi disponibilizada para a turma vinculada.",
           type: "curso",
@@ -451,9 +457,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const dispatchNotification: AppState["dispatchNotification"] = (n) => {
+    const userId = n.userId ?? currentUser?.id;
+    if (!userId) return;
     setNotifications((prev) => [
       {
         ...n,
+        userId,
         id: "n" + Math.random().toString(36).slice(2, 7),
         read: false,
         timestamp: "Agora",
@@ -503,7 +512,81 @@ export function AppProvider({ children }: { children: ReactNode }) {
     log({ user: currentUser?.email ?? "system", action: `Cadastrou sala '${s.name}'`, module: "Aprendizagem", severity: "info" });
   };
 
+  const finalizeEnrollment = (
+    params: {
+      userId: string;
+      userName: string;
+      courseId: string;
+      courseTitle: string;
+      turmaId?: string;
+      turmaName?: string;
+      unitId: UnitId;
+    }
+  ) => {
+    const id = "ins" + Math.random().toString(36).slice(2, 7);
+    setInscricoes((prev) => {
+      if (
+        prev.some(
+          (i) =>
+            i.userId === params.userId &&
+            i.courseId === params.courseId &&
+            i.status === "ativa"
+        )
+      ) {
+        return prev;
+      }
+      return [
+        {
+          id,
+          userId: params.userId,
+          userName: params.userName,
+          courseId: params.courseId,
+          courseTitle: params.courseTitle,
+          turmaId: params.turmaId,
+          turmaName: params.turmaName,
+          unitId: params.unitId,
+          enrolledAt: now(),
+          progress: 0,
+          status: "ativa",
+        },
+        ...prev,
+      ];
+    });
+    setCourses((prev) =>
+      prev.map((c) =>
+        c.id === params.courseId ? { ...c, enrolled: c.enrolled + 1 } : c
+      )
+    );
+    if (params.turmaId) {
+      setTurmas((prev) =>
+        prev.map((t) =>
+          t.id === params.turmaId ? { ...t, enrolled: t.enrolled + 1 } : t
+        )
+      );
+    }
+  };
+
   const updateSolicitacao: AppState["updateSolicitacao"] = (id, status) => {
+    const sol = solicitacoes.find((s) => s.id === id);
+    if (sol && status === "aprovada" && sol.status === "pendente") {
+      const turma = sol.turmaId ? turmas.find((t) => t.id === sol.turmaId) : undefined;
+      finalizeEnrollment({
+        userId: sol.userId,
+        userName: sol.userName,
+        courseId: sol.courseId,
+        courseTitle: sol.courseTitle,
+        turmaId: sol.turmaId,
+        turmaName: turma?.name,
+        unitId: sol.unitId,
+      });
+      dispatchNotification({
+        userId: sol.userId,
+        title: "Matrícula aprovada",
+        message: `Sua inscrição em "${sol.courseTitle}" foi aprovada.`,
+        type: "curso",
+        href: "/aprendizagem/catalogo?tab=inscricoes",
+      });
+    }
     setSolicitacoes((prev) =>
       prev.map((s) =>
         s.id === id
@@ -512,6 +595,117 @@ export function AppProvider({ children }: { children: ReactNode }) {
       )
     );
     log({ user: currentUser?.email ?? "system", action: `Solicitação '${id}' → ${status}`, module: "Aprendizagem", severity: "info" });
+  };
+
+  const inscreverCurso: AppState["inscreverCurso"] = (courseId, turmaId) => {
+    if (!currentUser) return "login";
+
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) return "duplicate";
+
+    const turma = turmaId ? turmas.find((t) => t.id === turmaId) : undefined;
+    if (turma && turma.enrolled >= turma.capacity) return "lotada";
+
+    const alreadyEnrolled = inscricoes.some(
+      (i) =>
+        i.userId === currentUser.id &&
+        i.courseId === courseId &&
+        i.status === "ativa"
+    );
+    if (alreadyEnrolled) return "duplicate";
+
+    const pending = solicitacoes.some(
+      (s) =>
+        s.userId === currentUser.id &&
+        s.courseId === courseId &&
+        s.status === "pendente"
+    );
+    if (pending) return "duplicate";
+
+    if (settings.approvalRequired) {
+      const id = "sol" + Math.random().toString(36).slice(2, 7);
+      setSolicitacoes((prev) => [
+        {
+          id,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          courseId: course.id,
+          courseTitle: course.title,
+          turmaId,
+          unitId: currentUser.unitId,
+          requestedAt: now(),
+          status: "pendente",
+        },
+        ...prev,
+      ]);
+      dispatchNotification({
+        userId: currentUser.id,
+        title: "Solicitação enviada",
+        message: `Sua inscrição em "${course.title}" aguarda aprovação.`,
+        type: "info",
+        href: "/aprendizagem/catalogo?tab=inscricoes",
+      });
+      log({
+        user: currentUser.email,
+        action: `Solicitou matrícula em '${course.title}'`,
+        module: "Aprendizagem",
+        severity: "info",
+      });
+      return "pending";
+    }
+
+    finalizeEnrollment({
+      userId: currentUser.id,
+      userName: currentUser.name,
+      courseId: course.id,
+      courseTitle: course.title,
+      turmaId,
+      turmaName: turma?.name,
+      unitId: currentUser.unitId,
+    });
+    dispatchNotification({
+      userId: currentUser.id,
+      title: "Inscrição confirmada",
+      message: `Você foi matriculado em "${course.title}".`,
+      type: "curso",
+      href: "/aprendizagem/catalogo?tab=inscricoes",
+    });
+    log({
+      user: currentUser.email,
+      action: `Inscreveu-se em '${course.title}'`,
+      module: "Aprendizagem",
+      severity: "info",
+    });
+    return "ok";
+  };
+
+  const cancelarInscricao: AppState["cancelarInscricao"] = (id) => {
+    const ins = inscricoes.find((i) => i.id === id);
+    if (!ins || ins.status !== "ativa") return;
+
+    setInscricoes((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, status: "cancelada" } : i))
+    );
+    setCourses((prev) =>
+      prev.map((c) =>
+        c.id === ins.courseId ? { ...c, enrolled: Math.max(0, c.enrolled - 1) } : c
+      )
+    );
+    if (ins.turmaId) {
+      setTurmas((prev) =>
+        prev.map((t) =>
+          t.id === ins.turmaId
+            ? { ...t, enrolled: Math.max(0, t.enrolled - 1) }
+            : t
+        )
+      );
+    }
+    log({
+      user: currentUser?.email ?? "system",
+      action: `Cancelou inscrição em '${ins.courseTitle}'`,
+      module: "Aprendizagem",
+      severity: "info",
+    });
   };
 
   const addInteresse: AppState["addInteresse"] = (i) => {
@@ -585,10 +779,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const markAllNotificationsRead: AppState["markAllNotificationsRead"] = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    if (!currentUser) return;
+    setNotifications((prev) =>
+      prev.map((n) => (n.userId === currentUser.id ? { ...n, read: true } : n))
+    );
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const myNotifications = useMemo(
+    () =>
+      currentUser
+        ? notifications.filter((n) => n.userId === currentUser.id)
+        : [],
+    [notifications, currentUser]
+  );
+
+  const unreadCount = myNotifications.filter((n) => !n.read).length;
 
   const value = useMemo<AppState>(
     () => ({
@@ -603,6 +808,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       certificados,
       interesses,
       solicitacoes,
+      inscricoes,
       posts,
       messages,
       questions,
@@ -617,7 +823,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       scheduledJobs,
       auditLogs,
       settings,
-      notifications,
+      notifications: myNotifications,
       unreadCount,
       preferences,
       addUser,
@@ -630,6 +836,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateTrilha,
       addSala,
       updateSolicitacao,
+      inscreverCurso,
+      cancelarInscricao,
       addInteresse,
       updateCertificado,
       addPost,
@@ -660,7 +868,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       log,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, posts, messages, questions, evaluations, contents, destaques, alertRules, internalMails, automations, integrations, permissions, scheduledJobs, auditLogs, settings, notifications, preferences]
+    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, inscricoes, posts, messages, questions, evaluations, contents, destaques, alertRules, internalMails, automations, integrations, permissions, scheduledJobs, auditLogs, settings, myNotifications, preferences]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

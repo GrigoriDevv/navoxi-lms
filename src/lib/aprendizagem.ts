@@ -24,6 +24,12 @@ export const turmaStatusLabels = {
   concluida: "Concluída",
 } as const;
 
+export const inscricaoStatusLabels = {
+  ativa: "Em andamento",
+  concluida: "Concluída",
+  cancelada: "Cancelada",
+} as const;
+
 export const solicitacaoStatusLabels = {
   pendente: "Pendente",
   aprovada: "Aprovada",

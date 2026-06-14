@@ -39,7 +39,7 @@ export default function ComunicacaoPage() {
   const [modal, setModal] = useState<"destaque" | "post" | "notif" | "alert" | "mail" | "camp" | null>(null);
   const [destaqueForm, setDestaqueForm] = useState({ title: "", body: "", unitId: (unitId ?? "holding") as UnitId, visible: true, pinned: false });
   const [postForm, setPostForm] = useState({ title: "", body: "", unitId: (unitId ?? "holding") as UnitId });
-  const [notifForm, setNotifForm] = useState({ title: "", message: "", type: "info" as const });
+  const [notifForm, setNotifForm] = useState({ title: "", message: "", type: "info" as const, userId: "" });
   const [alertForm, setAlertForm] = useState({ name: "", criteria: "", channel: "sistema" as AlertRule["channel"], audience: "Todos", unitId: (unitId ?? "holding") as UnitId, enabled: true });
   const [mailForm, setMailForm] = useState({ toUserId: "", subject: "", body: "", unitId: (unitId ?? "holding") as UnitId });
   const [campForm, setCampForm] = useState({ title: "", channel: "email" as Message["channel"], audience: "Todos", status: "rascunho" as Message["status"], sentAt: "—", openRate: 0 });
@@ -112,7 +112,7 @@ export default function ComunicacaoPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-slate-800">Notificações sistêmicas</h3>
-            <Button onClick={() => setModal("notif")}><Icon name="plus" className="w-4 h-4" />Disparar</Button>
+            <Button onClick={() => { setNotifForm({ title: "", message: "", type: "info", userId: currentUser?.id ?? "" }); setModal("notif"); }}><Icon name="plus" className="w-4 h-4" />Disparar</Button>
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {notifications.slice(0, 6).map((n) => (
@@ -196,6 +196,14 @@ export default function ComunicacaoPage() {
       </Modal>
       <Modal open={modal === "notif"} onClose={() => setModal(null)} title="Disparar notificação">
         <form onSubmit={(e) => { e.preventDefault(); dispatchNotification(notifForm); setModal(null); }}>
+          <Field label="Destinatário">
+            <select required className={inputClass} value={notifForm.userId} onChange={(e) => setNotifForm({ ...notifForm, userId: e.target.value })}>
+              <option value="">Selecione…</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          </Field>
           <Field label="Título"><input required className={inputClass} value={notifForm.title} onChange={(e) => setNotifForm({ ...notifForm, title: e.target.value })} /></Field>
           <Field label="Mensagem"><textarea required className={inputClass} rows={2} value={notifForm.message} onChange={(e) => setNotifForm({ ...notifForm, message: e.target.value })} /></Field>
           <Button type="submit">Disparar</Button>

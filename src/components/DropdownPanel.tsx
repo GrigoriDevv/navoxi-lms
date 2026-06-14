@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+type DropdownPanelChildren =
+  | ReactNode
+  | ((api: { close: () => void }) => ReactNode);
+
 export function DropdownPanel({
   trigger,
   children,
@@ -9,12 +13,13 @@ export function DropdownPanel({
   width = "w-80",
 }: {
   trigger: (props: { open: boolean; toggle: () => void }) => ReactNode;
-  children: ReactNode;
+  children: DropdownPanelChildren;
   align?: "left" | "right";
   width?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const close = () => setOpen(false);
 
   useEffect(() => {
     if (!open) return;
@@ -44,7 +49,7 @@ export function DropdownPanel({
           }`}
           role="menu"
         >
-          {children}
+          {typeof children === "function" ? children({ close }) : children}
         </div>
       )}
     </div>

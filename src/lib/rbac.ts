@@ -94,6 +94,7 @@ export function hasPermission(role: Role, permission: PermissionKey): boolean {
 /** Rotas acessíveis por perfil */
 const routeAccess: Record<string, PermissionKey[]> = {
   "/dashboard": ["consume_learning"],
+  "/notificacoes": ["manage_own_session"],
   "/perfil": ["manage_own_session"],
   "/preferencias": ["manage_own_session"],
   "/identidade": ["manage_identity"],

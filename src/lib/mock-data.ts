@@ -25,6 +25,7 @@ import type {
   AlertRule,
   InternalMail,
   ScheduledJob,
+  InscricaoCurso,
 } from "./types";
 
 const colors = ["#00a14b", "#2563eb", "#db2777", "#d97706", "#7c3aed", "#0891b2"];
@@ -124,6 +125,12 @@ export const solicitacoes: SolicitacaoMatricula[] = [
   { id: "sol1", userId: "u4", userName: "Diego Alves", courseId: "c1", courseTitle: "Segurança em Redes Elétricas (NR-10)", turmaId: "t1", unitId: "coelba", requestedAt: "2026-06-10 14:30", status: "pendente" },
   { id: "sol2", userId: "u7", userName: "Gabriela Nunes", courseId: "c3", courseTitle: "Excelência no Atendimento ao Cliente", turmaId: "t4", unitId: "coelba", requestedAt: "2026-06-09 09:15", status: "aprovada", reviewer: "Bruno Ferreira" },
   { id: "sol3", userId: "u5", userName: "Eduarda Lima", courseId: "c4", courseTitle: "Liderança e Gestão de Equipes", turmaId: "t2", unitId: "elektro", requestedAt: "2026-06-07 11:00", status: "rejeitada", reviewer: "Bruno Ferreira" },
+];
+
+export const inscricoes: InscricaoCurso[] = [
+  { id: "ins1", userId: "u4", userName: "Diego Alves", courseId: "c2", courseTitle: "Compliance e Código de Ética", unitId: "coelba", enrolledAt: "2026-05-15 10:00", progress: 68, status: "ativa" },
+  { id: "ins2", userId: "u4", userName: "Diego Alves", courseId: "c3", courseTitle: "Excelência no Atendimento ao Cliente", turmaId: "t4", turmaName: "Atendimento · Online Contínuo", unitId: "coelba", enrolledAt: "2026-06-01 09:30", progress: 22, status: "ativa" },
+  { id: "ins3", userId: "u7", userName: "Gabriela Nunes", courseId: "c2", courseTitle: "Compliance e Código de Ética", unitId: "coelba", enrolledAt: "2026-04-20 14:00", progress: 100, status: "concluida" },
 ];
 
 export const questions: Question[] = [
@@ -253,46 +260,92 @@ export const defaultPreferences: UserPreferences = {
 export const notifications: Notification[] = [
   {
     id: "n1",
+    userId: "u4",
     title: "Prazo de conclusão — LGPD",
     message: "Você tem 7 dias para concluir o curso LGPD na Prática.",
     type: "prazo",
     read: false,
     timestamp: "Há 2 horas",
     href: "/aprendizagem/cursos",
+    module: "Aprendizagem",
+    details:
+      "O curso LGPD na Prática é obrigatório para colaboradores da área comercial.\n\nPrazo final: 19/06/2026\nCarga horária restante: 2h\nProgresso atual: 50%\n\nAcesse o curso e conclua o módulo final para emitir seu certificado.",
   },
   {
     id: "n2",
+    userId: "u4",
     title: "Nova turma disponível",
     message: "NR-10 · Turma 2026.1 aberta para inscrições na Celpe.",
     type: "curso",
     read: false,
     timestamp: "Há 5 horas",
-    href: "/aprendizagem/turmas",
+    href: "/aprendizagem/catalogo",
+    module: "Aprendizagem",
+    details:
+      "Turma: NR-10 · Turma 2026.1\nInstrutora: Carla Mendes\nInício: 15/06/2026\nVagas: 2 restantes\nModalidade: Híbrido\n\nInscreva-se pelo catálogo de cursos antes do encerramento das vagas.",
   },
   {
     id: "n3",
+    userId: "u1",
     title: "Manutenção programada",
     message: "A plataforma ficará indisponível no domingo, 14/06, das 20h às 22h.",
     type: "info",
     read: false,
     timestamp: "Ontem",
+    module: "Sistema",
+    details:
+      "Manutenção preventiva do ambiente de produção.\n\nJanela: domingo, 14/06/2026, 20h–22h (horário de Brasília)\nImpacto: indisponibilidade total da plataforma\n\nRecomenda-se salvar trabalhos em andamento antes do horário informado.",
   },
   {
     id: "n4",
+    userId: "u4",
     title: "Certificado emitido",
     message: "Seu certificado de Compliance e Código de Ética está disponível.",
     type: "curso",
     read: true,
     timestamp: "12/06",
-    href: "/aprendizagem/cursos",
+    href: "/aprendizagem/certificados",
+    module: "Aprendizagem",
+    details:
+      "Curso concluído: Compliance e Código de Ética\nNota final: 92%\nEmitido em: 12/06/2026\nValidade: 12/06/2027\n\nO certificado pode ser baixado em PDF na área de Certificados.",
   },
   {
     id: "n5",
+    userId: "u2",
     title: "Tentativas de login detectadas",
     message: "Foram registradas tentativas de acesso não autorizadas na sua conta.",
     type: "alerta",
     read: true,
     timestamp: "10/06",
+    module: "Identidade",
+    details:
+      "Foram detectadas 3 tentativas de login malsucedidas em 10/06/2026 entre 22h e 22h15.\n\nOrigem: IP externo não reconhecido\nAção recomendada: revise sua senha e verifique sessões ativas em Identidade & Acesso.",
+  },
+  {
+    id: "n6",
+    userId: "u2",
+    title: "Solicitação de matrícula pendente",
+    message: "Diego Alves solicitou matrícula em Segurança em Redes Elétricas (NR-10).",
+    type: "info",
+    read: false,
+    timestamp: "Há 1 hora",
+    href: "/aprendizagem/solicitacoes?status=pendente",
+    module: "Aprendizagem",
+    details:
+      "Solicitante: Diego Alves (Coelba)\nCurso: Segurança em Redes Elétricas (NR-10)\nTurma: NR-10 · Turma 2026.1\nSolicitado em: 12/06/2026 às 09:15\n\nAprove ou rejeite a solicitação na área de Solicitações de Matrícula.",
+  },
+  {
+    id: "n7",
+    userId: "u8",
+    title: "Turma iniciada",
+    message: "A turma Liderança · Junho entrou em andamento.",
+    type: "curso",
+    read: false,
+    timestamp: "Hoje",
+    href: "/aprendizagem/turmas",
+    module: "Aprendizagem",
+    details:
+      "Turma: Liderança · Junho\nInstrutor: Henrique Castro\nPeríodo: 02/06 a 30/06/2026\nAlunos matriculados: 25\n\nConsulte o calendário de aulas e materiais na gestão de turmas.",
   },
 ];
 

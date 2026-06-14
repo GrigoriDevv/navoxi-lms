@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { useAuthScope } from "@/lib/use-auth-scope";
 import { unitLabels } from "@/lib/rbac";
@@ -11,9 +12,17 @@ import { Icon } from "@/components/Icon";
 const statusColor = { pendente: "amber", aprovada: "green", rejeitada: "red", cancelada: "slate" } as const;
 
 export default function SolicitacoesPage() {
+  const searchParams = useSearchParams();
+  const statusFromUrl = searchParams.get("status");
+
   const { updateSolicitacao } = useApp();
   const { solicitacoes, turmas, can } = useAuthScope();
-  const [filter, setFilter] = useState("todas");
+  const validFilters = ["todas", "pendente", "aprovada", "rejeitada", "cancelada"] as const;
+  const [filter, setFilter] = useState<string>(
+    statusFromUrl && validFilters.includes(statusFromUrl as (typeof validFilters)[number])
+      ? statusFromUrl
+      : "todas"
+  );
   const [detail, setDetail] = useState<(typeof solicitacoes)[0] | null>(null);
 
   const turmaName = (id?: string) => turmas.find((t) => t.id === id)?.name ?? "—";

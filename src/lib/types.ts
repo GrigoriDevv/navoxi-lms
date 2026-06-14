@@ -120,6 +120,20 @@ export interface SolicitacaoMatricula {
   reviewer?: string;
 }
 
+export interface InscricaoCurso {
+  id: string;
+  userId: string;
+  userName: string;
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string;
+  turmaName?: string;
+  unitId: UnitId;
+  enrolledAt: string;
+  progress: number;
+  status: "ativa" | "concluida" | "cancelada";
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -219,12 +233,15 @@ export interface ScheduledJob {
 
 export interface Notification {
   id: string;
+  userId: string;
   title: string;
   message: string;
   type: "info" | "alerta" | "curso" | "prazo";
   read: boolean;
   timestamp: string;
   href?: string;
+  module?: string;
+  details?: string;
 }
 
 export interface UserPreferences {

@@ -6,6 +6,7 @@ import { matrixRoles } from "@/lib/mock-data";
 import { moduleDefinitions } from "@/lib/platform-config";
 import { roleLabels } from "@/lib/rbac";
 import { PageHeader, Card, Field, inputClass, Button, Badge, Table } from "@/components/ui";
+import { IntegrationLogoSlot } from "@/components/integrations/IntegrationLogoSlot";
 import { Icon } from "@/components/Icon";
 import type { Role, Settings } from "@/lib/types";
 
@@ -154,9 +155,7 @@ export default function ConfiguracoesPage() {
           <div className="space-y-3">
             {integrations.map((i) => (
               <div key={i.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
-                <span className="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 grid place-items-center shrink-0">
-                  <Icon name="plug" className="w-5 h-5" />
-                </span>
+                <IntegrationLogoSlot integration={i} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-800">{i.name}</div>
                   <div className="text-xs text-slate-400">{i.type} · última sinc.: {i.lastSync}</div>

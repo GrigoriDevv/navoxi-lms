@@ -169,12 +169,24 @@ export interface Message {
   openRate: number; // %
 }
 
+import type { IntegrationBrand } from "./integration-brands";
+
 export interface Integration {
   id: string;
   name: string;
-  type: "SSO" | "RH" | "BI" | "Webhook" | "API";
+  type: "SSO" | "RH" | "BI" | "Webhook" | "API" | "Biblioteca";
   status: "conectado" | "desconectado" | "erro";
   lastSync: string;
+  brand?: IntegrationBrand;
+}
+
+export interface IntegrationConnector {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  brand: IntegrationBrand;
+  featured?: boolean;
 }
 
 export interface Automation {

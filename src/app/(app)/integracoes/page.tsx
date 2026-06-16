@@ -1,8 +1,10 @@
 "use client";
 
 import { useApp } from "@/lib/store";
+import { integrationConnectors } from "@/lib/mock-data";
 import { PageHeader, Card, Badge, Table } from "@/components/ui";
-import { Icon } from "@/components/Icon";
+import { ConnectorsCarousel } from "@/components/integrations/ConnectorsCarousel";
+import { IntegrationLogoSlot } from "@/components/integrations/IntegrationLogoSlot";
 import Link from "next/link";
 
 const statusColor = {
@@ -32,9 +34,7 @@ export default function IntegracoesPage() {
           <div className="space-y-3">
             {integrations.map((i) => (
               <div key={i.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
-                <span className="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 grid place-items-center shrink-0">
-                  <Icon name="plug" className="w-5 h-5" />
-                </span>
+                <IntegrationLogoSlot integration={i} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-800">{i.name}</div>
                   <div className="text-xs text-slate-400">{i.type} · última sinc.: {i.lastSync}</div>
@@ -54,13 +54,7 @@ export default function IntegracoesPage() {
 
         <Card className="p-6">
           <h3 className="font-semibold text-slate-800 mb-4">Catálogo de conectores</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {["Microsoft Teams", "Workday", "Salesforce", "Google Workspace", "Slack", "Zoom", "Moodle", "LinkedIn Learning"].map((name) => (
-              <div key={name} className="p-3 rounded-lg border border-dashed border-slate-300 text-center text-sm text-slate-600 hover:border-brand hover:text-brand transition cursor-pointer">
-                {name}
-              </div>
-            ))}
-          </div>
+          <ConnectorsCarousel connectors={integrationConnectors} />
         </Card>
       </div>
 

@@ -41,7 +41,7 @@ export function EquipeTab({
         </Card>
         <Card className="p-5">
           <div className="text-sm text-slate-500">Ativos</div>
-          <div className="text-2xl font-bold text-emerald-600 mt-1">{active.length}</div>
+          <div className="text-2xl font-bold text-blue-600 mt-1">{active.length}</div>
         </Card>
         <Card className="p-5">
           <div className="text-sm text-slate-500">Inativos / bloqueados</div>

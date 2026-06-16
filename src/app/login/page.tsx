@@ -9,17 +9,17 @@ import { Icon } from "@/components/Icon";
 import { Badge } from "@/components/ui";
 
 const demoEmails = [
-  "ana.souza@neoenergia.com",
-  "bruno.ferreira@neoenergia.com",
-  "carla.mendes@neoenergia.com",
-  "henrique.castro@neoenergia.com",
-  "diego.alves@neoenergia.com",
+  "ana.souza@navoxi.com",
+  "bruno.ferreira@navoxi.com",
+  "carla.mendes@navoxi.com",
+  "henrique.castro@navoxi.com",
+  "diego.alves@navoxi.com",
 ];
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useApp();
-  const [email, setEmail] = useState("ana.souza@neoenergia.com");
+  const [email, setEmail] = useState("diego.alves@navoxi.com");
   const [password, setPassword] = useState("demo1234");
   const [mfa, setMfa] = useState(false);
 
@@ -33,16 +33,16 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 text-white relative overflow-hidden bg-gradient-to-br from-[#007a39] via-[#00a14b] to-[#0b2a23]">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 text-white relative overflow-hidden bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#0f172a]">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur grid place-items-center font-bold text-xl">
             N
           </div>
-          <span className="text-xl font-semibold tracking-tight">Neoenergia</span>
+          <span className="text-xl font-semibold tracking-tight">Navoxi</span>
         </div>
         <div className="relative z-10">
           <h1 className="text-4xl font-bold leading-tight">
-            Plataforma Corporativa<br />de Aprendizagem
+            Plataforma para<br />Sistema Inteligente
           </h1>
           <p className="mt-4 text-white/80 max-w-md">
             Controle de acesso por perfil e unidade — menus, funcionalidades e
@@ -57,7 +57,7 @@ export default function LoginPage() {
           </div>
         </div>
         <p className="text-white/60 text-sm relative z-10">
-          © 2026 Neoenergia · Ambiente de demonstração (MVP)
+          © 2026 Navoxi · Ambiente de demonstração (MVP)
         </p>
         <div className="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-white/10 blur-2xl" />
       </div>
@@ -65,10 +65,10 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6 bg-white">
         <form onSubmit={submit} className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-brand text-white grid place-items-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 text-white grid place-items-center font-bold shadow-sm">
               N
             </div>
-            <span className="text-lg font-semibold">Neoenergia LMS</span>
+            <span className="text-lg font-semibold">Sistema Inteligente</span>
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Acessar plataforma</h2>
           <p className="text-sm text-slate-500 mt-1">
@@ -83,6 +83,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             required
+            placeholder="nome@navoxi.com"
             className="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm"
           />
 
@@ -119,7 +120,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="mt-6 w-full py-2.5 rounded-lg bg-brand hover:bg-brand-dark text-white font-semibold text-sm transition flex items-center justify-center gap-2"
+            className="mt-6 w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm"
           >
             <Icon name="logout" className="w-4 h-4" />
             Entrar
@@ -137,8 +138,8 @@ export default function LoginPage() {
                     onClick={() => setEmail(demoEmail)}
                     className={`text-left px-3 py-2.5 rounded-lg border text-xs transition ${
                       email === demoEmail
-                        ? "border-brand bg-emerald-50/60"
-                        : "border-slate-200 hover:border-brand hover:bg-emerald-50/50"
+                        ? "border-brand bg-blue-50/60"
+                        : "border-slate-200 hover:border-brand hover:bg-blue-50/50"
                     }`}
                   >
                     <span className="font-medium text-slate-700 block">

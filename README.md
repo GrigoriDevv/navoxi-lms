@@ -1,89 +1,250 @@
-# Neoenergia LMS — MVP
+# Plataforma para Sistema Inteligente — MVP
 
-Plataforma corporativa de **Gestão de Aprendizagem (LMS)** da Neoenergia, construída em **Next.js 16 (App Router) + TypeScript + Tailwind CSS v4**.
+**Navoxi** — plataforma corporativa de **gestão de aprendizagem, conteúdos e operações**. Este repositório contém um **MVP funcional** para demonstração de requisitos, fluxos de negócio e experiência de uso — com dados simulados e persistência local.
 
-Este MVP demonstra, ponta a ponta, os macroblocos funcionais previstos no escopo, com dados simulados (mock) e estado gerenciado no cliente (React Context + persistência em `localStorage`).
+## Stack
 
-## Macroblocos implementados
-
-| Macrobloco | Rota | Destaques |
-|---|---|---|
-| Gestão de Identidade e Controle de Acesso | `/identidade` | Perfis/RBAC, matriz de permissões, políticas de segurança, sessões |
-| Módulo Administração | `/administracao` | Gestão de usuários, busca, departamentos, cadastro de usuário |
-| Módulo Aprendizagem | `/aprendizagem/*` | Cursos, Turmas, Trilhas e Calendário acadêmico |
-| Módulo Repositório de Conteúdos | `/repositorio` | Biblioteca de mídias (vídeo, PDF, SCORM, imagem, link) |
-| Módulo Comunicação | `/comunicacao` | Campanhas multicanal (e-mail, push, mural, SMS) e métricas |
-| Módulo Relatórios e Analytics | `/relatorios` | KPIs, gráficos de matrícula, conclusão e perfis |
-| Módulo Configurações e Parametrização | `/configuracoes` | Identidade visual, segurança e regras de negócio |
-| Automação e Integrações | `/integracoes` | SSO/RH/BI, conectores e automações (toggle on/off) |
-| Auditoria e Logs | `/auditoria` | Trilha de auditoria com filtros por severidade |
-
-## Controle de acesso (RBAC)
-
-A navegação, funcionalidades e permissões são definidas pelo perfil e unidade do usuário autenticado (`src/lib/rbac.ts`).
-
-### Perfis confirmados
-
-| Perfil | Escopo |
+| Camada | Tecnologia |
 |---|---|
-| **Administrador Premium** | Acesso total — todas unidades, configurações globais, identidade, integrações e auditoria |
-| **Administrador de Unidade** | Escopo da própria unidade (Coelba, Celpe, Coelce, Elektro) — usuários, turmas, conteúdos, comunicação e relatórios |
+| Framework | [Next.js 16](https://nextjs.org/) (App Router) |
+| UI | React 19 + TypeScript |
+| Estilo | Tailwind CSS v4 |
+| Estado | React Context (`src/lib/store.tsx`) |
+| Persistência | `localStorage` (sessão, preferências) |
+| Dados | Mock estático (`src/lib/mock-data.ts`) |
 
-### Perfis complementares (a confirmar)
-
-Gestor de Conteúdo, Instrutor e Aluno já estão mapeados com permissões provisórias, marcados como **"A confirmar"** na tela de Identidade & Acesso.
-
-### Demonstração
-
-Na tela de login, use os botões de acesso rápido:
-
-- `ana.souza@neoenergia.com` → Administrador Premium (Holding)
-- `bruno.ferreira@neoenergia.com` → Administrador de Unidade (Celpe · PE)
-- `carla.mendes@neoenergia.com` → Gestor de Conteúdo *(a confirmar)*
-- `henrique.castro@neoenergia.com` → Instrutor *(a confirmar)*
-- `diego.alves@neoenergia.com` → Aluno *(a confirmar)*
-
-O perfil e a unidade vêm do cadastro do usuário — menus e dados são filtrados automaticamente.
-
-## Como executar
+## Início rápido
 
 ```bash
 npm install
 npm run dev
-# abra http://localhost:3000
 ```
+
+Abra [http://localhost:3000](http://localhost:3000). Na tela de login, use os botões de acesso rápido ou informe um e-mail cadastrado.
 
 Build de produção:
 
 ```bash
-npm run build && npm start
+npm run build
+npm start
 ```
+
+## Contas de demonstração
+
+| E-mail | Perfil | Unidade |
+|---|---|---|
+| `ana.souza@navoxi.com` | Administrador Premium | Navoxi · Matriz |
+| `bruno.ferreira@navoxi.com` | Administrador de Unidade | Navoxi · Matriz |
+| `carla.mendes@navoxi.com` | Gestor de Conteúdo | Navoxi · Matriz |
+| `henrique.castro@navoxi.com` | Instrutor | Navoxi · Matriz |
+| `diego.alves@navoxi.com` | Aluno | Navoxi · Matriz |
+| `felipe.rocha@navoxi.com` | Administrador de Unidade | Navoxi · Nordeste |
+
+O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são filtrados automaticamente conforme **RBAC** e escopo de unidade.
+
+## Visão geral dos módulos
+
+### Geral
+
+| Rota | Descrição |
+|---|---|
+| `/dashboard` | KPIs, atalhos, destaques, filtros (unidade, categoria, público-alvo, modalidade), abas Dashboard / Equipe |
+| `/notificacoes` | Central de notificações com detalhamento |
+| `/perfil` | Dados do usuário autenticado |
+| `/preferencias` | Tema, idioma e preferências de notificação |
+
+### Administração e identidade
+
+| Rota | Requisitos | Descrição |
+|---|---|---|
+| `/identidade` | Admin Premium | Perfis, matriz de permissões, políticas de segurança, sessões |
+| `/administracao` | Admin Premium / Unidade | Gestão de usuários, busca, departamentos, cadastro |
+
+### Aprendizagem
+
+| Rota | Descrição |
+|---|---|
+| `/aprendizagem/catalogo` | Catálogo navegável + aba **Minhas inscrições** (matrículas e solicitações pendentes) |
+| `/aprendizagem/cursos` | CRUD de cursos (publicar, arquivar, rascunho) |
+| `/aprendizagem/turmas` | Gestão de turmas vinculadas a cursos e salas |
+| `/aprendizagem/trilhas` | Trilhas com etapas sequenciais e progresso |
+| `/aprendizagem/calendario` | Calendário acadêmico de eventos |
+| `/aprendizagem/biblioteca` | Biblioteca de materiais de aprendizagem |
+| `/aprendizagem/salas` | Cadastro de salas e recursos presenciais |
+| `/aprendizagem/certificados` | Emissão e gestão de certificados |
+| `/aprendizagem/interesses` | Registro de interesse em cursos futuros |
+| `/aprendizagem/solicitacoes` | Aprovação/rejeição de solicitações de matrícula |
+| `/aprendizagem/avaliacoes` | Criação, edição e aplicação de avaliações |
+
+**Modalidades suportadas:** EAD/online, presencial e híbrido.
+
+**Fluxo de inscrição em cursos**
+
+1. Aluno acessa **Catálogo** e clica em **Inscrever-se**.
+2. Se o curso tiver turmas, seleciona a turma disponível (com verificação de vagas).
+3. Com **aprovação obrigatória** ativa em Configurações → cria solicitação pendente.
+4. Gestor aprova em **Solicitações** → matrícula efetivada e notificação enviada.
+5. Sem aprovação → matrícula imediata, contadores de inscritos atualizados.
+6. A aba **Inscrições** (`/aprendizagem/catalogo?tab=inscricoes`) lista matrículas ativas, concluídas e canceladas.
+
+### Conteúdo e avaliações
+
+| Rota | Descrição |
+|---|---|
+| `/repositorio` | Upload e gestão de conteúdos (vídeo, PDF, SCORM, imagem, link) com campo de uso |
+| `/repositorio/questoes` | Banco de questões (múltipla escolha, verdadeiro/falso, dissertativa) |
+
+### Comunicação
+
+| Rota | Descrição |
+|---|---|
+| `/comunicacao` | Destaques, posts, notificações, alertas, correio interno e campanhas multicanal |
+
+O banner de destaques no dashboard pode ser ligado/desligado em **Configurações → Interface**.
+
+### Inteligência e sistema
+
+| Rota | Descrição |
+|---|---|
+| `/relatorios` | KPIs, gráficos de matrícula, conclusão e perfis |
+| `/configuracoes` | Parâmetros gerais, módulos, interface, integrações, permissões, jobs agendados |
+| `/integracoes` | SSO, RH, BI, webhooks, automações e jobs |
+| `/auditoria` | Trilha de auditoria com filtros por severidade |
+
+## Controle de acesso (RBAC)
+
+Definido em `src/lib/rbac.ts`. Cada perfil possui um conjunto de permissões; rotas e itens de menu exigem permissões específicas.
+
+| Perfil | Escopo principal |
+|---|---|
+| **Administrador Premium** | Todas as unidades, configurações globais, identidade, integrações, auditoria |
+| **Administrador de Unidade** | Usuários, turmas, conteúdos e relatórios da própria unidade |
+| **Gestor de Conteúdo** | Repositório, cursos e consumo de aprendizagem |
+| **Instrutor** | Cursos, turmas e consumo de aprendizagem |
+| **Aluno** | Catálogo, inscrições, trilhas, calendário e biblioteca |
+
+**Unidades:** Navoxi · Matriz, Nordeste, Sul e Centro-Oeste.
+
+O hook `useAuthScope()` (`src/lib/use-auth-scope.ts`) aplica o filtro por unidade nos dados retornados ao componente.
+
+## Parametrização da plataforma
+
+Em `/configuracoes` é possível alterar (persistido no estado da aplicação):
+
+- Nome da organização, idioma, fuso horário
+- Regras de segurança (MFA, tamanho mínimo de senha)
+- **Aprovação de matrícula** (`approvalRequired`) — impacta o fluxo de inscrição
+- Identidade visual (cor da marca)
+- **Módulos habilitados** — ocultam itens do menu lateral
+- **Layout** — sidebar ou menu superior, densidade, exibição de destaques
+- Matriz de permissões por perfil
+- Jobs agendados (sincronização RH, lembretes, relatórios)
 
 ## Arquitetura
 
 ```
 src/
 ├── app/
-│   ├── login/                 # Autenticação (demo)
-│   └── (app)/                 # Área autenticada (sidebar + header)
+│   ├── login/                      # Autenticação (demo por e-mail)
+│   ├── page.tsx                    # Redirecionamento para login ou dashboard
+│   └── (app)/                      # Shell autenticado (sidebar + header)
 │       ├── dashboard/
 │       ├── identidade/
 │       ├── administracao/
-│       ├── aprendizagem/{cursos,turmas,trilhas,calendario}/
+│       ├── aprendizagem/           # 12 sub-rotas (catálogo, cursos, turmas…)
 │       ├── repositorio/
 │       ├── comunicacao/
 │       ├── relatorios/
 │       ├── configuracoes/
 │       ├── integracoes/
-│       └── auditoria/
-├── components/                # UI, Sidebar, Header, Icon, charts
-└── lib/                       # types, mock-data, store (Context), nav
+│       ├── auditoria/
+│       ├── notificacoes/
+│       ├── perfil/
+│       └── preferencias/
+├── components/
+│   ├── Sidebar.tsx                 # Navegação lateral (padrão)
+│   ├── TopNav.tsx                  # Navegação superior (opcional)
+│   ├── Header.tsx
+│   ├── RouteGuard.tsx              # Proteção de rotas por permissão
+│   ├── ui.tsx                      # Modal, Button, Card, Table…
+│   ├── dashboard/                  # Filtros, widgets, aba Equipe
+│   └── home/                       # Atalhos, destaques, ações rápidas
+└── lib/
+    ├── types.ts                    # Tipos de domínio
+    ├── mock-data.ts                # Seed de demonstração
+    ├── store.tsx                   # Estado global e ações
+    ├── rbac.ts                     # Perfis, permissões, menu
+    ├── use-auth-scope.ts           # Escopo por unidade/perfil
+    ├── aprendizagem.ts             # Labels (modalidade, status…)
+    ├── dashboard-metrics.ts        # Cálculo de KPIs do dashboard
+    └── platform-config.ts          # Tema / cor da marca
 ```
 
-## Observações
+### Fluxo de dados
 
-- Dados são **simulados** e residem em `src/lib/mock-data.ts`.
-- Ações como criar usuário/curso, alterar configurações e ligar/desligar automações
-  são refletidas no estado e geram registros na **Auditoria**.
-- Para produção: substituir o store por uma API (ex.: Next Route Handlers + banco),
-  integrar SSO real (SAML/OIDC) e provedores de RH/BI.
+```mermaid
+flowchart LR
+  UI[Páginas React] --> Store[AppProvider / store.tsx]
+  Store --> Mock[mock-data.ts]
+  Store --> LS[(localStorage)]
+  UI --> Scope[useAuthScope]
+  Scope --> RBAC[rbac.ts]
+  Store --> Audit[auditLogs]
+```
+
+Toda mutação relevante (criar curso, inscrever aluno, alterar configuração) atualiza o estado em memória e registra entrada na **Auditoria**.
+
+## Entidades principais (mock)
+
+| Entidade | Uso |
+|---|---|
+| `User` | Colaboradores e perfis de acesso |
+| `Course` / `Turma` / `Trilha` | Oferta de aprendizagem |
+| `InscricaoCurso` | Matrículas efetivadas |
+| `SolicitacaoMatricula` | Pedidos aguardando aprovação |
+| `Certificado` | Emissão pós-conclusão |
+| `Question` / `Evaluation` | Avaliações vinculadas a curso/turma |
+| `ContentAsset` | Repositório de mídias |
+| `Post` / `Destaque` / `InternalMail` | Comunicação interna |
+| `Integration` / `Automation` / `ScheduledJob` | Integrações e automações |
+| `AuditLog` / `Notification` | Auditoria e alertas |
+
+## Limitações do MVP
+
+Este projeto é uma **prova de conceito front-end**. Não há backend real, banco de dados nem integrações externas funcionais.
+
+| Aspecto | Estado atual |
+|---|---|
+| Autenticação | Login por e-mail (sem senha/SSO real) |
+| Persistência | Sessão e preferências em `localStorage`; demais dados resetam ao recarregar* |
+| Upload de arquivos | Simulado (metadados apenas) |
+| E-mail / push / SMS | Simulados na UI |
+| Integrações SSO/RH/BI | Status mock; toggles alteram apenas o estado local |
+
+\* *O estado React persiste durante a sessão do navegador; ao fechar a aba ou limpar storage, os dados voltam ao seed.*
+
+## Caminho para produção
+
+1. **API** — Next.js Route Handlers ou serviço dedicado com banco relacional (PostgreSQL).
+2. **Autenticação** — SSO corporativo (SAML/OIDC) e gestão de sessão server-side.
+3. **RBAC** — Permissões avaliadas no servidor, não apenas no cliente.
+4. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
+5. **Storage** — S3 ou equivalente para conteúdos e certificados PDF.
+6. **Filas** — Jobs agendados (lembretes, sincronização, relatórios) via worker/cron.
+
+## Scripts npm
+
+| Comando | Ação |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Build de produção |
+| `npm start` | Servidor de produção |
+| `npm run lint` | ESLint |
+
+## Repositório
+
+Código-fonte: [github.com/GrigoriDevv/navoxi-platform](https://github.com/GrigoriDevv/navoxi-platform)
+
+---
+
+**Plataforma para Sistema Inteligente · Navoxi** · MVP demonstrativo · Junho/2026

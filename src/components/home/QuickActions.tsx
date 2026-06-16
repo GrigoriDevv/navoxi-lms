@@ -23,7 +23,7 @@ export function QuickActions() {
     name: "",
     courseId: scopedCourses[0]?.id ?? "",
     instructor: currentUser?.name ?? "",
-    unitId: (unitId ?? "holding") as UnitId,
+    unitId: (unitId ?? "matriz") as UnitId,
     startDate: "2026-06-15",
     endDate: "2026-07-15",
     capacity: 30,
@@ -35,15 +35,15 @@ export function QuickActions() {
     name: "",
     email: "",
     role: "aluno" as Role,
-    unitId: (unitId ?? "holding") as UnitId,
-    department: "Operações",
+    unitId: (unitId ?? "matriz") as UnitId,
+    department: "Navoxi · Operações",
     status: "ativo" as const,
   });
 
   const [postForm, setPostForm] = useState({
     title: "",
     body: "",
-    unitId: (unitId ?? "holding") as UnitId,
+    unitId: (unitId ?? "matriz") as UnitId,
   });
 
   if (actions.length === 0) return null;
@@ -95,7 +95,7 @@ export function QuickActions() {
           <button
             key={a.id}
             onClick={() => setActive(a.action)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-slate-300 text-slate-700 text-sm font-semibold hover:border-brand hover:bg-emerald-50/50 transition"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-slate-300 text-slate-700 text-sm font-semibold hover:border-brand hover:bg-blue-50/50 transition"
           >
             <Icon name={a.icon} className="w-4 h-4 text-brand" />
             {a.label}

@@ -23,7 +23,7 @@ export default function TurmasPage() {
     name: "",
     courseId: "",
     instructor: "",
-    unitId: "holding" as UnitId,
+    unitId: "matriz" as UnitId,
     salaId: "",
     startDate: "",
     endDate: "",
@@ -105,7 +105,7 @@ export default function TurmasPage() {
                 </td>
                 <td className="px-4 py-3 w-40">
                   <div className="flex items-center gap-2">
-                    <ProgressBar value={pct} color={pct >= 95 ? "#d97706" : "#00a14b"} />
+                    <ProgressBar value={pct} color={pct >= 95 ? "#d97706" : "#2563eb"} />
                     <span className="text-xs text-slate-500 whitespace-nowrap">{t.enrolled}/{t.capacity}</span>
                   </div>
                 </td>

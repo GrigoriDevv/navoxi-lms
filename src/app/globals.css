@@ -3,9 +3,12 @@
 :root {
   --background: #f4f6f8;
   --foreground: #0f172a;
-  --brand: #00a14b;
-  --brand-dark: #007a39;
-  --sidebar: #0b2a23;
+  --brand: #2563eb;
+  --brand-dark: #1d4ed8;
+  --brand-light: #3b82f6;
+  --sidebar-from: #1e40af;
+  --sidebar-via: #1e3a8a;
+  --sidebar-to: #0f172a;
 }
 
 @theme inline {
@@ -13,7 +16,7 @@
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
-  --color-sidebar: var(--sidebar);
+  --color-brand-light: var(--brand-light);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

@@ -2,7 +2,7 @@
 
 export function BarChart({
   data,
-  color = "#00a14b",
+  color = "#2563eb",
   height = 180,
 }: {
   data: { label: string; value: number }[];
@@ -85,7 +85,7 @@ export function Donut({
 
 export function LineTrend({
   points,
-  color = "#00a14b",
+  color = "#2563eb",
   height = 80,
 }: {
   points: number[];

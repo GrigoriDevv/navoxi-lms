@@ -66,7 +66,7 @@ export function NotificacoesView() {
         <StatCard
           label="Cursos e prazos"
           value={notifications.filter((n) => n.type === "curso" || n.type === "prazo").length.toString()}
-          color="#00a14b"
+          color="#2563eb"
           icon={<Icon name="book" className="w-5 h-5" />}
         />
       </div>
@@ -139,7 +139,7 @@ export function NotificacoesView() {
                   key={n.id}
                   onClick={() => openDetail(n.id)}
                   className={`w-full text-left px-4 py-4 hover:bg-slate-50 transition ${
-                    !n.read ? "bg-emerald-50/40" : ""
+                    !n.read ? "bg-blue-50/40" : ""
                   } ${selectedId === n.id ? "ring-2 ring-inset ring-brand/30" : ""}`}
                 >
                   <div className="flex items-start gap-3">

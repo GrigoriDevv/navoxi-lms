@@ -80,7 +80,7 @@ export default function TrilhasPage() {
         {trilhas.map((tr) => (
           <Card key={tr.id} className="p-6 flex flex-col">
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-emerald-100 text-brand grid place-items-center">
+              <div className="w-11 h-11 rounded-xl bg-blue-100 text-brand grid place-items-center">
                 <Icon name="route" />
               </div>
               <div className="flex gap-1">

@@ -276,7 +276,7 @@ export default function CatalogoPage() {
                       className={`mt-3 w-full py-2 rounded-lg text-sm font-semibold transition ${
                         enrollDisabled(c.id)
                           ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                          : "bg-brand text-white hover:bg-brand-dark"
+                          : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-sm"
                       }`}
                     >
                       {enrollLabel(c.id)}

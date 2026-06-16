@@ -49,7 +49,7 @@ export default function IdentidadePage() {
         ))}
       </div>
 
-      <Card className="p-4 mb-6 bg-emerald-50/50 border-emerald-200">
+      <Card className="p-4 mb-6 bg-blue-50/50 border-blue-200">
         <div className="text-sm text-slate-700">
           <strong>Perfis confirmados:</strong>{" "}
           {confirmedRoles.map((r) => roleLabels[r]).join(" · ")}.
@@ -136,7 +136,7 @@ export default function IdentidadePage() {
                 {matrixRoles.map((r) => (
                   <td key={r} className="px-4 py-3 text-center">
                     {p.roles.includes(r) ? (
-                      <span className="inline-flex w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 items-center justify-center mx-auto">
+                      <span className="inline-flex w-5 h-5 rounded-full bg-blue-100 text-blue-600 items-center justify-center mx-auto">
                         <Icon name="check" className="w-3.5 h-3.5" />
                       </span>
                     ) : (
@@ -162,7 +162,7 @@ export default function IdentidadePage() {
                 ["Escopo por unidade", "Admin. de Unidade restrito à sua distribuidora"],
               ].map(([t, d]) => (
                 <li key={t} className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 grid place-items-center mt-0.5 shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 grid place-items-center mt-0.5 shrink-0">
                     <Icon name="check" className="w-3.5 h-3.5" />
                   </span>
                   <div>

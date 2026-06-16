@@ -32,11 +32,10 @@ export function isConfirmedRole(role: Role): boolean {
 }
 
 export const unitLabels: Record<string, string> = {
-  coelba: "Coelba · Bahia",
-  celpe: "Celpe · Pernambuco",
-  coelce: "Coelce · Ceará",
-  elektro: "Elektro · SP/MS",
-  holding: "Neoenergia · Holding",
+  matriz: "Navoxi · Matriz",
+  nordeste: "Navoxi · Nordeste",
+  sul: "Navoxi · Sul",
+  centro: "Navoxi · Centro-Oeste",
 };
 
 export type PermissionKey =
@@ -322,7 +321,7 @@ export const roleColor: Record<
   Role,
   "green" | "blue" | "purple" | "amber" | "slate"
 > = {
-  admin_premium: "green",
+  admin_premium: "blue",
   admin_unidade: "blue",
   gestor_conteudo: "purple",
   instrutor: "amber",

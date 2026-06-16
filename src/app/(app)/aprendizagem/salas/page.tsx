@@ -17,7 +17,7 @@ export default function SalasPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    unitId: (unitId ?? "holding") as UnitId,
+    unitId: (unitId ?? "matriz") as UnitId,
     location: "",
     capacity: 30,
     resources: "Projetor, Quadro",
@@ -50,7 +50,7 @@ export default function SalasPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard label="Total" value={salas.length.toString()} icon={<Icon name="plug" className="w-5 h-5" />} />
-        <StatCard label="Disponíveis" value={salas.filter((s) => s.status === "disponivel").length.toString()} color="#00a14b" icon={<Icon name="check" className="w-5 h-5" />} />
+        <StatCard label="Disponíveis" value={salas.filter((s) => s.status === "disponivel").length.toString()} color="#2563eb" icon={<Icon name="check" className="w-5 h-5" />} />
         <StatCard label="Capacidade total" value={salas.reduce((s, x) => s + x.capacity, 0).toString()} icon={<Icon name="group" className="w-5 h-5" />} color="#2563eb" />
         <StatCard label="Escopo" value={isGlobal ? "Todas" : unitLabel ?? "—"} icon={<Icon name="grid" className="w-5 h-5" />} color="#7c3aed" />
       </div>

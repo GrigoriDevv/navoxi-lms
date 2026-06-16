@@ -49,13 +49,37 @@ const VALID_ROLES: Role[] = [
   "aluno",
 ];
 
+const STORAGE_USER = "navoxi-user";
+const STORAGE_PREFS = "navoxi-prefs";
+const LEGACY_STORAGE_USER = "neo-lms-user";
+const LEGACY_STORAGE_PREFS = "neo-lms-prefs";
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase().replace("@neoenergia.com", "@navoxi.com");
+}
+
+const LEGACY_UNIT_MAP: Record<string, UnitId> = {
+  celpe: "matriz",
+  coelba: "nordeste",
+  coelce: "nordeste",
+  elektro: "sul",
+  holding: "matriz",
+};
+
+function normalizeUnitId(unitId?: string): UnitId {
+  if (!unitId) return "matriz";
+  return LEGACY_UNIT_MAP[unitId] ?? (unitId as UnitId);
+}
+
 function resolveSession(raw: string, users: User[]): AuthState | null {
   try {
     const parsed = JSON.parse(raw) as Partial<AuthState>;
     if (!parsed.email || !parsed.role || !VALID_ROLES.includes(parsed.role)) {
       return null;
     }
-    const registered = users.find((u) => u.email === parsed.email);
+    const email = normalizeEmail(parsed.email);
+    const unitId = normalizeUnitId(parsed.unitId as string | undefined);
+    const registered = users.find((u) => u.email === email);
     if (registered) {
       return {
         id: registered.id,
@@ -68,11 +92,11 @@ function resolveSession(raw: string, users: User[]): AuthState | null {
     }
     return {
       id: parsed.id ?? "guest",
-      name: parsed.name ?? parsed.email.split("@")[0],
-      email: parsed.email,
+      name: parsed.name ?? email.split("@")[0],
+      email,
       role: parsed.role,
-      unitId: parsed.unitId ?? "holding",
-      avatarColor: parsed.avatarColor ?? "#00a14b",
+      unitId: unitId as UnitId,
+      avatarColor: parsed.avatarColor ?? "#2563eb",
     };
   } catch {
     return null;
@@ -165,7 +189,7 @@ interface AppState {
 
 const Ctx = createContext<AppState | null>(null);
 
-const colors = ["#00a14b", "#2563eb", "#db2777", "#d97706", "#7c3aed", "#0891b2"];
+const colors = ["#2563eb", "#1d4ed8", "#3b82f6", "#0ea5e9", "#6366f1", "#0891b2"];
 const now = () =>
   new Date().toLocaleString("pt-BR", { hour12: false }).replace(",", "");
 
@@ -199,37 +223,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("neo-lms-user");
+      const raw =
+        localStorage.getItem(STORAGE_USER) ??
+        localStorage.getItem(LEGACY_STORAGE_USER);
       if (raw) {
         const session = resolveSession(raw, seed.users);
-        if (session) setCurrentUser(session);
-        else localStorage.removeItem("neo-lms-user");
+        if (session) {
+          setCurrentUser(session);
+          const parsed = JSON.parse(raw) as Partial<AuthState>;
+          const legacyUnit = parsed.unitId as string | undefined;
+          const migrated =
+            normalizeEmail(parsed.email ?? "") !== parsed.email ||
+            (legacyUnit && LEGACY_UNIT_MAP[legacyUnit]) ||
+            localStorage.getItem(LEGACY_STORAGE_USER);
+          if (migrated) {
+            localStorage.setItem(STORAGE_USER, JSON.stringify(session));
+            localStorage.removeItem(LEGACY_STORAGE_USER);
+          }
+        } else {
+          localStorage.removeItem(STORAGE_USER);
+          localStorage.removeItem(LEGACY_STORAGE_USER);
+        }
       }
-      const prefs = localStorage.getItem("neo-lms-prefs");
-      if (prefs) setPreferences(JSON.parse(prefs));
+      const prefs =
+        localStorage.getItem(STORAGE_PREFS) ??
+        localStorage.getItem(LEGACY_STORAGE_PREFS);
+      if (prefs) {
+        setPreferences(JSON.parse(prefs));
+        if (localStorage.getItem(LEGACY_STORAGE_PREFS)) {
+          localStorage.setItem(STORAGE_PREFS, prefs);
+          localStorage.removeItem(LEGACY_STORAGE_PREFS);
+        }
+      }
     } catch {}
   }, []);
 
   const login = (email: string) => {
-    const existing = users.find((u) => u.email === email);
+    const normalized = normalizeEmail(email);
+    const existing = users.find((u) => u.email === normalized);
     const u: AuthState = {
       id: existing?.id ?? "guest",
-      name: existing?.name ?? email.split("@")[0],
-      email,
+      name: existing?.name ?? normalized.split("@")[0],
+      email: normalized,
       role: existing?.role ?? "aluno",
-      unitId: existing?.unitId ?? "holding",
-      avatarColor: existing?.avatarColor ?? "#00a14b",
+      unitId: existing?.unitId ?? "matriz",
+      avatarColor: existing?.avatarColor ?? "#2563eb",
     };
     setCurrentUser(u);
     try {
-      localStorage.setItem("neo-lms-user", JSON.stringify(u));
+      localStorage.setItem(STORAGE_USER, JSON.stringify(u));
     } catch {}
   };
 
   const logout = () => {
     setCurrentUser(null);
     try {
-      localStorage.removeItem("neo-lms-user");
+      localStorage.removeItem(STORAGE_USER);
+      localStorage.removeItem(LEGACY_STORAGE_USER);
     } catch {}
   };
 
@@ -766,7 +816,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPreferences((prev) => {
       const next = { ...prev, ...p };
       try {
-        localStorage.setItem("neo-lms-prefs", JSON.stringify(next));
+        localStorage.setItem(STORAGE_PREFS, JSON.stringify(next));
       } catch {}
       return next;
     });

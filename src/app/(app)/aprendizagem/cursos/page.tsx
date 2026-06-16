@@ -35,12 +35,12 @@ export default function CursosPage() {
     title: "",
     category: "Compliance",
     instructor: "",
-    unitId: (unitId ?? "holding") as UnitId,
+    unitId: (unitId ?? "matriz") as UnitId,
     modality: "online" as Course["modality"],
     audience: "Todos colaboradores",
     workload: 8,
     status: "rascunho" as Course["status"],
-    cover: "#00a14b",
+    cover: "#2563eb",
   });
 
   const categories = ["todos", ...Array.from(new Set(courses.map((c) => c.category)))];
@@ -51,12 +51,12 @@ export default function CursosPage() {
       title: "",
       category: "Compliance",
       instructor: "",
-      unitId: (unitId ?? "holding") as UnitId,
+      unitId: (unitId ?? "matriz") as UnitId,
       modality: "online",
       audience: "Todos colaboradores",
       workload: 8,
       status: "rascunho",
-      cover: "#00a14b",
+      cover: "#2563eb",
     });
 
   const openEdit = (c: Course) => {
@@ -156,7 +156,7 @@ export default function CursosPage() {
                 <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
                   <button onClick={() => openEdit(c)} className="text-xs text-brand font-medium hover:underline">Editar</button>
                   {c.status !== "publicado" && (
-                    <button onClick={() => publish(c.id)} className="text-xs text-emerald-600 font-medium hover:underline">Publicar</button>
+                    <button onClick={() => publish(c.id)} className="text-xs text-blue-600 font-medium hover:underline">Publicar</button>
                   )}
                   {c.status !== "arquivado" && (
                     <button onClick={() => archive(c.id)} className="text-xs text-slate-500 font-medium hover:underline">Arquivar</button>

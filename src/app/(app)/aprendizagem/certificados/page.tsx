@@ -31,7 +31,7 @@ export default function CertificadosPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard label="Total" value={certificados.length.toString()} icon={<Icon name="check" className="w-5 h-5" />} />
-        <StatCard label="Válidos" value={certificados.filter((c) => c.status === "valido").length.toString()} color="#00a14b" icon={<Icon name="check" className="w-5 h-5" />} />
+        <StatCard label="Válidos" value={certificados.filter((c) => c.status === "valido").length.toString()} color="#2563eb" icon={<Icon name="check" className="w-5 h-5" />} />
         <StatCard label="Expirados" value={certificados.filter((c) => c.status === "expirado").length.toString()} color="#dc2626" icon={<Icon name="bell" className="w-5 h-5" />} />
         <StatCard label="Revogados" value={certificados.filter((c) => c.status === "revogado").length.toString()} icon={<Icon name="shield" className="w-5 h-5" />} color="#64748b" />
       </div>

@@ -99,7 +99,7 @@ export function NotificationsPanel() {
                 <button
                   onClick={() => openDetail(n.id)}
                   className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition ${
-                    !n.read ? "bg-emerald-50/40" : ""
+                    !n.read ? "bg-blue-50/40" : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">

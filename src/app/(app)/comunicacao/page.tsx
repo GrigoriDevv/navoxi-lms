@@ -37,11 +37,11 @@ export default function ComunicacaoPage() {
   const { destaques, alertRules, internalMails, users, currentUser, unitId } = useAuthScope();
 
   const [modal, setModal] = useState<"destaque" | "post" | "notif" | "alert" | "mail" | "camp" | null>(null);
-  const [destaqueForm, setDestaqueForm] = useState({ title: "", body: "", unitId: (unitId ?? "holding") as UnitId, visible: true, pinned: false });
-  const [postForm, setPostForm] = useState({ title: "", body: "", unitId: (unitId ?? "holding") as UnitId });
+  const [destaqueForm, setDestaqueForm] = useState({ title: "", body: "", unitId: (unitId ?? "matriz") as UnitId, visible: true, pinned: false });
+  const [postForm, setPostForm] = useState({ title: "", body: "", unitId: (unitId ?? "matriz") as UnitId });
   const [notifForm, setNotifForm] = useState({ title: "", message: "", type: "info" as const, userId: "" });
-  const [alertForm, setAlertForm] = useState({ name: "", criteria: "", channel: "sistema" as AlertRule["channel"], audience: "Todos", unitId: (unitId ?? "holding") as UnitId, enabled: true });
-  const [mailForm, setMailForm] = useState({ toUserId: "", subject: "", body: "", unitId: (unitId ?? "holding") as UnitId });
+  const [alertForm, setAlertForm] = useState({ name: "", criteria: "", channel: "sistema" as AlertRule["channel"], audience: "Todos", unitId: (unitId ?? "matriz") as UnitId, enabled: true });
+  const [mailForm, setMailForm] = useState({ toUserId: "", subject: "", body: "", unitId: (unitId ?? "matriz") as UnitId });
   const [campForm, setCampForm] = useState({ title: "", channel: "email" as Message["channel"], audience: "Todos", status: "rascunho" as Message["status"], sentAt: "—", openRate: 0 });
 
   const enviadas = messages.filter((m) => m.status === "enviado");

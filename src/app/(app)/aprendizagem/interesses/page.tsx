@@ -47,7 +47,7 @@ export default function InteressesPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <StatCard label="Registros" value={interesses.length.toString()} icon={<Icon name="trend" className="w-5 h-5" />} />
-        <StatCard label="Notificados" value={interesses.filter((i) => i.notified).length.toString()} color="#00a14b" icon={<Icon name="check" className="w-5 h-5" />} />
+        <StatCard label="Notificados" value={interesses.filter((i) => i.notified).length.toString()} color="#2563eb" icon={<Icon name="check" className="w-5 h-5" />} />
         <StatCard label="Aguardando aviso" value={interesses.filter((i) => !i.notified).length.toString()} color="#2563eb" icon={<Icon name="bell" className="w-5 h-5" />} />
       </div>
 

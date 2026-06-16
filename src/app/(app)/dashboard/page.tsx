@@ -86,7 +86,7 @@ export default function DashboardPage() {
           <button
             onClick={refresh}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark disabled:opacity-60 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 transition shadow-sm"
           >
             <Icon name="refresh" className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
             {isRefreshing ? "Atualizando…" : "Atualizar painel"}
@@ -161,7 +161,7 @@ export default function DashboardPage() {
               value={effectiveStatus === "loading" ? "…" : metrics.activeEnrollments.toLocaleString("pt-BR")}
               delta={`${metrics.totalEnrollments.toLocaleString("pt-BR")} total`}
               icon={<Icon name="route" className="w-5 h-5" />}
-              color="#00a14b"
+              color="#2563eb"
             />
             <StatCard
               label="Acessos ao sistema"
@@ -191,7 +191,7 @@ export default function DashboardPage() {
               <StatCard label="Usuários no escopo" value={users.length.toString()} icon={<Icon name="users" className="w-5 h-5" />} />
               <StatCard label="Turmas abertas" value={turmas.filter((t) => t.status !== "concluida").length.toString()} color="#2563eb" icon={<Icon name="group" className="w-5 h-5" />} />
               <StatCard label="Solicitações pendentes" value={solicitacoes.filter((s) => s.status === "pendente").length.toString()} color="#d97706" icon={<Icon name="mail" className="w-5 h-5" />} />
-              <StatCard label="Cursos publicados" value={courses.filter((c) => c.status === "publicado").length.toString()} color="#00a14b" icon={<Icon name="book" className="w-5 h-5" />} />
+              <StatCard label="Cursos publicados" value={courses.filter((c) => c.status === "publicado").length.toString()} color="#2563eb" icon={<Icon name="book" className="w-5 h-5" />} />
             </div>
           )}
 
@@ -206,11 +206,11 @@ export default function DashboardPage() {
               <p className="text-3xl font-bold text-slate-900">
                 {metrics.activeEnrollments.toLocaleString("pt-BR")}
               </p>
-              <p className="text-xs text-emerald-600 font-medium mt-1">
+              <p className="text-xs text-blue-600 font-medium mt-1">
                 em andamento no escopo filtrado
               </p>
               <div className="mt-4">
-                <LineTrend points={metrics.enrollmentTrend} color="#00a14b" height={100} />
+                <LineTrend points={metrics.enrollmentTrend} color="#2563eb" height={100} />
               </div>
             </WidgetShell>
 
@@ -250,7 +250,7 @@ export default function DashboardPage() {
             >
               <Donut
                 segments={[
-                  { label: "Concluídas", value: metrics.avgCompletion, color: "#00a14b" },
+                  { label: "Concluídas", value: metrics.avgCompletion, color: "#2563eb" },
                   { label: "Em andamento", value: Math.max(0, 100 - metrics.avgCompletion - 8), color: "#2563eb" },
                   { label: "Não iniciadas", value: 8, color: "#e2e8f0" },
                 ]}
@@ -273,7 +273,7 @@ export default function DashboardPage() {
                           {t.enrolled}/{t.capacity}
                         </span>
                       </div>
-                      <ProgressBar value={pct} color={pct >= 95 ? "#d97706" : "#00a14b"} />
+                      <ProgressBar value={pct} color={pct >= 95 ? "#d97706" : "#2563eb"} />
                     </div>
                   );
                 })}
@@ -297,7 +297,7 @@ export default function DashboardPage() {
                   <li key={l.id} className="py-3 flex items-center gap-3 text-sm">
                     <span
                       className={`w-2 h-2 rounded-full shrink-0 ${
-                        l.severity === "critico" ? "bg-red-500" : l.severity === "alerta" ? "bg-amber-500" : "bg-emerald-500"
+                        l.severity === "critico" ? "bg-red-500" : l.severity === "alerta" ? "bg-amber-500" : "bg-blue-500"
                       }`}
                     />
                     <span className="text-slate-700 flex-1">{l.action}</span>

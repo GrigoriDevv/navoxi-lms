@@ -20,7 +20,7 @@ export default function AvaliacoesPage() {
     name: "",
     courseId: "",
     turmaId: "",
-    unitId: (unitId ?? "holding") as UnitId,
+    unitId: (unitId ?? "matriz") as UnitId,
     questionIds: [] as string[],
     status: "rascunho" as Evaluation["status"],
     dueDate: "",
@@ -34,7 +34,7 @@ export default function AvaliacoesPage() {
       name: "",
       courseId: courses[0]?.id ?? "",
       turmaId: "",
-      unitId: (unitId ?? "holding") as UnitId,
+      unitId: (unitId ?? "matriz") as UnitId,
       questionIds: [],
       status: "rascunho",
       dueDate: "",
@@ -119,7 +119,7 @@ export default function AvaliacoesPage() {
                   <>
                     <button onClick={() => openEdit(a)} className="text-xs text-brand font-medium hover:underline">Editar</button>
                     {a.status !== "aplicada" && (
-                      <button onClick={() => applyEvaluation(a.id)} className="text-xs text-emerald-600 font-medium hover:underline">Aplicar</button>
+                      <button onClick={() => applyEvaluation(a.id)} className="text-xs text-blue-600 font-medium hover:underline">Aplicar</button>
                     )}
                   </>
                 )}

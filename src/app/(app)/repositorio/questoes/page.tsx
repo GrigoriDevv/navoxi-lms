@@ -19,7 +19,7 @@ export default function QuestoesPage() {
     text: "",
     type: "multipla" as Question["type"],
     category: "Segurança",
-    unitId: (unitId ?? "holding") as UnitId,
+    unitId: (unitId ?? "matriz") as UnitId,
   });
 
   const filtered = questions.filter(
@@ -27,7 +27,7 @@ export default function QuestoesPage() {
   );
 
   const reset = () =>
-    setForm({ text: "", type: "multipla", category: "Segurança", unitId: (unitId ?? "holding") as UnitId });
+    setForm({ text: "", type: "multipla", category: "Segurança", unitId: (unitId ?? "matriz") as UnitId });
 
   const openEdit = (q: Question) => {
     setEditing(q);

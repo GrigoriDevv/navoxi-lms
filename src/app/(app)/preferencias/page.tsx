@@ -113,7 +113,7 @@ export default function PreferenciasPage() {
               Salvar preferências
             </Button>
             {saved && (
-              <span className="text-sm text-emerald-600 font-medium">Salvo!</span>
+              <span className="text-sm text-blue-600 font-medium">Salvo!</span>
             )}
           </div>
         </Card>

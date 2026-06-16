@@ -58,5 +58,5 @@ export function useAuthScope() {
 }
 
 export function defaultUnitForUser(unitId?: UnitId): UnitId {
-  return unitId ?? "holding";
+  return unitId ?? "matriz";
 }

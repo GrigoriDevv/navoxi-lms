@@ -28,7 +28,7 @@ export default function AdministracaoPage() {
     name: "",
     email: "",
     role: "aluno" as Role,
-    unitId: (unitId ?? "holding") as UnitId,
+    unitId: (unitId ?? "matriz") as UnitId,
     department: "Operações",
     status: "ativo" as const,
   });
@@ -53,7 +53,7 @@ export default function AdministracaoPage() {
       name: "",
       email: "",
       role: "aluno",
-      unitId: unitId ?? "holding",
+      unitId: unitId ?? "matriz",
       department: "Operações",
       status: "ativo",
     });

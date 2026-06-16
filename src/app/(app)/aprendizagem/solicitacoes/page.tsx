@@ -42,7 +42,7 @@ export default function SolicitacoesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard label="Total" value={solicitacoes.length.toString()} icon={<Icon name="mail" className="w-5 h-5" />} />
         <StatCard label="Pendentes" value={solicitacoes.filter((s) => s.status === "pendente").length.toString()} color="#d97706" icon={<Icon name="list" className="w-5 h-5" />} />
-        <StatCard label="Aprovadas" value={solicitacoes.filter((s) => s.status === "aprovada").length.toString()} color="#00a14b" icon={<Icon name="check" className="w-5 h-5" />} />
+        <StatCard label="Aprovadas" value={solicitacoes.filter((s) => s.status === "aprovada").length.toString()} color="#2563eb" icon={<Icon name="check" className="w-5 h-5" />} />
         <StatCard label="Rejeitadas" value={solicitacoes.filter((s) => s.status === "rejeitada").length.toString()} color="#dc2626" icon={<Icon name="bell" className="w-5 h-5" />} />
       </div>
 

@@ -33,7 +33,7 @@ export default function RelatoriosPage() {
       value: users.filter((u) => u.role === r).length,
       color:
         r === "admin_premium"
-          ? "#00a14b"
+          ? "#2563eb"
           : r === "admin_unidade"
           ? "#2563eb"
           : r === "gestor_conteudo"

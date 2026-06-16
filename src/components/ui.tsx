@@ -46,7 +46,7 @@ export function Button({
     "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition";
   const styles =
     variant === "primary"
-      ? "bg-brand hover:bg-brand-dark text-white"
+      ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-sm"
       : "border border-slate-300 text-slate-700 hover:bg-slate-50";
   return (
     <button type={type} onClick={onClick} className={`${base} ${styles}`}>
@@ -116,7 +116,7 @@ export function StatCard({
   value,
   delta,
   icon,
-  color = "#00a14b",
+  color = "#2563eb",
 }: {
   label: string;
   value: string;
@@ -139,15 +139,15 @@ export function StatCard({
       </div>
       <div className="mt-3 text-3xl font-bold text-slate-900">{value}</div>
       {delta && (
-        <div className="mt-1 text-xs font-medium text-emerald-600">{delta}</div>
+        <div className="mt-1 text-xs font-medium text-blue-600">{delta}</div>
       )}
     </Card>
   );
 }
 
 const badgeColors: Record<string, string> = {
-  green: "bg-emerald-100 text-emerald-700",
-  blue: "bg-blue-100 text-blue-700",
+  green: "bg-sky-100 text-sky-800",
+  blue: "bg-blue-100 text-blue-800",
   amber: "bg-amber-100 text-amber-700",
   red: "bg-red-100 text-red-700",
   slate: "bg-slate-100 text-slate-600",
@@ -172,16 +172,22 @@ export function Badge({
 
 export function ProgressBar({
   value,
-  color = "#00a14b",
+  color = "#2563eb",
 }: {
   value: number;
   color?: string;
 }) {
+  const useGradient = color === "#2563eb";
   return (
     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
       <div
         className="h-full rounded-full transition-all"
-        style={{ width: `${Math.min(100, value)}%`, backgroundColor: color }}
+        style={{
+          width: `${Math.min(100, value)}%`,
+          background: useGradient
+            ? "linear-gradient(90deg, #3b82f6, #2563eb)"
+            : color,
+        }}
       />
     </div>
   );

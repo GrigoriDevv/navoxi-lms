@@ -25,7 +25,7 @@ export const quickShortcuts: QuickShortcut[] = [
     description: "Gestão e listagem de cursos",
     href: "/aprendizagem/cursos",
     icon: "book",
-    color: "#00a14b",
+    color: "#2563eb",
     permissions: ["manage_courses"],
   },
   {
@@ -88,7 +88,7 @@ export const quickShortcuts: QuickShortcut[] = [
     description: "Trilhas de aprendizagem",
     href: "/aprendizagem/trilhas",
     icon: "route",
-    color: "#0b2a23",
+    color: "#1e3a8a",
     permissions: ["manage_courses", "consume_learning"],
   },
 ];

@@ -7,9 +7,9 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Neoenergia LMS · Plataforma Corporativa de Aprendizagem",
+  title: "Plataforma para Sistema Inteligente · Navoxi",
   description:
-    "Plataforma corporativa de Gestão de Aprendizagem (LMS) da Neoenergia",
+    "Plataforma para Sistema Inteligente — gestão de aprendizagem, conteúdos e operações corporativas",
 };
 
 export default function RootLayout({

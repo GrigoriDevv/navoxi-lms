@@ -15,14 +15,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const groups = Array.from(new Set(visible.map((i) => i.group)));
 
   return (
-    <aside className="w-64 shrink-0 bg-sidebar text-slate-300 flex flex-col h-full">
+    <aside className="w-64 shrink-0 bg-gradient-to-b from-[#1e40af] via-[#1e3a8a] to-[#0f172a] text-slate-300 flex flex-col h-full">
       <div className="h-16 flex items-center gap-2.5 px-5 border-b border-white/10">
-        <div className="w-9 h-9 rounded-lg bg-brand grid place-items-center font-bold text-white">
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center font-bold text-white shadow-sm">
           N
         </div>
         <div className="leading-tight">
-          <div className="text-white font-semibold text-sm">Neoenergia</div>
-          <div className="text-[11px] text-slate-400">LMS Corporativo</div>
+          <div className="text-white font-semibold text-sm">Navoxi</div>
+          <div className="text-[11px] text-slate-400">Sistema Inteligente</div>
         </div>
       </div>
 
@@ -46,8 +46,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={onNavigate}
                       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
                         active
-                          ? "bg-brand text-white font-medium"
-                          : "hover:bg-white/5 hover:text-white"
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-sm"
+                          : "hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <Icon name={item.icon} className="w-[18px] h-[18px]" />

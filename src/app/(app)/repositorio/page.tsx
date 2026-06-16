@@ -29,7 +29,7 @@ export default function RepositorioPage() {
     type: "pdf" as ContentAsset["type"],
     size: "1 MB",
     category: "Geral",
-    unitId: "holding" as UnitId,
+    unitId: "matriz" as UnitId,
     usedIn: ["biblioteca"] as ContentAsset["usedIn"],
   });
 
@@ -48,7 +48,7 @@ export default function RepositorioPage() {
     e.preventDefault();
     addContent(form);
     setOpen(false);
-    setForm({ name: "", type: "pdf", size: "1 MB", category: "Geral", unitId: "holding", usedIn: ["biblioteca"] });
+    setForm({ name: "", type: "pdf", size: "1 MB", category: "Geral", unitId: "matriz", usedIn: ["biblioteca"] });
   };
 
   return (

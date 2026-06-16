@@ -74,9 +74,9 @@ export default function ConfiguracoesPage() {
               </Field>
               <Field label="Fuso horário">
                 <select className={inputClass} value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })}>
-                  <option value="America/Recife">America/Recife</option>
                   <option value="America/Sao_Paulo">America/Sao_Paulo</option>
-                  <option value="America/Bahia">America/Bahia</option>
+                  <option value="America/Manaus">America/Manaus</option>
+                  <option value="America/Fortaleza">America/Fortaleza</option>
                 </select>
               </Field>
             </div>
@@ -115,7 +115,7 @@ export default function ConfiguracoesPage() {
               <input type="number" min={1} className={inputClass} value={form.certificateValidity} onChange={(e) => setForm({ ...form, certificateValidity: Number(e.target.value) })} />
             </Field>
             <p className="text-xs text-slate-400 mt-2">
-              Define quando os colaboradores precisam refazer treinamentos obrigatórios (ex.: NR-10, Compliance).
+              Define quando os colaboradores precisam refazer treinamentos obrigatórios (ex.: Segurança da Informação, Compliance).
             </p>
           </Card>
 
@@ -186,7 +186,7 @@ export default function ConfiguracoesPage() {
                     <button
                       type="button"
                       onClick={() => togglePermissionRole(p.id, r)}
-                      className={`w-6 h-6 rounded-full mx-auto text-xs ${p.roles.includes(r) ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-300"}`}
+                      className={`w-6 h-6 rounded-full mx-auto text-xs ${p.roles.includes(r) ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-300"}`}
                     >
                       {p.roles.includes(r) ? "✓" : "·"}
                     </button>
@@ -227,7 +227,7 @@ export default function ConfiguracoesPage() {
               Salvar alterações
             </Button>
             {saved && (
-              <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+              <span className="text-sm text-blue-600 font-medium flex items-center gap-1">
                 <Icon name="check" className="w-4 h-4" /> Salvo!
               </span>
             )}

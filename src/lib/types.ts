@@ -5,7 +5,7 @@ export type Role =
   | "instrutor"
   | "aluno";
 
-export type UnitId = "coelba" | "celpe" | "coelce" | "elektro" | "holding";
+export type UnitId = "matriz" | "nordeste" | "sul" | "centro";
 
 export interface User {
   id: string;

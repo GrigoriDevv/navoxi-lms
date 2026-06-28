@@ -13,6 +13,8 @@ import type {
   AuditLog,
   Automation,
   Course,
+  CourseLesson,
+  CourseModule,
   Message,
   Role,
   Settings,
@@ -37,9 +39,11 @@ import type {
   Integration,
   Permission,
   ScheduledJob,
+  LessonProgress,
 } from "./types";
 import { hasPermission } from "./rbac";
 import { applyBrandColor } from "./platform-config";
+import { computeProgress, syncInscricaoProgress } from "./course-progress";
 
 const VALID_ROLES: Role[] = [
   "admin_premium",
@@ -51,6 +55,7 @@ const VALID_ROLES: Role[] = [
 
 const STORAGE_USER = "navoxi-user";
 const STORAGE_PREFS = "navoxi-prefs";
+const STORAGE_LESSON_PROGRESS = "navoxi-lesson-progress";
 const LEGACY_STORAGE_USER = "neo-lms-user";
 const LEGACY_STORAGE_PREFS = "neo-lms-prefs";
 
@@ -127,6 +132,9 @@ interface AppState {
   interesses: InteresseCurso[];
   solicitacoes: SolicitacaoMatricula[];
   inscricoes: InscricaoCurso[];
+  courseModules: CourseModule[];
+  courseLessons: CourseLesson[];
+  lessonProgress: LessonProgress[];
   posts: Post[];
   messages: Message[];
   questions: Question[];
@@ -157,6 +165,13 @@ interface AppState {
   updateSolicitacao: (id: string, status: SolicitacaoMatricula["status"]) => void;
   inscreverCurso: (courseId: string, turmaId?: string) => "ok" | "duplicate" | "pending" | "lotada" | "login";
   cancelarInscricao: (id: string) => void;
+  completeLesson: (lessonId: string) => void;
+  importPlaylistLessons: (
+    courseId: string,
+    moduleTitle: string,
+    items: Array<{ videoId: string; title: string; durationSec?: number }>
+  ) => void;
+  updateCourseLesson: (lessonId: string, data: Partial<Pick<CourseLesson, "title">>) => void;
   addInteresse: (i: Omit<InteresseCurso, "id" | "registeredAt" | "notified">) => void;
   updateCertificado: (id: string, status: Certificado["status"]) => void;
   addPost: (p: Omit<Post, "id" | "publishedAt" | "author" | "status">) => void;
@@ -204,6 +219,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [interesses, setInteresses] = useState<InteresseCurso[]>(seed.interesses);
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoMatricula[]>(seed.solicitacoes);
   const [inscricoes, setInscricoes] = useState<InscricaoCurso[]>(seed.inscricoes);
+  const [courseModules, setCourseModules] = useState<CourseModule[]>(seed.courseModules);
+  const [courseLessons, setCourseLessons] = useState<CourseLesson[]>(seed.courseLessons);
+  const [lessonProgress, setLessonProgress] = useState<LessonProgress[]>(seed.lessonProgress);
   const [posts, setPosts] = useState<Post[]>(seed.posts);
   const [messages, setMessages] = useState<Message[]>(seed.messages);
   const [questions, setQuestions] = useState<Question[]>(seed.questions);
@@ -255,8 +273,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(LEGACY_STORAGE_PREFS);
         }
       }
+      const storedProgress = localStorage.getItem(STORAGE_LESSON_PROGRESS);
+      if (storedProgress) {
+        try {
+          const parsed = JSON.parse(storedProgress) as LessonProgress[];
+          if (Array.isArray(parsed)) {
+            const key = (p: LessonProgress) => `${p.userId}:${p.lessonId}`;
+            const merged = new Map<string, LessonProgress>();
+            for (const p of seed.lessonProgress) merged.set(key(p), p);
+            for (const p of parsed) merged.set(key(p), p);
+            setLessonProgress(Array.from(merged.values()));
+          }
+        } catch {}
+      }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_LESSON_PROGRESS, JSON.stringify(lessonProgress));
+    } catch {}
+  }, [lessonProgress]);
 
   const login = (email: string) => {
     const normalized = normalizeEmail(email);
@@ -758,6 +795,103 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const completeLesson: AppState["completeLesson"] = (lessonId) => {
+    if (!currentUser) return;
+    const lesson = courseLessons.find((l) => l.id === lessonId);
+    if (!lesson) return;
+
+    const alreadyDone = lessonProgress.some(
+      (p) => p.userId === currentUser.id && p.lessonId === lessonId
+    );
+    if (alreadyDone) return;
+
+    const nextProgress = [
+      ...lessonProgress,
+      { userId: currentUser.id, lessonId, completedAt: now() },
+    ];
+    setLessonProgress(nextProgress);
+
+    const { percent } = computeProgress(
+      currentUser.id,
+      lesson.courseId,
+      courseLessons,
+      nextProgress
+    );
+    setInscricoes((prev) =>
+      syncInscricaoProgress(prev, currentUser.id, lesson.courseId, percent)
+    );
+
+    if (percent >= 100) {
+      dispatchNotification({
+        userId: currentUser.id,
+        title: "Curso concluído",
+        message: `Parabéns! Você concluiu "${courses.find((c) => c.id === lesson.courseId)?.title ?? "o curso"}".`,
+        type: "curso",
+        href: `/aprendizagem/cursos/${lesson.courseId}`,
+      });
+    }
+
+    log({
+      user: currentUser.email,
+      action: `Concluiu aula '${lesson.title}'`,
+      module: "Aprendizagem",
+      severity: "info",
+    });
+  };
+
+  const importPlaylistLessons: AppState["importPlaylistLessons"] = (
+    courseId,
+    moduleTitle,
+    items
+  ) => {
+    if (items.length === 0) return;
+
+    const moduleId = "m" + Math.random().toString(36).slice(2, 7);
+    const existingModules = courseModules.filter((m) => m.courseId === courseId);
+    const moduleOrder =
+      existingModules.length === 0
+        ? 1
+        : Math.max(...existingModules.map((m) => m.order)) + 1;
+
+    const existingLessons = courseLessons.filter((l) => l.courseId === courseId);
+    let orderBase =
+      existingLessons.length === 0
+        ? 0
+        : Math.max(...existingLessons.map((l) => l.order));
+
+    const newModule: CourseModule = {
+      id: moduleId,
+      courseId,
+      title: moduleTitle,
+      order: moduleOrder,
+    };
+
+    const newLessons: CourseLesson[] = items.map((item, idx) => ({
+      id: "l" + Math.random().toString(36).slice(2, 7),
+      courseId,
+      moduleId,
+      order: orderBase + idx + 1,
+      title: item.title,
+      youtubeVideoId: item.videoId,
+      durationSec: item.durationSec,
+    }));
+
+    setCourseModules((prev) => [...prev, newModule]);
+    setCourseLessons((prev) => [...prev, ...newLessons]);
+    log({
+      user: currentUser?.email ?? "system",
+      action: `Importou ${items.length} aulas do YouTube no curso '${courseId}'`,
+      module: "Aprendizagem",
+      severity: "info",
+    });
+  };
+
+  const updateCourseLesson: AppState["updateCourseLesson"] = (lessonId, data) => {
+    setCourseLessons((prev) =>
+      prev.map((l) => (l.id === lessonId ? { ...l, ...data } : l))
+    );
+  };
+
   const addInteresse: AppState["addInteresse"] = (i) => {
     const id = "int" + Math.random().toString(36).slice(2, 7);
     setInteresses((prev) => [{ ...i, id, registeredAt: now(), notified: false }, ...prev]);
@@ -859,6 +993,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       interesses,
       solicitacoes,
       inscricoes,
+      courseModules,
+      courseLessons,
+      lessonProgress,
       posts,
       messages,
       questions,
@@ -888,6 +1025,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateSolicitacao,
       inscreverCurso,
       cancelarInscricao,
+      completeLesson,
+      importPlaylistLessons,
+      updateCourseLesson,
       addInteresse,
       updateCertificado,
       addPost,
@@ -918,7 +1058,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       log,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, inscricoes, posts, messages, questions, evaluations, contents, destaques, alertRules, internalMails, automations, integrations, permissions, scheduledJobs, auditLogs, settings, myNotifications, preferences]
+    [currentUser, users, courses, turmas, trilhas, salas, certificados, interesses, solicitacoes, inscricoes, courseModules, courseLessons, lessonProgress, posts, messages, questions, evaluations, contents, destaques, alertRules, internalMails, automations, integrations, permissions, scheduledJobs, auditLogs, settings, myNotifications, preferences]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { useAuthScope } from "@/lib/use-auth-scope";
+import { computeProgress, getCourseLessons } from "@/lib/course-progress";
 import {
   modalityLabels,
   modalityColors,
@@ -35,7 +37,7 @@ export default function CatalogoPage() {
   const tabFromUrl = searchParams.get("tab");
 
   const { inscreverCurso, cancelarInscricao, currentUser } = useApp();
-  const { courses, turmas, inscricoes, solicitacoes, isGlobal, unitLabel } = useAuthScope();
+  const { courses, turmas, inscricoes, solicitacoes, courseLessons, lessonProgress, isGlobal, unitLabel } = useAuthScope();
 
   const [tab, setTab] = useState<Tab>(
     tabFromUrl === "inscricoes" ? "inscricoes" : "catalogo"
@@ -342,6 +344,18 @@ export default function CatalogoPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {myInscricoes.map((i) => {
                   const course = courses.find((c) => c.id === i.courseId);
+                  const lessons = getCourseLessons(i.courseId, courseLessons);
+                  const progressStats =
+                    currentUser && lessons.length > 0
+                      ? computeProgress(
+                          currentUser.id,
+                          i.courseId,
+                          lessons,
+                          lessonProgress
+                        )
+                      : { completed: 0, total: 0, percent: i.progress };
+                  const barValue =
+                    lessons.length > 0 ? progressStats.percent : i.progress;
                   return (
                     <Card key={i.id} className="p-4">
                       <div className="flex items-start justify-between gap-2 mb-3">
@@ -356,12 +370,24 @@ export default function CatalogoPage() {
                           {inscricaoStatusLabels[i.status]}
                         </Badge>
                       </div>
-                      <ProgressBar value={i.progress} />
-                      <p className="text-xs text-slate-400 mt-1">{i.progress}% concluído</p>
+                      <ProgressBar value={barValue} />
+                      <p className="text-xs text-slate-400 mt-1">
+                        {lessons.length > 0
+                          ? `${progressStats.completed}/${progressStats.total} aulas · ${barValue}%`
+                          : `${i.progress}% concluído`}
+                      </p>
                       {course && (
                         <p className="text-xs text-slate-500 mt-2">
                           {course.workload}h · {modalityLabels[course.modality]}
                         </p>
+                      )}
+                      {i.status === "ativa" && lessons.length > 0 && (
+                        <Link
+                          href={`/aprendizagem/cursos/${i.courseId}`}
+                          className="mt-3 block w-full py-2 rounded-lg text-sm font-semibold text-center bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-sm"
+                        >
+                          Continuar curso
+                        </Link>
                       )}
                       {i.status === "ativa" && (
                         <button

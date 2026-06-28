@@ -41,6 +41,29 @@ export interface Course {
   cover: string;
 }
 
+export interface CourseModule {
+  id: string;
+  courseId: string;
+  title: string;
+  order: number;
+}
+
+export interface CourseLesson {
+  id: string;
+  courseId: string;
+  moduleId: string;
+  order: number;
+  title: string;
+  youtubeVideoId: string;
+  durationSec?: number;
+}
+
+export interface LessonProgress {
+  userId: string;
+  lessonId: string;
+  completedAt: string;
+}
+
 export interface Turma {
   id: string;
   courseId: string;

@@ -19,9 +19,14 @@ const paths: Record<string, string> = {
   check: "M20 6L9 17l-5-5",
   trend: "M3 17l6-6 4 4 8-8M21 7h-5M21 7v5",
   chevron: "M6 9l6 6 6-6",
+  "chevron-left": "M15 18l-6-6 6-6",
+  "chevron-right": "M9 18l6-6-6-6",
+  menu: "M4 6h16M4 12h16M4 18h16",
+  close: "M18 6L6 18M6 6l12 12",
   user: "M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8",
   help: "M12 18h.01M8.2 8.2a4 4 0 015.6 5.6c-.9.9-1.4 1.4-1.4 2.8v.4",
   refresh: "M4 4v5h5M20 20v-5h-5M5 19a9 9 0 0014-7M19 5a9 9 0 00-14 7",
+  play: "M8 5v14l11-7L8 5z",
 };
 
 export function Icon({

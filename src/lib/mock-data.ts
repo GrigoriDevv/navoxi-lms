@@ -27,6 +27,9 @@ import type {
   InternalMail,
   ScheduledJob,
   InscricaoCurso,
+  CourseModule,
+  CourseLesson,
+  LessonProgress,
 } from "./types";
 
 const colors = ["#2563eb", "#1d4ed8", "#3b82f6", "#0ea5e9", "#6366f1", "#0891b2"];
@@ -129,9 +132,55 @@ export const solicitacoes: SolicitacaoMatricula[] = [
 ];
 
 export const inscricoes: InscricaoCurso[] = [
-  { id: "ins1", userId: "u4", userName: "Diego Alves", courseId: "c2", courseTitle: "Compliance e Código de Ética", unitId: "matriz", enrolledAt: "2026-05-15 10:00", progress: 68, status: "ativa" },
+  { id: "ins1", userId: "u4", userName: "Diego Alves", courseId: "c2", courseTitle: "Compliance e Código de Ética", unitId: "matriz", enrolledAt: "2026-05-15 10:00", progress: 67, status: "ativa" },
   { id: "ins2", userId: "u4", userName: "Diego Alves", courseId: "c3", courseTitle: "Excelência no Atendimento ao Cliente", turmaId: "t4", turmaName: "Atendimento · Online Contínuo", unitId: "matriz", enrolledAt: "2026-06-01 09:30", progress: 22, status: "ativa" },
   { id: "ins3", userId: "u7", userName: "Gabriela Nunes", courseId: "c2", courseTitle: "Compliance e Código de Ética", unitId: "matriz", enrolledAt: "2026-04-20 14:00", progress: 100, status: "concluida" },
+];
+
+export const courseModules: CourseModule[] = [
+  { id: "m-c1-1", courseId: "c1", title: "Fundamentos de Segurança", order: 1 },
+  { id: "m-c1-2", courseId: "c1", title: "Proteção de Dados", order: 2 },
+  { id: "m-c2-1", courseId: "c2", title: "Princípios de Compliance", order: 1 },
+  { id: "m-c2-2", courseId: "c2", title: "Conduta e Integridade", order: 2 },
+  { id: "m-c3-1", courseId: "c3", title: "Atendimento de Excelência", order: 1 },
+];
+
+// Aulas com vídeos Creative Commons (Blender Foundation, CC BY) ou domínio público (NASA).
+export const courseLessons: CourseLesson[] = [
+  { id: "l-c1-1", courseId: "c1", moduleId: "m-c1-1", order: 1, title: "Introdução à segurança da informação", youtubeVideoId: "86YLFOog4GM", durationSec: 180 },
+  { id: "l-c1-2", courseId: "c1", moduleId: "m-c1-1", order: 2, title: "Ameaças digitais e vetores de ataque", youtubeVideoId: "_L4F9fCEqWM", durationSec: 210 },
+  { id: "l-c1-3", courseId: "c1", moduleId: "m-c1-2", order: 3, title: "Classificação e tratamento de dados", youtubeVideoId: "21X5lGlwtYQ", durationSec: 195 },
+  { id: "l-c1-4", courseId: "c1", moduleId: "m-c1-2", order: 4, title: "Controles de acesso e autenticação", youtubeVideoId: "libKSDqviAo", durationSec: 240 },
+  { id: "l-c2-1", courseId: "c2", moduleId: "m-c2-1", order: 1, title: "O que é compliance corporativo", youtubeVideoId: "YE7VzlLtp-4", durationSec: 32 },
+  { id: "l-c2-2", courseId: "c2", moduleId: "m-c2-1", order: 2, title: "Marco regulatório e normas aplicáveis", youtubeVideoId: "kDkqc7ZcM3M", durationSec: 150 },
+  { id: "l-c2-3", courseId: "c2", moduleId: "m-c2-1", order: 3, title: "Canal de denúncias e whistleblowing", youtubeVideoId: "QWfjPoglWLQ", durationSec: 120 },
+  { id: "l-c2-4", courseId: "c2", moduleId: "m-c2-2", order: 4, title: "Conflito de interesses", youtubeVideoId: "KGksZCYuiIk", durationSec: 180 },
+  { id: "l-c2-5", courseId: "c2", moduleId: "m-c2-2", order: 5, title: "Presentes, brindes e hospitalidade", youtubeVideoId: "bMeKNPGrk0c", durationSec: 200 },
+  { id: "l-c2-6", courseId: "c2", moduleId: "m-c2-2", order: 6, title: "Responsabilidade individual e penalidades", youtubeVideoId: "mN0zPOpOAN8", durationSec: 220 },
+  { id: "l-c3-1", courseId: "c3", moduleId: "m-c3-1", order: 1, title: "Princípios do atendimento ao cliente", youtubeVideoId: "86YLFOog4GM", durationSec: 180 },
+  { id: "l-c3-2", courseId: "c3", moduleId: "m-c3-1", order: 2, title: "Escuta ativa e empatia", youtubeVideoId: "_L4F9fCEqWM", durationSec: 210 },
+  { id: "l-c3-3", courseId: "c3", moduleId: "m-c3-1", order: 3, title: "Comunicação clara e objetiva", youtubeVideoId: "21X5lGlwtYQ", durationSec: 195 },
+  { id: "l-c3-4", courseId: "c3", moduleId: "m-c3-1", order: 4, title: "Gestão de reclamações", youtubeVideoId: "kDkqc7ZcM3M", durationSec: 150 },
+  { id: "l-c3-5", courseId: "c3", moduleId: "m-c3-1", order: 5, title: "SLA e prazos de resposta", youtubeVideoId: "QWfjPoglWLQ", durationSec: 120 },
+  { id: "l-c3-6", courseId: "c3", moduleId: "m-c3-1", order: 6, title: "Atendimento omnichannel", youtubeVideoId: "KGksZCYuiIk", durationSec: 180 },
+  { id: "l-c3-7", courseId: "c3", moduleId: "m-c3-1", order: 7, title: "Indicadores de satisfação (NPS/CSAT)", youtubeVideoId: "bMeKNPGrk0c", durationSec: 200 },
+  { id: "l-c3-8", courseId: "c3", moduleId: "m-c3-1", order: 8, title: "Retenção e fidelização", youtubeVideoId: "mN0zPOpOAN8", durationSec: 220 },
+  { id: "l-c3-9", courseId: "c3", moduleId: "m-c3-1", order: 9, title: "Encerramento e boas práticas finais", youtubeVideoId: "YE7VzlLtp-4", durationSec: 32 },
+];
+
+export const lessonProgress: LessonProgress[] = [
+  { userId: "u4", lessonId: "l-c2-1", completedAt: "2026-05-16 10:00" },
+  { userId: "u4", lessonId: "l-c2-2", completedAt: "2026-05-18 14:30" },
+  { userId: "u4", lessonId: "l-c2-3", completedAt: "2026-05-20 09:15" },
+  { userId: "u4", lessonId: "l-c2-4", completedAt: "2026-05-22 16:00" },
+  { userId: "u4", lessonId: "l-c3-1", completedAt: "2026-06-02 11:00" },
+  { userId: "u4", lessonId: "l-c3-2", completedAt: "2026-06-05 15:30" },
+  { userId: "u7", lessonId: "l-c2-1", completedAt: "2026-04-21 10:00" },
+  { userId: "u7", lessonId: "l-c2-2", completedAt: "2026-04-22 11:00" },
+  { userId: "u7", lessonId: "l-c2-3", completedAt: "2026-04-23 09:00" },
+  { userId: "u7", lessonId: "l-c2-4", completedAt: "2026-04-24 14:00" },
+  { userId: "u7", lessonId: "l-c2-5", completedAt: "2026-04-25 10:30" },
+  { userId: "u7", lessonId: "l-c2-6", completedAt: "2026-04-26 16:00" },
 ];
 
 export const questions: Question[] = [

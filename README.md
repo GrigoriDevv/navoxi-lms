@@ -65,7 +65,8 @@ O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são fil
 | Rota | Descrição |
 |---|---|
 | `/aprendizagem/catalogo` | Catálogo navegável + aba **Minhas inscrições** (matrículas e solicitações pendentes) |
-| `/aprendizagem/cursos` | CRUD de cursos (publicar, arquivar, rascunho) |
+| `/aprendizagem/cursos` | CRUD de cursos (publicar, arquivar, rascunho) + importação de aulas via YouTube |
+| `/aprendizagem/cursos/[courseId]` | Player de aulas com vídeos YouTube (estilo biblioteca digital) e progresso por aula |
 | `/aprendizagem/turmas` | Gestão de turmas vinculadas a cursos e salas |
 | `/aprendizagem/trilhas` | Trilhas com etapas sequenciais e progresso |
 | `/aprendizagem/calendario` | Calendário acadêmico de eventos |
@@ -86,6 +87,19 @@ O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são fil
 4. Gestor aprova em **Solicitações** → matrícula efetivada e notificação enviada.
 5. Sem aprovação → matrícula imediata, contadores de inscritos atualizados.
 6. A aba **Inscrições** (`/aprendizagem/catalogo?tab=inscricoes`) lista matrículas ativas, concluídas e canceladas.
+7. Alunos matriculados acessam **Continuar curso** → player em `/aprendizagem/cursos/[courseId]`; progresso = aulas concluídas ÷ total de aulas.
+
+### Vídeos YouTube (importação de aulas)
+
+Gestores podem importar playlists do YouTube na edição de um curso. A reprodução usa a YouTube IFrame Player API com títulos customizados da plataforma (sem exibir metadados do YouTube ao aluno).
+
+Configure a chave da YouTube Data API v3 em `.env.local`:
+
+```bash
+YOUTUBE_API_KEY=sua_chave_aqui
+```
+
+Reinicie o servidor (`npm run dev`) após adicionar a variável. Sem a chave, o player de aulas seed continua funcionando; apenas a importação de novas playlists fica indisponível.
 
 ### Conteúdo e avaliações
 

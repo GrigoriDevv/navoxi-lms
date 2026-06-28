@@ -32,3 +32,19 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+
+/* Player YouTube — proporção 16:9 sem bordas do embed */
+.yt-clean-player {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.yt-clean-player iframe {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}

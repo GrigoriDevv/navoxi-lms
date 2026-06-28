@@ -80,6 +80,9 @@ export function UserMenu() {
             {roleLabels[currentUser.role]}
           </Badge>
           <Badge color="blue">{unitLabels[currentUser.unitId]}</Badge>
+          {currentUser.authProvider === "microsoft" && (
+            <Badge color="slate">Microsoft verificado</Badge>
+          )}
         </div>
         <p className="mt-2 text-[11px] text-slate-500 leading-snug">
           {roleDescriptions[currentUser.role]}

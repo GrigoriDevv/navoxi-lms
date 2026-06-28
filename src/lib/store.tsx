@@ -93,6 +93,7 @@ function resolveSession(raw: string, users: User[]): AuthState | null {
         role: registered.role,
         unitId: registered.unitId,
         avatarColor: registered.avatarColor,
+        authProvider: parsed.authProvider,
       };
     }
     return {
@@ -102,6 +103,7 @@ function resolveSession(raw: string, users: User[]): AuthState | null {
       role: parsed.role,
       unitId: unitId as UnitId,
       avatarColor: parsed.avatarColor ?? "#2563eb",
+      authProvider: parsed.authProvider,
     };
   } catch {
     return null;
@@ -115,12 +117,13 @@ interface AuthState {
   role: Role;
   unitId: UnitId;
   avatarColor: string;
+  authProvider?: "microsoft" | "password";
 }
 
 interface AppState {
   // auth
   currentUser: AuthState | null;
-  login: (email: string) => void;
+  login: (email: string, options?: { name?: string; provider?: AuthState["authProvider"] }) => void;
   logout: () => void;
   // data
   users: User[];
@@ -286,6 +289,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         } catch {}
       }
+
+      fetch("/api/auth/session")
+        .then((r) => r.json())
+        .then(
+          (data: {
+            authenticated?: boolean;
+            email?: string;
+            name?: string;
+            provider?: AuthState["authProvider"];
+          }) => {
+            if (data.authenticated && data.email) {
+              const normalized = normalizeEmail(data.email);
+              const existing = seed.users.find((u) => u.email === normalized);
+              const u: AuthState = {
+                id: existing?.id ?? "guest",
+                name: data.name ?? existing?.name ?? normalized.split("@")[0],
+                email: normalized,
+                role: existing?.role ?? "aluno",
+                unitId: existing?.unitId ?? "matriz",
+                avatarColor: existing?.avatarColor ?? "#2563eb",
+                authProvider: data.provider ?? "microsoft",
+              };
+              setCurrentUser(u);
+              localStorage.setItem(STORAGE_USER, JSON.stringify(u));
+            }
+          }
+        )
+        .catch(() => {});
     } catch {}
   }, []);
 
@@ -295,16 +326,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [lessonProgress]);
 
-  const login = (email: string) => {
+  const login: AppState["login"] = (email, options) => {
     const normalized = normalizeEmail(email);
     const existing = users.find((u) => u.email === normalized);
     const u: AuthState = {
       id: existing?.id ?? "guest",
-      name: existing?.name ?? normalized.split("@")[0],
+      name: options?.name ?? existing?.name ?? normalized.split("@")[0],
       email: normalized,
       role: existing?.role ?? "aluno",
       unitId: existing?.unitId ?? "matriz",
       avatarColor: existing?.avatarColor ?? "#2563eb",
+      authProvider: options?.provider ?? "password",
     };
     setCurrentUser(u);
     try {
@@ -318,6 +350,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(STORAGE_USER);
       localStorage.removeItem(LEGACY_STORAGE_USER);
     } catch {}
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
   };
 
   const log: AppState["log"] = (entry) => {

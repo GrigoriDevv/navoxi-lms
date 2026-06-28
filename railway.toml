@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+
+[build.env]
+NIXPACKS_NODE_VERSION = "22"
+NPM_CONFIG_PRODUCTION = "false"
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/login"
+healthcheckTimeout = 300

@@ -101,6 +101,28 @@ YOUTUBE_API_KEY=sua_chave_aqui
 
 Reinicie o servidor (`npm run dev`) após adicionar a variável. Sem a chave, o player de aulas seed continua funcionando; apenas a importação de novas playlists fica indisponível.
 
+### Login com Microsoft (Entra ID)
+
+Na tela de login há a opção **Entrar com Microsoft**, com identidade verificada via OAuth 2.0 e Microsoft Graph.
+
+No [portal Azure](https://portal.azure.com) → **Microsoft Entra ID** → **Registros de aplicativo** → novo app:
+
+1. **URI de redirecionamento (Web):** `https://seu-dominio/api/auth/microsoft/callback` (local: `http://localhost:3000/api/auth/microsoft/callback`)
+2. Crie um **Segredo do cliente**
+3. Permissões delegadas: `openid`, `profile`, `email`, `User.Read`
+
+Variáveis em `.env.local` (e no Railway → Variables):
+
+```bash
+AZURE_AD_CLIENT_ID=seu_client_id
+AZURE_AD_CLIENT_SECRET=seu_client_secret
+AZURE_AD_TENANT_ID=common
+AUTH_SECRET=string_aleatoria_longa
+NEXT_PUBLIC_APP_URL=https://neoenergia-lms-production.up.railway.app
+```
+
+`AZURE_AD_TENANT_ID=common` aceita contas Microsoft corporativas e pessoais; use o ID do tenant da organização para restringir ao domínio da empresa.
+
 ### Conteúdo e avaliações
 
 | Rota | Descrição |

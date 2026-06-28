@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { roleLabels, roleDescriptions, unitLabels } from "@/lib/rbac";
 import { users } from "@/lib/mock-data";
 import { Icon } from "@/components/Icon";
 import { Badge } from "@/components/ui";
+import { MicrosoftSignInButton } from "@/components/auth/MicrosoftSignInButton";
 
 const demoEmails = [
   "ana.souza@navoxi.com",
@@ -17,17 +18,41 @@ const demoEmails = [
 ];
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white text-slate-500 text-sm">
+          Carregando…
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useApp();
   const [email, setEmail] = useState("diego.alves@navoxi.com");
   const [password, setPassword] = useState("demo1234");
   const [mfa, setMfa] = useState(false);
+  const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
+  const authError = searchParams.get("error");
+
+  useEffect(() => {
+    fetch("/api/auth/microsoft/status")
+      .then((r) => r.json())
+      .then((data: { enabled?: boolean }) => setMicrosoftEnabled(!!data.enabled))
+      .catch(() => setMicrosoftEnabled(false));
+  }, []);
 
   const selectedUser = users.find((u) => u.email === email);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email);
+    login(email, { provider: "password" });
     router.push("/dashboard");
   };
 
@@ -75,7 +100,29 @@ export default function LoginPage() {
             O perfil e a unidade são definidos pelo cadastro do usuário.
           </p>
 
-          <label className="block mt-6 text-sm font-medium text-slate-700">
+          {authError && (
+            <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+              {authError}
+            </div>
+          )}
+
+          <div className="mt-6">
+            <MicrosoftSignInButton enabled={microsoftEnabled} />
+            <p className="mt-2 text-[11px] text-slate-400 text-center">
+              Identidade verificada pela Microsoft (Entra ID)
+            </p>
+          </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-3 text-slate-400">ou entre com e-mail</span>
+            </div>
+          </div>
+
+          <label className="block text-sm font-medium text-slate-700">
             E-mail corporativo
           </label>
           <input

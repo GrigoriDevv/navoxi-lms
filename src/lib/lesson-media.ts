@@ -47,3 +47,15 @@ export function formatLessonMediaLabel(lesson: CourseLesson): string {
   if (!media) return "—";
   return media.kind === "youtube" ? "YouTube" : "Vídeo (MP4)";
 }
+
+export function getLessonVideoInputValue(lesson: CourseLesson): string {
+  const media = getLessonMedia(lesson);
+  if (!media) return "";
+  if (media.kind === "youtube") return media.youtubeVideoId;
+  if (media.videoUrl.startsWith("data:video/")) return "";
+  return media.videoUrl;
+}
+
+export function lessonUsesUploadedFile(lesson: CourseLesson): boolean {
+  return Boolean(lesson.videoUrl?.startsWith("data:video/"));
+}

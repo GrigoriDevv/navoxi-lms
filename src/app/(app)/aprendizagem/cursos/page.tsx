@@ -8,6 +8,7 @@ import { modalityLabels, courseStatusLabels } from "@/lib/aprendizagem";
 import { unitLabels } from "@/lib/rbac";
 import { getCourseLessons } from "@/lib/course-progress";
 import { LessonPublishForm } from "@/components/courses/LessonPublishForm";
+import { LessonManageList } from "@/components/courses/LessonManageList";
 import {
   PageHeader,
   Card,
@@ -28,10 +29,11 @@ const statusColor = {
 } as const;
 
 export default function CursosPage() {
-  const { addCourse, updateCourse, updateCourseLesson } = useApp();
+  const { addCourse, updateCourse } = useApp();
   const {
     courses,
     courseLessons,
+    courseModules,
     inscricoes,
     currentUser,
     unitId,
@@ -260,22 +262,16 @@ export default function CursosPage() {
           </div>
         </form>
         {editing && canManage && (
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            {getCourseLessons(editing.id, courseLessons).length > 0 && (
-              <ul className="space-y-2 max-h-32 overflow-y-auto mb-4">
-                {getCourseLessons(editing.id, courseLessons).map((lesson) => (
-                  <li key={lesson.id} className="flex gap-2 items-center">
-                    <input
-                      className={`${inputClass} flex-1 text-sm`}
-                      value={lesson.title}
-                      onChange={(e) =>
-                        updateCourseLesson(lesson.id, { title: e.target.value })
-                      }
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
+            <LessonManageList
+              lessons={getCourseLessons(editing.id, courseLessons).map((lesson) => {
+                const mod = courseModules.find((m) => m.id === lesson.moduleId);
+                return { ...lesson, moduleTitle: mod?.title };
+              })}
+              courseModules={courseModules.filter((m) => m.courseId === editing.id)}
+              title={`Aulas (${lessonCount(editing.id)})`}
+              emptyMessage="Nenhuma aula neste curso ainda."
+            />
             <LessonPublishForm
               key={editing.id}
               courses={[editing]}

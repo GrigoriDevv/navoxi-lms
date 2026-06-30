@@ -1,13 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useAuthScope } from "@/lib/use-auth-scope";
 import { getInstructorCourses } from "@/lib/instructor-courses";
-import { formatLessonMediaLabel } from "@/lib/lesson-media";
 import { LessonPublishForm } from "@/components/courses/LessonPublishForm";
+import { LessonManageList } from "@/components/courses/LessonManageList";
 import { PageHeader, Card } from "@/components/ui";
-import { Icon } from "@/components/Icon";
 
 export default function PublicarAulasPage() {
   const {
@@ -74,53 +72,18 @@ export default function PublicarAulasPage() {
       />
 
       <section>
-        <h2 className="text-sm font-semibold text-slate-700 mb-3">
-          Aulas publicadas nos seus cursos ({publishedLessons.length})
-        </h2>
-        {publishedLessons.length === 0 ? (
-          <Card className="p-8 text-center text-slate-400 text-sm">
-            Nenhuma aula publicada ainda.
-          </Card>
-        ) : (
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-left text-xs text-slate-500 uppercase tracking-wide">
-                    <th className="px-4 py-3 font-medium">Aula</th>
-                    <th className="px-4 py-3 font-medium">Curso</th>
-                    <th className="px-4 py-3 font-medium">Módulo</th>
-                    <th className="px-4 py-3 font-medium">Formato</th>
-                    <th className="px-4 py-3 font-medium">Ordem</th>
-                    <th className="px-4 py-3 font-medium" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {publishedLessons.map((lesson) => (
-                    <tr key={lesson.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-3 font-medium text-slate-800">
-                        {lesson.title}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{lesson.courseTitle}</td>
-                      <td className="px-4 py-3 text-slate-500">{lesson.moduleTitle}</td>
-                      <td className="px-4 py-3 text-slate-500">{formatLessonMediaLabel(lesson)}</td>
-                      <td className="px-4 py-3 text-slate-500">{lesson.order}</td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/aprendizagem/cursos/${lesson.courseId}?aula=${lesson.id}`}
-                          className="text-brand text-xs font-medium hover:underline inline-flex items-center gap-1"
-                        >
-                          <Icon name="video" className="w-3.5 h-3.5" />
-                          Preview
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        )}
+        <Card className="p-4">
+          <LessonManageList
+            lessons={publishedLessons}
+            courseModules={courseModules.filter((m) =>
+              instructorCourseIds.has(m.courseId)
+            )}
+            showCourse
+            title={`Aulas publicadas nos seus cursos (${publishedLessons.length})`}
+            emptyMessage="Nenhuma aula publicada ainda."
+            onChanged={() => setRefreshKey((k) => k + 1)}
+          />
+        </Card>
       </section>
     </div>
   );

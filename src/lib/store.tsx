@@ -189,7 +189,11 @@ interface AppState {
     videoUrl?: string;
     durationSec?: number;
   }) => void;
-  updateCourseLesson: (lessonId: string, data: Partial<Pick<CourseLesson, "title">>) => void;
+  updateCourseLesson: (
+    lessonId: string,
+    data: Partial<Pick<CourseLesson, "title" | "youtubeVideoId" | "videoUrl" | "moduleId" | "order">>
+  ) => void;
+  deleteCourseLesson: (lessonId: string) => void;
   addInteresse: (i: Omit<InteresseCurso, "id" | "registeredAt" | "notified">) => void;
   updateCertificado: (id: string, status: Certificado["status"]) => void;
   addPost: (p: Omit<Post, "id" | "publishedAt" | "author" | "status">) => void;
@@ -1018,9 +1022,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCourseLesson: AppState["updateCourseLesson"] = (lessonId, data) => {
+    const lesson = courseLessons.find((l) => l.id === lessonId);
+    if (!lesson) return;
+
     setCourseLessons((prev) =>
       prev.map((l) => (l.id === lessonId ? { ...l, ...data } : l))
     );
+
+    log({
+      user: currentUser?.email ?? "system",
+      action: `Editou aula '${lesson.title}'`,
+      module: "Aprendizagem",
+      severity: "info",
+    });
+  };
+
+  const deleteCourseLesson: AppState["deleteCourseLesson"] = (lessonId) => {
+    const lesson = courseLessons.find((l) => l.id === lessonId);
+    if (!lesson) return;
+
+    setCourseLessons((prev) => prev.filter((l) => l.id !== lessonId));
+    setLessonProgress((prev) => prev.filter((p) => p.lessonId !== lessonId));
+
+    log({
+      user: currentUser?.email ?? "system",
+      action: `Removeu aula '${lesson.title}' do curso`,
+      module: "Aprendizagem",
+      severity: "alerta",
+    });
   };
 
   const addInteresse: AppState["addInteresse"] = (i) => {
@@ -1160,6 +1189,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       importPlaylistLessons,
       publishCourseLesson,
       updateCourseLesson,
+      deleteCourseLesson,
       addInteresse,
       updateCertificado,
       addPost,

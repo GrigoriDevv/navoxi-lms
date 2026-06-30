@@ -28,6 +28,8 @@ const paths: Record<string, string> = {
   refresh: "M4 4v5h5M20 20v-5h-5M5 19a9 9 0 0014-7M19 5a9 9 0 00-14 7",
   play: "M8 5v14l11-7L8 5z",
   video: "M4 6h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2zm0 0l8 5-8 5V6z",
+  edit: "M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z",
+  trash: "M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14",
 };
 
 export function Icon({

@@ -172,8 +172,17 @@ interface AppState {
   importPlaylistLessons: (
     courseId: string,
     moduleTitle: string,
-    items: Array<{ videoId: string; title: string; durationSec?: number }>
+    items: Array<{ videoId: string; title: string; durationSec?: number }>,
+    existingModuleId?: string
   ) => void;
+  publishCourseLesson: (params: {
+    courseId: string;
+    moduleId?: string;
+    moduleTitle?: string;
+    title: string;
+    youtubeVideoId: string;
+    durationSec?: number;
+  }) => void;
   updateCourseLesson: (lessonId: string, data: Partial<Pick<CourseLesson, "title">>) => void;
   addInteresse: (i: Omit<InteresseCurso, "id" | "registeredAt" | "notified">) => void;
   updateCertificado: (id: string, status: Certificado["status"]) => void;
@@ -875,45 +884,125 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const importPlaylistLessons: AppState["importPlaylistLessons"] = (
     courseId,
     moduleTitle,
-    items
+    items,
+    existingModuleId
   ) => {
     if (items.length === 0) return;
 
-    const moduleId = "m" + Math.random().toString(36).slice(2, 7);
-    const existingModules = courseModules.filter((m) => m.courseId === courseId);
-    const moduleOrder =
-      existingModules.length === 0
-        ? 1
-        : Math.max(...existingModules.map((m) => m.order)) + 1;
+    const course = courses.find((c) => c.id === courseId);
+    let moduleId = existingModuleId;
+
+    if (!moduleId) {
+      moduleId = "m" + Math.random().toString(36).slice(2, 7);
+      const existingModules = courseModules.filter((m) => m.courseId === courseId);
+      const moduleOrder =
+        existingModules.length === 0
+          ? 1
+          : Math.max(...existingModules.map((m) => m.order)) + 1;
+
+      const newModule: CourseModule = {
+        id: moduleId,
+        courseId,
+        title: moduleTitle,
+        order: moduleOrder,
+      };
+      setCourseModules((prev) => [...prev, newModule]);
+    }
 
     const existingLessons = courseLessons.filter((l) => l.courseId === courseId);
-    let orderBase =
+    const orderBase =
       existingLessons.length === 0
         ? 0
         : Math.max(...existingLessons.map((l) => l.order));
 
-    const newModule: CourseModule = {
-      id: moduleId,
-      courseId,
-      title: moduleTitle,
-      order: moduleOrder,
-    };
-
     const newLessons: CourseLesson[] = items.map((item, idx) => ({
       id: "l" + Math.random().toString(36).slice(2, 7),
       courseId,
-      moduleId,
+      moduleId: moduleId!,
       order: orderBase + idx + 1,
       title: item.title,
       youtubeVideoId: item.videoId,
       durationSec: item.durationSec,
     }));
 
-    setCourseModules((prev) => [...prev, newModule]);
     setCourseLessons((prev) => [...prev, ...newLessons]);
+
+    const enrolled = inscricoes.filter(
+      (i) => i.courseId === courseId && i.status === "ativa"
+    );
+    for (const ins of enrolled) {
+      dispatchNotification({
+        userId: ins.userId,
+        title: "Novas aulas disponíveis",
+        message: `${items.length} nova(s) aula(s) em "${course?.title ?? "seu curso"}".`,
+        type: "curso",
+        href: `/aprendizagem/cursos/${courseId}`,
+      });
+    }
+
     log({
       user: currentUser?.email ?? "system",
       action: `Importou ${items.length} aulas do YouTube no curso '${courseId}'`,
+      module: "Aprendizagem",
+      severity: "info",
+    });
+  };
+
+  const publishCourseLesson: AppState["publishCourseLesson"] = (params) => {
+    const course = courses.find((c) => c.id === params.courseId);
+    if (!course) return;
+
+    let moduleId = params.moduleId;
+    if (!moduleId) {
+      const existingModules = courseModules.filter((m) => m.courseId === params.courseId);
+      const moduleOrder =
+        existingModules.length === 0
+          ? 1
+          : Math.max(...existingModules.map((m) => m.order)) + 1;
+      moduleId = "m" + Math.random().toString(36).slice(2, 7);
+      const newModule: CourseModule = {
+        id: moduleId,
+        courseId: params.courseId,
+        title: params.moduleTitle?.trim() || "Módulo",
+        order: moduleOrder,
+      };
+      setCourseModules((prev) => [...prev, newModule]);
+    }
+
+    const existingLessons = courseLessons.filter((l) => l.courseId === params.courseId);
+    const order =
+      existingLessons.length === 0
+        ? 1
+        : Math.max(...existingLessons.map((l) => l.order)) + 1;
+
+    const lesson: CourseLesson = {
+      id: "l" + Math.random().toString(36).slice(2, 7),
+      courseId: params.courseId,
+      moduleId,
+      order,
+      title: params.title,
+      youtubeVideoId: params.youtubeVideoId,
+      durationSec: params.durationSec,
+    };
+
+    setCourseLessons((prev) => [...prev, lesson]);
+
+    const enrolled = inscricoes.filter(
+      (i) => i.courseId === params.courseId && i.status === "ativa"
+    );
+    for (const ins of enrolled) {
+      dispatchNotification({
+        userId: ins.userId,
+        title: "Nova aula disponível",
+        message: `"${params.title}" foi publicada em "${course.title}".`,
+        type: "curso",
+        href: `/aprendizagem/cursos/${params.courseId}?aula=${lesson.id}`,
+      });
+    }
+
+    log({
+      user: currentUser?.email ?? "system",
+      action: `Publicou aula '${params.title}' no curso '${course.title}'`,
       module: "Aprendizagem",
       severity: "info",
     });
@@ -1060,6 +1149,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cancelarInscricao,
       completeLesson,
       importPlaylistLessons,
+      publishCourseLesson,
       updateCourseLesson,
       addInteresse,
       updateCertificado,

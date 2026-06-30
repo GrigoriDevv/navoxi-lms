@@ -83,6 +83,15 @@ export const quickShortcuts: QuickShortcut[] = [
     permissions: ["manage_courses", "manage_turmas"],
   },
   {
+    id: "publicar-aulas",
+    label: "Publicar aulas",
+    description: "Publicar vídeos-aula nos seus cursos",
+    href: "/aprendizagem/publicar-aulas",
+    icon: "video",
+    color: "#d97706",
+    permissions: ["publish_lessons"],
+  },
+  {
     id: "trilhas",
     label: "Trilhas",
     description: "Trilhas de aprendizagem",

@@ -7,6 +7,7 @@ import { useAuthScope } from "@/lib/use-auth-scope";
 import { modalityLabels, courseStatusLabels } from "@/lib/aprendizagem";
 import { unitLabels } from "@/lib/rbac";
 import { getCourseLessons } from "@/lib/course-progress";
+import { LessonPublishForm } from "@/components/courses/LessonPublishForm";
 import {
   PageHeader,
   Card,
@@ -20,13 +21,6 @@ import {
 import { Icon } from "@/components/Icon";
 import type { Course, UnitId } from "@/lib/types";
 
-interface ImportDraft {
-  videoId: string;
-  title: string;
-  durationSec?: number;
-  thumbnailUrl?: string;
-}
-
 const statusColor = {
   publicado: "green",
   rascunho: "amber",
@@ -34,7 +28,7 @@ const statusColor = {
 } as const;
 
 export default function CursosPage() {
-  const { addCourse, updateCourse, importPlaylistLessons, updateCourseLesson } = useApp();
+  const { addCourse, updateCourse, updateCourseLesson } = useApp();
   const {
     courses,
     courseLessons,
@@ -50,11 +44,6 @@ export default function CursosPage() {
   const [editing, setEditing] = useState<Course | null>(null);
   const canManage = can("manage_courses");
   const canConsume = can("consume_learning");
-  const [playlistInput, setPlaylistInput] = useState("");
-  const [moduleTitle, setModuleTitle] = useState("Módulo importado");
-  const [importDraft, setImportDraft] = useState<ImportDraft[]>([]);
-  const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     category: "Compliance",
@@ -87,16 +76,7 @@ export default function CursosPage() {
   const lessonCount = (courseId: string) =>
     getCourseLessons(courseId, courseLessons).length;
 
-  const resetImport = () => {
-    setPlaylistInput("");
-    setModuleTitle("Módulo importado");
-    setImportDraft([]);
-    setImportError(null);
-    setImportLoading(false);
-  };
-
   const resetForm = () => {
-    resetImport();
     setForm({
       title: "",
       category: "Compliance",
@@ -111,7 +91,6 @@ export default function CursosPage() {
   };
 
   const openEdit = (c: Course) => {
-    resetImport();
     setEditing(c);
     setForm({
       title: c.title,
@@ -124,47 +103,6 @@ export default function CursosPage() {
       status: c.status,
       cover: c.cover,
     });
-  };
-
-  const fetchPlaylist = async () => {
-    if (!playlistInput.trim()) return;
-    setImportLoading(true);
-    setImportError(null);
-    try {
-      const params = new URLSearchParams({ playlistId: playlistInput.trim() });
-      const res = await fetch(`/api/youtube/playlist?${params}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Falha ao importar playlist");
-      setImportDraft(
-        (data.items as Array<{ videoId: string; durationSec?: number; thumbnailUrl?: string; position: number }>).map(
-          (item, idx) => ({
-            videoId: item.videoId,
-            title: `Aula ${idx + 1}`,
-            durationSec: item.durationSec,
-            thumbnailUrl: item.thumbnailUrl,
-          })
-        )
-      );
-    } catch (e) {
-      setImportError(e instanceof Error ? e.message : "Erro ao importar");
-      setImportDraft([]);
-    } finally {
-      setImportLoading(false);
-    }
-  };
-
-  const saveImport = () => {
-    if (!editing || importDraft.length === 0) return;
-    importPlaylistLessons(
-      editing.id,
-      moduleTitle.trim() || "Módulo importado",
-      importDraft.map((d) => ({
-        videoId: d.videoId,
-        title: d.title,
-        durationSec: d.durationSec,
-      }))
-    );
-    resetImport();
   };
 
   const submit = (e: React.FormEvent) => {
@@ -314,10 +252,9 @@ export default function CursosPage() {
             </Field>
           </div>
           {editing && canManage && (
-            <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
-              <h3 className="text-sm font-semibold text-slate-800">Conteúdo do curso</h3>
+            <div className="mt-4 pt-4 border-t border-slate-100">
               {getCourseLessons(editing.id, courseLessons).length > 0 && (
-                <ul className="space-y-2 max-h-40 overflow-y-auto">
+                <ul className="space-y-2 max-h-32 overflow-y-auto mb-4">
                   {getCourseLessons(editing.id, courseLessons).map((lesson) => (
                     <li key={lesson.id} className="flex gap-2 items-center">
                       <input
@@ -327,65 +264,11 @@ export default function CursosPage() {
                           updateCourseLesson(lesson.id, { title: e.target.value })
                         }
                       />
-                      <span className="text-[10px] text-slate-400 shrink-0">ID oculto</span>
                     </li>
                   ))}
                 </ul>
               )}
-              <Field label="Título do módulo">
-                <input
-                  className={inputClass}
-                  value={moduleTitle}
-                  onChange={(e) => setModuleTitle(e.target.value)}
-                />
-              </Field>
-              <Field label="Playlist do YouTube (URL ou ID)">
-                <div className="flex gap-2">
-                  <input
-                    className={inputClass}
-                    value={playlistInput}
-                    onChange={(e) => setPlaylistInput(e.target.value)}
-                    placeholder="https://youtube.com/playlist?list=PL..."
-                  />
-                  <Button type="button" variant="outline" onClick={() => !importLoading && void fetchPlaylist()}>
-                    {importLoading ? "..." : "Importar"}
-                  </Button>
-                </div>
-              </Field>
-              {importError && (
-                <p className="text-xs text-red-600">{importError}</p>
-              )}
-              {importDraft.length > 0 && (
-                <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-100 rounded-lg p-2">
-                  {importDraft.map((item, idx) => (
-                    <div key={item.videoId} className="flex gap-2 items-center">
-                      {item.thumbnailUrl && (
-                        <img
-                          src={item.thumbnailUrl}
-                          alt=""
-                          className="w-12 h-8 object-cover rounded shrink-0"
-                        />
-                      )}
-                      <input
-                        className={`${inputClass} flex-1 text-sm`}
-                        value={item.title}
-                        onChange={(e) =>
-                          setImportDraft((prev) =>
-                            prev.map((d, i) =>
-                              i === idx ? { ...d, title: e.target.value } : d
-                            )
-                          )
-                        }
-                      />
-                    </div>
-                  ))}
-                  <div className="w-full mt-2">
-                    <Button type="button" onClick={saveImport}>
-                      Salvar {importDraft.length} aulas importadas
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <LessonPublishForm courses={[editing]} />
             </div>
           )}
           <div className="flex justify-end gap-2 mt-4">

@@ -53,7 +53,8 @@ export type PermissionKey =
   | "send_communications"
   | "view_all_units"
   | "consume_learning"
-  | "manage_own_session";
+  | "manage_own_session"
+  | "publish_lessons";
 
 const rolePermissions: Record<Role, PermissionKey[]> = {
   admin_premium: [
@@ -82,7 +83,7 @@ const rolePermissions: Record<Role, PermissionKey[]> = {
     "manage_own_session",
   ],
   gestor_conteudo: ["manage_content", "manage_courses", "consume_learning", "manage_own_session"],
-  instrutor: ["manage_courses", "manage_turmas", "consume_learning", "manage_own_session"],
+  instrutor: ["manage_courses", "manage_turmas", "consume_learning", "manage_own_session", "publish_lessons"],
   aluno: ["consume_learning", "manage_own_session"],
 };
 
@@ -109,6 +110,7 @@ const routeAccess: Record<string, PermissionKey[]> = {
   "/aprendizagem/interesses": ["manage_courses", "manage_turmas", "consume_learning"],
   "/aprendizagem/solicitacoes": ["manage_turmas", "manage_users_all", "manage_users_unit"],
   "/aprendizagem/calendario": ["manage_courses", "consume_learning"],
+  "/aprendizagem/publicar-aulas": ["publish_lessons"],
   "/repositorio": ["manage_content"],
   "/repositorio/questoes": ["manage_content"],
   "/comunicacao": ["send_communications"],
@@ -181,6 +183,14 @@ export const navItems: NavItemDef[] = [
     href: "/aprendizagem/turmas",
     icon: "group",
     permissions: ["manage_turmas"],
+    group: "Aprendizagem",
+    module: "aprendizagem",
+  },
+  {
+    label: "Publicar aulas",
+    href: "/aprendizagem/publicar-aulas",
+    icon: "video",
+    permissions: ["publish_lessons"],
     group: "Aprendizagem",
     module: "aprendizagem",
   },

@@ -59,6 +59,7 @@ export const permissions: Permission[] = [
   { id: "p10", name: "Configurar integrações", description: "Gerenciar SSO, RH e APIs", roles: ["admin_premium"] },
   { id: "p11", name: "Consultar auditoria", description: "Acessar logs e trilhas de auditoria", roles: ["admin_premium"] },
   { id: "p12", name: "Realizar cursos", description: "Inscrever-se e concluir cursos", roles: ["admin_premium", "admin_unidade", "gestor_conteudo", "instrutor", "aluno"] },
+  { id: "p13", name: "Publicar aulas em vídeo", description: "Publicar vídeos-aula nos cursos do instrutor", roles: ["instrutor"] },
 ];
 
 export const courses: Course[] = [

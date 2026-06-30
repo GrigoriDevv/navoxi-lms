@@ -269,6 +269,8 @@ export default function CursosPage() {
                 return { ...lesson, moduleTitle: mod?.title };
               })}
               courseModules={courseModules.filter((m) => m.courseId === editing.id)}
+              courseId={editing.id}
+              allowRemoveAll
               title={`Aulas (${lessonCount(editing.id)})`}
               emptyMessage="Nenhuma aula neste curso ainda."
             />

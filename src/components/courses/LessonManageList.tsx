@@ -12,7 +12,6 @@ import {
   resolveLessonVideoInput,
 } from "@/lib/lesson-media";
 import { Modal, Button, Field, inputClass } from "@/components/ui";
-import { Icon } from "@/components/Icon";
 
 type VideoSourceMode = "youtube" | "mp4";
 
@@ -24,8 +23,10 @@ interface LessonRow extends CourseLesson {
 interface LessonManageListProps {
   lessons: LessonRow[];
   courseModules?: CourseModule[];
+  courseId?: string;
   showCourse?: boolean;
   showPreview?: boolean;
+  allowRemoveAll?: boolean;
   title?: string;
   emptyMessage?: string;
   onChanged?: () => void;
@@ -34,13 +35,15 @@ interface LessonManageListProps {
 export function LessonManageList({
   lessons,
   courseModules = [],
+  courseId,
   showCourse = false,
   showPreview = true,
+  allowRemoveAll = false,
   title = "Aulas do curso",
   emptyMessage = "Nenhuma aula cadastrada.",
   onChanged,
 }: LessonManageListProps) {
-  const { updateCourseLesson, deleteCourseLesson } = useApp();
+  const { updateCourseLesson, deleteCourseLesson, deleteAllCourseLessons } = useApp();
   const [editingLesson, setEditingLesson] = useState<LessonRow | null>(null);
   const [lessonTitle, setLessonTitle] = useState("");
   const [videoSourceMode, setVideoSourceMode] = useState<VideoSourceMode>("youtube");
@@ -146,7 +149,24 @@ export function LessonManageList({
     );
     if (!confirmed) return;
     deleteCourseLesson(lesson.id);
+    if (editingLesson?.id === lesson.id) closeEdit();
     onChanged?.();
+  };
+
+  const handleDeleteAll = () => {
+    if (!courseId || lessons.length === 0) return;
+    const confirmed = window.confirm(
+      `Remover todas as ${lessons.length} aulas deste curso? Esta ação não pode ser desfeita.`
+    );
+    if (!confirmed) return;
+    deleteAllCourseLessons(courseId);
+    closeEdit();
+    onChanged?.();
+  };
+
+  const handleDeleteFromModal = () => {
+    if (!editingLesson) return;
+    handleDelete(editingLesson);
   };
 
   if (lessons.length === 0) {
@@ -160,7 +180,18 @@ export function LessonManageList({
   return (
     <>
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+          {allowRemoveAll && courseId && lessons.length > 0 && (
+            <button
+              type="button"
+              onClick={handleDeleteAll}
+              className="text-xs font-medium text-red-600 hover:text-red-700 hover:underline shrink-0"
+            >
+              Remover todas ({lessons.length})
+            </button>
+          )}
+        </div>
         <ul className="space-y-2 max-h-56 overflow-y-auto">
           {lessons.map((lesson) => (
             <li
@@ -175,31 +206,28 @@ export function LessonManageList({
                   {formatLessonMediaLabel(lesson)} · ordem {lesson.order}
                 </p>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {showPreview && (
                   <Link
                     href={`/aprendizagem/cursos/${lesson.courseId}?aula=${lesson.id}`}
-                    className="p-1.5 rounded-md text-brand hover:bg-brand/10"
-                    title="Preview"
+                    className="text-xs font-medium text-brand hover:underline"
                   >
-                    <Icon name="video" className="w-4 h-4" />
+                    Preview
                   </Link>
                 )}
                 <button
                   type="button"
                   onClick={() => openEdit(lesson)}
-                  className="p-1.5 rounded-md text-slate-600 hover:bg-white hover:text-brand"
-                  title="Editar aula"
+                  className="text-xs font-medium text-slate-600 hover:text-brand"
                 >
-                  <Icon name="edit" className="w-4 h-4" />
+                  Editar
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(lesson)}
-                  className="p-1.5 rounded-md text-red-600 hover:bg-red-50"
-                  title="Apagar aula"
+                  className="text-xs font-medium text-red-600 hover:text-red-700"
                 >
-                  <Icon name="trash" className="w-4 h-4" />
+                  Remover
                 </button>
               </div>
             </li>
@@ -303,11 +331,20 @@ export function LessonManageList({
               </>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={closeEdit}>
-                Cancelar
-              </Button>
-              <Button type="submit">Salvar aula</Button>
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleDeleteFromModal}
+                className="text-sm font-semibold text-red-600 hover:text-red-700"
+              >
+                Remover aula
+              </button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={closeEdit}>
+                  Cancelar
+                </Button>
+                <Button type="submit">Salvar aula</Button>
+              </div>
             </div>
           </form>
         )}

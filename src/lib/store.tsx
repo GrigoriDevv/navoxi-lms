@@ -194,6 +194,7 @@ interface AppState {
     data: Partial<Pick<CourseLesson, "title" | "youtubeVideoId" | "videoUrl" | "moduleId" | "order">>
   ) => void;
   deleteCourseLesson: (lessonId: string) => void;
+  deleteAllCourseLessons: (courseId: string) => void;
   addInteresse: (i: Omit<InteresseCurso, "id" | "registeredAt" | "notified">) => void;
   updateCertificado: (id: string, status: Certificado["status"]) => void;
   addPost: (p: Omit<Post, "id" | "publishedAt" | "author" | "status">) => void;
@@ -1052,6 +1053,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const deleteAllCourseLessons: AppState["deleteAllCourseLessons"] = (courseId) => {
+    const toRemove = courseLessons.filter((l) => l.courseId === courseId);
+    if (toRemove.length === 0) return;
+
+    const removedIds = new Set(toRemove.map((l) => l.id));
+    setCourseLessons((prev) => prev.filter((l) => l.courseId !== courseId));
+    setLessonProgress((prev) => prev.filter((p) => !removedIds.has(p.lessonId)));
+
+    const course = courses.find((c) => c.id === courseId);
+    log({
+      user: currentUser?.email ?? "system",
+      action: `Removeu ${toRemove.length} aula(s) do curso '${course?.title ?? courseId}'`,
+      module: "Aprendizagem",
+      severity: "alerta",
+    });
+  };
+
   const addInteresse: AppState["addInteresse"] = (i) => {
     const id = "int" + Math.random().toString(36).slice(2, 7);
     setInteresses((prev) => [{ ...i, id, registeredAt: now(), notified: false }, ...prev]);
@@ -1190,6 +1208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       publishCourseLesson,
       updateCourseLesson,
       deleteCourseLesson,
+      deleteAllCourseLessons,
       addInteresse,
       updateCertificado,
       addPost,

@@ -11,6 +11,7 @@ import {
   getPrevLessonId,
   getCompletedLessonIds,
 } from "@/lib/course-progress";
+import { isInstructorCourse } from "@/lib/instructor-courses";
 import { PageHeader, Card, Button } from "@/components/ui";
 import { CoursePlayerShell } from "@/components/courses/CoursePlayerShell";
 import Link from "next/link";
@@ -46,6 +47,8 @@ export default function CoursePlayerPage() {
   );
 
   const canManage = can("manage_courses");
+  const isInstructor =
+    !!course && !!currentUser && isInstructorCourse(course, currentUser.name);
   const enrollment = useMemo(
     () =>
       currentUser
@@ -58,7 +61,7 @@ export default function CoursePlayerPage() {
         : undefined,
     [currentUser, inscricoes, courseId]
   );
-  const hasAccess = canManage || !!enrollment;
+  const hasAccess = canManage || !!enrollment || (can("publish_lessons") && isInstructor);
 
   const completedIds = useMemo(
     () =>
@@ -148,7 +151,18 @@ export default function CoursePlayerPage() {
           {canManage && (
             <p className="mt-2 text-sm">
               <Link href="/aprendizagem/cursos" className="text-brand hover:underline">
-                Importe vídeos na gestão de cursos
+                Adicione vídeos na gestão de cursos
+              </Link>
+              {" "}ou em{" "}
+              <Link href="/aprendizagem/publicar-aulas" className="text-brand hover:underline">
+                Publicar aulas
+              </Link>
+            </p>
+          )}
+          {isInstructor && !canManage && (
+            <p className="mt-2 text-sm">
+              <Link href="/aprendizagem/publicar-aulas" className="text-brand hover:underline">
+                Publique aulas em vídeo
               </Link>
             </p>
           )}
@@ -184,7 +198,7 @@ export default function CoursePlayerPage() {
         onNext={nextId ? () => selectLesson(nextId) : undefined}
         hasPrev={!!prevId}
         hasNext={!!nextId}
-        previewMode={canManage && !enrollment}
+        previewMode={(canManage || isInstructor) && !enrollment}
       />
     </div>
   );

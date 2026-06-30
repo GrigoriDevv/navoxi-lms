@@ -7,6 +7,7 @@ import { useAuthScope } from "@/lib/use-auth-scope";
 import { modalityLabels, courseStatusLabels } from "@/lib/aprendizagem";
 import { unitLabels } from "@/lib/rbac";
 import { getCourseLessons } from "@/lib/course-progress";
+import { isInstructorCourse } from "@/lib/instructor-courses";
 import { LessonPublishForm } from "@/components/courses/LessonPublishForm";
 import { LessonManageList } from "@/components/courses/LessonManageList";
 import {
@@ -77,6 +78,21 @@ export default function CursosPage() {
 
   const lessonCount = (courseId: string) =>
     getCourseLessons(courseId, courseLessons).length;
+
+  const canOpenCourse = (c: Course) => {
+    if (c.status !== "publicado") return false;
+    const isInstructor =
+      !!currentUser && isInstructorCourse(c, currentUser.name);
+    return (
+      (canManage || myEnrolledIds.has(c.id) || isInstructor) &&
+      (canConsume || canManage)
+    );
+  };
+
+  const canEnterPlayer = (c: Course) => {
+    const lessons = lessonCount(c.id);
+    return canOpenCourse(c) && (lessons > 0 || canManage || isInstructorCourse(c, currentUser?.name ?? ""));
+  };
 
   const resetForm = () => {
     setForm({
@@ -190,17 +206,21 @@ export default function CursosPage() {
                 <ProgressBar value={c.completion} />
               </div>
               <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
-                {canConsume &&
-                  c.status === "publicado" &&
-                  (myEnrolledIds.has(c.id) || canManage) &&
-                  lessonCount(c.id) > 0 && (
+                {canEnterPlayer(c) && (
                     <Link
                       href={`/aprendizagem/cursos/${c.id}`}
                       className="text-xs font-semibold text-white bg-brand px-3 py-1.5 rounded-lg hover:opacity-90"
                     >
-                      {myEnrolledIds.has(c.id) ? "Assistir" : "Preview"}
+                      {myEnrolledIds.has(c.id)
+                        ? "Assistir"
+                        : lessonCount(c.id) > 0
+                          ? "Preview"
+                          : "Abrir curso"}
                     </Link>
                   )}
+                {canOpenCourse(c) && lessonCount(c.id) === 0 && !canManage && !isInstructorCourse(c, currentUser?.name ?? "") && (
+                  <span className="text-xs text-slate-400">Conteúdo em breve</span>
+                )}
                 {canManage && (
                   <>
                   <button onClick={() => openEdit(c)} className="text-xs text-brand font-medium hover:underline">Editar</button>

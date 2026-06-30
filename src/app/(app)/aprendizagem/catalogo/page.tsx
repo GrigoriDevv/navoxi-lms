@@ -389,6 +389,11 @@ export default function CatalogoPage() {
                           Continuar curso
                         </Link>
                       )}
+                      {i.status === "ativa" && lessons.length === 0 && (
+                        <p className="mt-3 text-xs text-slate-400 text-center">
+                          Aguardando publicação das aulas
+                        </p>
+                      )}
                       {i.status === "ativa" && (
                         <button
                           onClick={() => cancelarInscricao(i.id)}

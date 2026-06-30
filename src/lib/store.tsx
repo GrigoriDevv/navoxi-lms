@@ -172,7 +172,12 @@ interface AppState {
   importPlaylistLessons: (
     courseId: string,
     moduleTitle: string,
-    items: Array<{ videoId: string; title: string; durationSec?: number }>,
+    items: Array<{
+      videoId?: string;
+      videoUrl?: string;
+      title: string;
+      durationSec?: number;
+    }>,
     existingModuleId?: string
   ) => void;
   publishCourseLesson: (params: {
@@ -923,6 +928,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       order: orderBase + idx + 1,
       title: item.title,
       youtubeVideoId: item.videoId,
+      videoUrl: item.videoUrl,
       durationSec: item.durationSec,
     }));
 

@@ -251,34 +251,38 @@ export default function CursosPage() {
               </select>
             </Field>
           </div>
-          {editing && canManage && (
-            <div className="mt-4 pt-4 border-t border-slate-100">
-              {getCourseLessons(editing.id, courseLessons).length > 0 && (
-                <ul className="space-y-2 max-h-32 overflow-y-auto mb-4">
-                  {getCourseLessons(editing.id, courseLessons).map((lesson) => (
-                    <li key={lesson.id} className="flex gap-2 items-center">
-                      <input
-                        className={`${inputClass} flex-1 text-sm`}
-                        value={lesson.title}
-                        onChange={(e) =>
-                          updateCourseLesson(lesson.id, { title: e.target.value })
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <LessonPublishForm courses={[editing]} />
-            </div>
-          )}
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => { setOpen(false); setEditing(null); resetForm(); }}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={() => { setOpen(false); setEditing(null); resetForm(); }}>Cancelar</Button>
             <Button type="submit">
               <Icon name="check" className="w-4 h-4" />
               {editing ? "Salvar alterações" : "Criar curso"}
             </Button>
           </div>
         </form>
+        {editing && canManage && (
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            {getCourseLessons(editing.id, courseLessons).length > 0 && (
+              <ul className="space-y-2 max-h-32 overflow-y-auto mb-4">
+                {getCourseLessons(editing.id, courseLessons).map((lesson) => (
+                  <li key={lesson.id} className="flex gap-2 items-center">
+                    <input
+                      className={`${inputClass} flex-1 text-sm`}
+                      value={lesson.title}
+                      onChange={(e) =>
+                        updateCourseLesson(lesson.id, { title: e.target.value })
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <LessonPublishForm
+              key={editing.id}
+              courses={[editing]}
+              fixedCourseId={editing.id}
+            />
+          </div>
+        )}
       </Modal>
     </div>
   );

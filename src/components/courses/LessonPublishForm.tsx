@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
 import { getCourseLessons } from "@/lib/course-progress";
 import { getInstructorCourses } from "@/lib/instructor-courses";
@@ -15,10 +15,18 @@ export interface ImportDraft {
   thumbnailUrl?: string;
 }
 
+interface Mp4Draft {
+  id: string;
+  title: string;
+  videoUrl: string;
+  fileName: string;
+}
+
 type VideoSourceMode = "youtube" | "mp4";
 
 interface LessonPublishFormProps {
   courses: Course[];
+  fixedCourseId?: string;
   instructorName?: string;
   restrictToInstructor?: boolean;
   onPublished?: () => void;
@@ -28,6 +36,7 @@ const MAX_UPLOAD_MB = 200;
 
 export function LessonPublishForm({
   courses,
+  fixedCourseId,
   instructorName,
   restrictToInstructor = false,
   onPublished,
@@ -51,6 +60,7 @@ export function LessonPublishForm({
   const [videoInput, setVideoInput] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [mp4Drafts, setMp4Drafts] = useState<Mp4Draft[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [playlistInput, setPlaylistInput] = useState("");
   const [importDraft, setImportDraft] = useState<ImportDraft[]>([]);
@@ -58,6 +68,29 @@ export function LessonPublishForm({
   const [importError, setImportError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const lockedCourse = useMemo(
+    () => (fixedCourseId ? availableCourses.find((c) => c.id === fixedCourseId) : null),
+    [availableCourses, fixedCourseId]
+  );
+
+  const syncCourseModules = (id: string) => {
+    const mods = courseModules.filter((m) => m.courseId === id);
+    if (mods.length > 0) {
+      setModuleMode("existing");
+      setModuleId(mods.sort((a, b) => a.order - b.order)[0].id);
+    } else {
+      setModuleMode("new");
+      setModuleId("");
+    }
+  };
+
+  useEffect(() => {
+    if (fixedCourseId && availableCourses.some((c) => c.id === fixedCourseId)) {
+      setCourseId(fixedCourseId);
+      syncCourseModules(fixedCourseId);
+    }
+  }, [fixedCourseId, availableCourses]);
 
   const courseModulesForCourse = useMemo(
     () =>
@@ -73,15 +106,9 @@ export function LessonPublishForm({
       : null;
 
   const handleCourseChange = (id: string) => {
+    if (fixedCourseId) return;
     setCourseId(id);
-    const mods = courseModules.filter((m) => m.courseId === id);
-    if (mods.length > 0) {
-      setModuleMode("existing");
-      setModuleId(mods.sort((a, b) => a.order - b.order)[0].id);
-    } else {
-      setModuleMode("new");
-      setModuleId("");
-    }
+    syncCourseModules(id);
     setFeedback(null);
     setError(null);
   };
@@ -89,37 +116,68 @@ export function LessonPublishForm({
   const clearUploadedFile = () => {
     setUploadedFile(null);
     setUploadedFileUrl(null);
+    setMp4Drafts([]);
     setUploadingFile(false);
   };
 
-  const handleFileChange = (file: File | null) => {
-    clearUploadedFile();
-    if (!file) return;
+  const titleFromFileName = (name: string) =>
+    name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || "Nova aula";
 
-    if (!file.type.startsWith("video/")) {
-      setError("Selecione um arquivo de vídeo (MP4, WebM, MOV, etc.).");
+  const readVideoFile = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("Falha ao ler arquivo"));
+      };
+      reader.onerror = () => reject(new Error("Não foi possível ler o arquivo de vídeo."));
+      reader.readAsDataURL(file);
+    });
+
+  const handleFileChange = async (files: FileList | null) => {
+    clearUploadedFile();
+    if (!files || files.length === 0) return;
+
+    const selected = Array.from(files);
+    const invalid = selected.find((f) => !f.type.startsWith("video/"));
+    if (invalid) {
+      setError("Selecione apenas arquivos de vídeo (MP4, WebM, MOV, etc.).");
       return;
     }
 
-    const sizeMb = file.size / (1024 * 1024);
-    if (sizeMb > MAX_UPLOAD_MB) {
-      setError(`Arquivo muito grande (${sizeMb.toFixed(0)} MB). Máximo: ${MAX_UPLOAD_MB} MB.`);
+    const tooLarge = selected.find((f) => f.size / (1024 * 1024) > MAX_UPLOAD_MB);
+    if (tooLarge) {
+      setError(`Arquivo muito grande (${tooLarge.name}). Máximo: ${MAX_UPLOAD_MB} MB por vídeo.`);
       return;
     }
 
     setUploadingFile(true);
     setError(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setUploadedFile(file);
-      setUploadedFileUrl(typeof reader.result === "string" ? reader.result : null);
+    try {
+      if (selected.length === 1) {
+        const file = selected[0];
+        const dataUrl = await readVideoFile(file);
+        setUploadedFile(file);
+        setUploadedFileUrl(dataUrl);
+        if (!lessonTitle.trim()) {
+          setLessonTitle(titleFromFileName(file.name));
+        }
+      } else {
+        const drafts = await Promise.all(
+          selected.map(async (file) => ({
+            id: `${file.name}-${file.size}-${file.lastModified}`,
+            title: titleFromFileName(file.name),
+            videoUrl: await readVideoFile(file),
+            fileName: file.name,
+          }))
+        );
+        setMp4Drafts(drafts);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar vídeos.");
+    } finally {
       setUploadingFile(false);
-    };
-    reader.onerror = () => {
-      setError("Não foi possível ler o arquivo de vídeo.");
-      setUploadingFile(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const fetchPlaylist = async () => {
@@ -174,8 +232,55 @@ export function LessonPublishForm({
     onPublished?.();
   };
 
+  const publishToCourse = (payload: {
+    title: string;
+    youtubeVideoId?: string;
+    videoUrl?: string;
+  }) => {
+    publishCourseLesson({
+      courseId,
+      moduleId: moduleMode === "existing" ? moduleId : undefined,
+      moduleTitle: moduleMode === "new" ? moduleTitle : undefined,
+      title: payload.title,
+      youtubeVideoId: payload.youtubeVideoId,
+      videoUrl: payload.videoUrl,
+    });
+  };
+
+  const publishMp4Batch = () => {
+    if (!courseId || mp4Drafts.length === 0) return;
+    if (moduleMode === "existing" && !moduleId && courseModulesForCourse.length > 0) {
+      setError("Selecione um módulo.");
+      return;
+    }
+    if (moduleMode === "new" && !moduleTitle.trim()) {
+      setError("Informe o título do módulo.");
+      return;
+    }
+
+    const count = mp4Drafts.length;
+    importPlaylistLessons(
+      courseId,
+      moduleTitle.trim() || "Módulo de vídeos",
+      mp4Drafts.map((draft) => ({
+        title: draft.title.trim() || titleFromFileName(draft.fileName),
+        videoUrl: draft.videoUrl,
+      })),
+      moduleMode === "existing" && moduleId ? moduleId : undefined
+    );
+
+    setMp4Drafts([]);
+    setFeedback(
+      lockedCourse
+        ? `${count} vídeo(s) adicionados ao curso "${lockedCourse.title}".`
+        : `${count} vídeo(s) adicionados ao curso.`
+    );
+    onPublished?.();
+  };
+
   const publishSingle = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setError(null);
     setFeedback(null);
 
@@ -211,10 +316,7 @@ export function LessonPublishForm({
       return;
     }
 
-    publishCourseLesson({
-      courseId,
-      moduleId: moduleMode === "existing" ? moduleId : undefined,
-      moduleTitle: moduleMode === "new" ? moduleTitle : undefined,
+    publishToCourse({
       title: lessonTitle.trim(),
       youtubeVideoId: resolved.youtubeVideoId,
       videoUrl: resolved.videoUrl,
@@ -223,7 +325,11 @@ export function LessonPublishForm({
     setLessonTitle("");
     setVideoInput("");
     if (videoSourceMode === "mp4") clearUploadedFile();
-    setFeedback("Aula publicada. Alunos matriculados foram notificados.");
+    setFeedback(
+      lockedCourse
+        ? `Aula publicada em "${lockedCourse.title}".`
+        : "Aula publicada. Alunos matriculados foram notificados."
+    );
     onPublished?.();
   };
 
@@ -238,7 +344,9 @@ export function LessonPublishForm({
   return (
     <div className="space-y-6">
       <form onSubmit={publishSingle} className="space-y-4 p-5 border border-slate-200 rounded-xl bg-white">
-        <h3 className="text-sm font-semibold text-slate-800">Publicar aula em vídeo</h3>
+        <h3 className="text-sm font-semibold text-slate-800">
+          {lockedCourse ? `Adicionar vídeos ao curso: ${lockedCourse.title}` : "Publicar aula em vídeo"}
+        </h3>
 
         {feedback && (
           <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
@@ -251,19 +359,21 @@ export function LessonPublishForm({
           </p>
         )}
 
-        <Field label="Curso">
-          <select
-            className={inputClass}
-            value={courseId}
-            onChange={(e) => handleCourseChange(e.target.value)}
-          >
-            {availableCourses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title} ({c.status})
-              </option>
-            ))}
-          </select>
-        </Field>
+        {!fixedCourseId && (
+          <Field label="Curso">
+            <select
+              className={inputClass}
+              value={courseId}
+              onChange={(e) => handleCourseChange(e.target.value)}
+            >
+              {availableCourses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title} ({c.status})
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         <Field label="Módulo">
           {courseModulesForCourse.length > 0 && (
@@ -363,29 +473,59 @@ export function LessonPublishForm({
             <Field label="Arquivo de vídeo">
               <input
                 type="file"
+                multiple
                 accept="video/mp4,video/webm,video/quicktime,video/*,.mp4,.webm,.mov"
                 className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white`}
-                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                onChange={(e) => void handleFileChange(e.target.files)}
               />
               {uploadingFile && (
-                <p className="text-xs text-slate-500 mt-1">Carregando arquivo...</p>
+                <p className="text-xs text-slate-500 mt-1">Carregando arquivo(s)...</p>
               )}
               {uploadedFile && !uploadingFile && (
                 <p className="text-xs text-slate-500 mt-1">
                   {uploadedFile.name} ({(uploadedFile.size / (1024 * 1024)).toFixed(1)} MB)
                 </p>
               )}
+              {mp4Drafts.length > 0 && (
+                <div className="mt-3 space-y-2 max-h-48 overflow-y-auto border border-slate-100 rounded-lg p-2">
+                  {mp4Drafts.map((draft) => (
+                    <div key={draft.id} className="flex gap-2 items-center">
+                      <input
+                        className={`${inputClass} flex-1 text-sm`}
+                        value={draft.title}
+                        onChange={(e) =>
+                          setMp4Drafts((prev) =>
+                            prev.map((d) =>
+                              d.id === draft.id ? { ...d, title: e.target.value } : d
+                            )
+                          )
+                        }
+                      />
+                      <span className="text-[10px] text-slate-400 shrink-0 max-w-[100px] truncate">
+                        {draft.fileName}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="pt-1">
+                    <Button type="button" onClick={publishMp4Batch}>
+                      Adicionar {mp4Drafts.length} vídeo(s) ao curso
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Field>
-            <Field label="Ou URL direta do vídeo">
-              <input
-                className={inputClass}
-                value={videoInput}
-                onChange={(e) => setVideoInput(e.target.value)}
-                placeholder="https://exemplo.com/aula.mp4"
-                disabled={!!uploadedFile}
-              />
-            </Field>
-            {previewUrl && (
+            {mp4Drafts.length === 0 && (
+              <Field label="Ou URL direta do vídeo">
+                <input
+                  className={inputClass}
+                  value={videoInput}
+                  onChange={(e) => setVideoInput(e.target.value)}
+                  placeholder="https://exemplo.com/aula.mp4"
+                  disabled={!!uploadedFile}
+                />
+              </Field>
+            )}
+            {previewUrl && mp4Drafts.length === 0 && (
               <div className="rounded-lg overflow-hidden border border-slate-200 bg-black aspect-video max-w-md">
                 <video
                   src={previewUrl}
@@ -398,7 +538,9 @@ export function LessonPublishForm({
           </>
         )}
 
-        <Button type="submit">Publicar aula</Button>
+        {!(videoSourceMode === "mp4" && mp4Drafts.length > 0) && (
+          <Button type="submit">Publicar aula</Button>
+        )}
       </form>
 
       <div className="space-y-3 p-5 border border-slate-200 rounded-xl bg-slate-50/50">

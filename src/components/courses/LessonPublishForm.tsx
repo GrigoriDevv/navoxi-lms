@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
 import { getCourseLessons } from "@/lib/course-progress";
 import { getInstructorCourses } from "@/lib/instructor-courses";
-import { parseYoutubeVideoId } from "@/lib/youtube-url";
+import { resolveLessonVideoInput } from "@/lib/lesson-media";
 import type { Course } from "@/lib/types";
 import { Button, Field, inputClass } from "@/components/ui";
 
@@ -15,12 +15,16 @@ export interface ImportDraft {
   thumbnailUrl?: string;
 }
 
+type VideoSourceMode = "youtube" | "mp4";
+
 interface LessonPublishFormProps {
   courses: Course[];
   instructorName?: string;
   restrictToInstructor?: boolean;
   onPublished?: () => void;
 }
+
+const MAX_UPLOAD_MB = 200;
 
 export function LessonPublishForm({
   courses,
@@ -43,7 +47,11 @@ export function LessonPublishForm({
   const [moduleId, setModuleId] = useState("");
   const [moduleTitle, setModuleTitle] = useState("Novo módulo");
   const [lessonTitle, setLessonTitle] = useState("");
+  const [videoSourceMode, setVideoSourceMode] = useState<VideoSourceMode>("youtube");
   const [videoInput, setVideoInput] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [playlistInput, setPlaylistInput] = useState("");
   const [importDraft, setImportDraft] = useState<ImportDraft[]>([]);
   const [importLoading, setImportLoading] = useState(false);
@@ -59,6 +67,11 @@ export function LessonPublishForm({
     [courseModules, courseId]
   );
 
+  const previewUrl =
+    videoSourceMode === "mp4"
+      ? uploadedFileUrl ?? (videoInput.trim() || null)
+      : null;
+
   const handleCourseChange = (id: string) => {
     setCourseId(id);
     const mods = courseModules.filter((m) => m.courseId === id);
@@ -71,6 +84,42 @@ export function LessonPublishForm({
     }
     setFeedback(null);
     setError(null);
+  };
+
+  const clearUploadedFile = () => {
+    setUploadedFile(null);
+    setUploadedFileUrl(null);
+    setUploadingFile(false);
+  };
+
+  const handleFileChange = (file: File | null) => {
+    clearUploadedFile();
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      setError("Selecione um arquivo de vídeo (MP4, WebM, MOV, etc.).");
+      return;
+    }
+
+    const sizeMb = file.size / (1024 * 1024);
+    if (sizeMb > MAX_UPLOAD_MB) {
+      setError(`Arquivo muito grande (${sizeMb.toFixed(0)} MB). Máximo: ${MAX_UPLOAD_MB} MB.`);
+      return;
+    }
+
+    setUploadingFile(true);
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedFile(file);
+      setUploadedFileUrl(typeof reader.result === "string" ? reader.result : null);
+      setUploadingFile(false);
+    };
+    reader.onerror = () => {
+      setError("Não foi possível ler o arquivo de vídeo.");
+      setUploadingFile(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const fetchPlaylist = async () => {
@@ -134,11 +183,21 @@ export function LessonPublishForm({
       setError("Selecione um curso.");
       return;
     }
-    const videoId = parseYoutubeVideoId(videoInput);
-    if (!videoId) {
-      setError("URL ou ID de vídeo do YouTube inválido.");
+
+    const resolved =
+      videoSourceMode === "youtube"
+        ? resolveLessonVideoInput(videoInput)
+        : resolveLessonVideoInput(videoInput, uploadedFileUrl);
+
+    if (!resolved) {
+      setError(
+        videoSourceMode === "youtube"
+          ? "URL ou ID de vídeo do YouTube inválido."
+          : "Envie um arquivo de vídeo ou informe uma URL direta (.mp4, .webm, .mov)."
+      );
       return;
     }
+
     if (!lessonTitle.trim()) {
       setError("Informe o título da aula.");
       return;
@@ -157,11 +216,13 @@ export function LessonPublishForm({
       moduleId: moduleMode === "existing" ? moduleId : undefined,
       moduleTitle: moduleMode === "new" ? moduleTitle : undefined,
       title: lessonTitle.trim(),
-      youtubeVideoId: videoId,
+      youtubeVideoId: resolved.youtubeVideoId,
+      videoUrl: resolved.videoUrl,
     });
 
     setLessonTitle("");
     setVideoInput("");
+    if (videoSourceMode === "mp4") clearUploadedFile();
     setFeedback("Aula publicada. Alunos matriculados foram notificados.");
     onPublished?.();
   };
@@ -257,15 +318,85 @@ export function LessonPublishForm({
           />
         </Field>
 
-        <Field label="Vídeo do YouTube (URL ou ID)">
-          <input
-            required
-            className={inputClass}
-            value={videoInput}
-            onChange={(e) => setVideoInput(e.target.value)}
-            placeholder="https://youtube.com/watch?v=..."
-          />
+        <Field label="Formato do vídeo">
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                checked={videoSourceMode === "youtube"}
+                onChange={() => {
+                  setVideoSourceMode("youtube");
+                  clearUploadedFile();
+                  setVideoInput("");
+                  setError(null);
+                }}
+              />
+              YouTube
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                checked={videoSourceMode === "mp4"}
+                onChange={() => {
+                  setVideoSourceMode("mp4");
+                  setVideoInput("");
+                  setError(null);
+                }}
+              />
+              Arquivo / URL de vídeo (MP4)
+            </label>
+          </div>
         </Field>
+
+        {videoSourceMode === "youtube" ? (
+          <Field label="Vídeo do YouTube (URL ou ID)">
+            <input
+              required
+              className={inputClass}
+              value={videoInput}
+              onChange={(e) => setVideoInput(e.target.value)}
+              placeholder="https://youtube.com/watch?v=..."
+            />
+          </Field>
+        ) : (
+          <>
+            <Field label="Arquivo de vídeo">
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,video/*,.mp4,.webm,.mov"
+                className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white`}
+                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+              />
+              {uploadingFile && (
+                <p className="text-xs text-slate-500 mt-1">Carregando arquivo...</p>
+              )}
+              {uploadedFile && !uploadingFile && (
+                <p className="text-xs text-slate-500 mt-1">
+                  {uploadedFile.name} ({(uploadedFile.size / (1024 * 1024)).toFixed(1)} MB)
+                </p>
+              )}
+            </Field>
+            <Field label="Ou URL direta do vídeo">
+              <input
+                className={inputClass}
+                value={videoInput}
+                onChange={(e) => setVideoInput(e.target.value)}
+                placeholder="https://exemplo.com/aula.mp4"
+                disabled={!!uploadedFile}
+              />
+            </Field>
+            {previewUrl && (
+              <div className="rounded-lg overflow-hidden border border-slate-200 bg-black aspect-video max-w-md">
+                <video
+                  src={previewUrl}
+                  className="w-full h-full object-contain"
+                  controls
+                  preload="metadata"
+                />
+              </div>
+            )}
+          </>
+        )}
 
         <Button type="submit">Publicar aula</Button>
       </form>

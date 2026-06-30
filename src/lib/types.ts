@@ -54,7 +54,8 @@ export interface CourseLesson {
   moduleId: string;
   order: number;
   title: string;
-  youtubeVideoId: string;
+  youtubeVideoId?: string;
+  videoUrl?: string;
   durationSec?: number;
 }
 

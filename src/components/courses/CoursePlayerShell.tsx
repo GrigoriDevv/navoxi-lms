@@ -6,7 +6,7 @@ import type { Course, CourseLesson, CourseModule, LessonProgress } from "@/lib/t
 import { computeProgress } from "@/lib/course-progress";
 import { ProgressBar } from "@/components/ui";
 import { Icon } from "@/components/Icon";
-import { YoutubePlayer } from "./YoutubePlayer";
+import { LessonVideoPlayer } from "./LessonVideoPlayer";
 import {
   CourseLessonSidebar,
   buildCompletedIds,
@@ -133,9 +133,8 @@ export function CoursePlayerShell({
               </div>
 
               <div className="w-full">
-                <YoutubePlayer
-                  key={activeLesson.id}
-                  videoId={activeLesson.youtubeVideoId}
+                <LessonVideoPlayer
+                  lesson={activeLesson}
                   onComplete={() => onLessonComplete(activeLesson.id)}
                 />
               </div>

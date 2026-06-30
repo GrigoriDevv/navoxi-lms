@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuthScope } from "@/lib/use-auth-scope";
 import { getInstructorCourses } from "@/lib/instructor-courses";
-import { getCourseLessons } from "@/lib/course-progress";
+import { formatLessonMediaLabel } from "@/lib/lesson-media";
 import { LessonPublishForm } from "@/components/courses/LessonPublishForm";
 import { PageHeader, Card } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -90,6 +90,7 @@ export default function PublicarAulasPage() {
                     <th className="px-4 py-3 font-medium">Aula</th>
                     <th className="px-4 py-3 font-medium">Curso</th>
                     <th className="px-4 py-3 font-medium">Módulo</th>
+                    <th className="px-4 py-3 font-medium">Formato</th>
                     <th className="px-4 py-3 font-medium">Ordem</th>
                     <th className="px-4 py-3 font-medium" />
                   </tr>
@@ -102,6 +103,7 @@ export default function PublicarAulasPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-600">{lesson.courseTitle}</td>
                       <td className="px-4 py-3 text-slate-500">{lesson.moduleTitle}</td>
+                      <td className="px-4 py-3 text-slate-500">{formatLessonMediaLabel(lesson)}</td>
                       <td className="px-4 py-3 text-slate-500">{lesson.order}</td>
                       <td className="px-4 py-3 text-right">
                         <Link

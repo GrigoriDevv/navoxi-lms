@@ -180,7 +180,8 @@ interface AppState {
     moduleId?: string;
     moduleTitle?: string;
     title: string;
-    youtubeVideoId: string;
+    youtubeVideoId?: string;
+    videoUrl?: string;
     durationSec?: number;
   }) => void;
   updateCourseLesson: (lessonId: string, data: Partial<Pick<CourseLesson, "title">>) => void;
@@ -951,6 +952,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const publishCourseLesson: AppState["publishCourseLesson"] = (params) => {
     const course = courses.find((c) => c.id === params.courseId);
     if (!course) return;
+    if (!params.youtubeVideoId && !params.videoUrl) return;
 
     let moduleId = params.moduleId;
     if (!moduleId) {
@@ -982,6 +984,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       order,
       title: params.title,
       youtubeVideoId: params.youtubeVideoId,
+      videoUrl: params.videoUrl,
       durationSec: params.durationSec,
     };
 

@@ -6,12 +6,28 @@
 
 | Camada | Tecnologia |
 |---|---|
-| Framework | [Next.js 16](https://nextjs.org/) (App Router) |
-| UI | React 19 + TypeScript |
+| Front | [Next.js 16](https://nextjs.org/) (App Router) + React 19 + TypeScript |
 | Estilo | Tailwind CSS v4 |
-| Estado | React Context (`src/lib/store.tsx`) |
-| Persistência | `localStorage` (sessão, preferências) |
-| Dados | Mock estático (`src/lib/mock-data.ts`) |
+| Estado UI | React Context (`src/lib/store.tsx`) |
+| Backend (Fase 1) | Java 21 + Spring Boot em [`backend/`](backend/) |
+| Persistência API | H2 (local) / PostgreSQL + Flyway (prod) |
+| Fallback demo | Mock em `src/lib/mock-data.ts` quando `NEXT_PUBLIC_USE_JAVA_API` ≠ `true` |
+
+### Backend Java (opcional)
+
+```bash
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+No front (`.env.local`):
+
+```env
+NEXT_PUBLIC_USE_JAVA_API=true
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
+
+Detalhes: [`backend/README.md`](backend/README.md).
 
 ## Início rápido
 

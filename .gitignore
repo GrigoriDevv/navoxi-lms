@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Java / Maven
+backend/target/
+backend/.tools/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+!backend/mvnw
+!backend/mvnw.cmd
+.idea/
+*.iml
+.vscode/

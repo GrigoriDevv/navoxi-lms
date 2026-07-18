@@ -44,6 +44,8 @@ import type {
 import { hasPermission } from "./rbac";
 import { applyBrandColor } from "./platform-config";
 import { computeProgress, syncInscricaoProgress } from "./course-progress";
+import { useJavaApi } from "./api-config";
+import { lmsApi } from "./api-client";
 
 const VALID_ROLES: Role[] = [
   "admin_premium",
@@ -296,18 +298,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(LEGACY_STORAGE_PREFS);
         }
       }
-      const storedProgress = localStorage.getItem(STORAGE_LESSON_PROGRESS);
-      if (storedProgress) {
-        try {
-          const parsed = JSON.parse(storedProgress) as LessonProgress[];
-          if (Array.isArray(parsed)) {
-            const key = (p: LessonProgress) => `${p.userId}:${p.lessonId}`;
-            const merged = new Map<string, LessonProgress>();
-            for (const p of seed.lessonProgress) merged.set(key(p), p);
-            for (const p of parsed) merged.set(key(p), p);
-            setLessonProgress(Array.from(merged.values()));
-          }
-        } catch {}
+      if (!useJavaApi()) {
+        const storedProgress = localStorage.getItem(STORAGE_LESSON_PROGRESS);
+        if (storedProgress) {
+          try {
+            const parsed = JSON.parse(storedProgress) as LessonProgress[];
+            if (Array.isArray(parsed)) {
+              const key = (p: LessonProgress) => `${p.userId}:${p.lessonId}`;
+              const merged = new Map<string, LessonProgress>();
+              for (const p of seed.lessonProgress) merged.set(key(p), p);
+              for (const p of parsed) merged.set(key(p), p);
+              setLessonProgress(Array.from(merged.values()));
+            }
+          } catch {}
+        }
       }
 
       fetch("/api/auth/session")
@@ -341,10 +345,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (useJavaApi()) return;
     try {
       localStorage.setItem(STORAGE_LESSON_PROGRESS, JSON.stringify(lessonProgress));
     } catch {}
   }, [lessonProgress]);
+
+  useEffect(() => {
+    if (!useJavaApi()) return;
+    let cancelled = false;
+    void Promise.all([lmsApi.listCourses(), lmsApi.listModules(), lmsApi.listLessons()])
+      .then(([apiCourses, apiModules, apiLessons]) => {
+        if (cancelled) return;
+        setCourses(apiCourses);
+        setCourseModules(apiModules);
+        setCourseLessons(apiLessons);
+      })
+      .catch((err) => {
+        console.error("[lms-api] falha ao carregar catálogo", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!useJavaApi() || !currentUser?.email) return;
+    let cancelled = false;
+    void Promise.all([
+      lmsApi.listMyEnrollments(currentUser.email),
+      lmsApi.listMyProgress(currentUser.email),
+    ])
+      .then(([apiEnrollments, apiProgress]) => {
+        if (cancelled) return;
+        setInscricoes((prev) => {
+          const others = prev.filter((i) => i.userId !== currentUser.id);
+          return [...apiEnrollments, ...others];
+        });
+        setLessonProgress((prev) => {
+          const others = prev.filter((p) => p.userId !== currentUser.id);
+          return [...apiProgress, ...others];
+        });
+      })
+      .catch((err) => {
+        console.error("[lms-api] falha ao carregar matrículas/progresso", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.email, currentUser?.id]);
 
   const login: AppState["login"] = (email, options) => {
     const normalized = normalizeEmail(email);
@@ -613,16 +662,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const addCourse: AppState["addCourse"] = (c) => {
-    const id = "c" + Math.random().toString(36).slice(2, 7);
     const unitId =
       currentUser && !hasPermission(currentUser.role, "view_all_units")
         ? currentUser.unitId
         : c.unitId;
-    setCourses((prev) => [{ ...c, id, unitId, enrolled: 0, completion: 0 }, ...prev]);
+    const payload = { ...c, unitId };
+
+    if (useJavaApi()) {
+      void lmsApi
+        .createCourse(payload)
+        .then((created) => {
+          setCourses((prev) => [created, ...prev]);
+          log({
+            user: currentUser?.email ?? "system",
+            action: `Criou curso '${created.title}'`,
+            module: "Aprendizagem",
+            severity: "info",
+          });
+        })
+        .catch((err) => console.error("[lms-api] createCourse", err));
+      return;
+    }
+
+    const id = "c" + Math.random().toString(36).slice(2, 7);
+    setCourses((prev) => [{ ...payload, id, enrolled: 0, completion: 0 }, ...prev]);
     log({ user: currentUser?.email ?? "system", action: `Criou curso '${c.title}'`, module: "Aprendizagem", severity: "info" });
   };
 
   const updateCourse: AppState["updateCourse"] = (id, data) => {
+    if (useJavaApi()) {
+      const current = courses.find((c) => c.id === id);
+      if (!current) return;
+      const merged = { ...current, ...data };
+      void lmsApi
+        .updateCourse(id, merged)
+        .then((updated) => {
+          setCourses((prev) => prev.map((c) => (c.id === id ? updated : c)));
+          log({
+            user: currentUser?.email ?? "system",
+            action: `Atualizou curso '${id}'`,
+            module: "Aprendizagem",
+            severity: "info",
+          });
+        })
+        .catch((err) => console.error("[lms-api] updateCourse", err));
+      return;
+    }
+
     setCourses((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
     log({ user: currentUser?.email ?? "system", action: `Atualizou curso '${id}'`, module: "Aprendizagem", severity: "info" });
   };
@@ -858,38 +944,73 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
     if (alreadyDone) return;
 
-    const nextProgress = [
-      ...lessonProgress,
-      { userId: currentUser.id, lessonId, completedAt: now() },
-    ];
-    setLessonProgress(nextProgress);
-
-    const { percent } = computeProgress(
-      currentUser.id,
-      lesson.courseId,
-      courseLessons,
-      nextProgress
-    );
-    setInscricoes((prev) =>
-      syncInscricaoProgress(prev, currentUser.id, lesson.courseId, percent)
-    );
-
-    if (percent >= 100) {
-      dispatchNotification({
-        userId: currentUser.id,
-        title: "Curso concluído",
-        message: `Parabéns! Você concluiu "${courses.find((c) => c.id === lesson.courseId)?.title ?? "o curso"}".`,
-        type: "curso",
-        href: `/aprendizagem/cursos/${lesson.courseId}`,
+    const applyLocal = (entry: LessonProgress) => {
+      const nextProgress = [...lessonProgress, entry];
+      setLessonProgress(nextProgress);
+      const { percent } = computeProgress(
+        currentUser.id,
+        lesson.courseId,
+        courseLessons,
+        nextProgress
+      );
+      setInscricoes((prev) =>
+        syncInscricaoProgress(prev, currentUser.id, lesson.courseId, percent)
+      );
+      if (percent >= 100) {
+        dispatchNotification({
+          userId: currentUser.id,
+          title: "Curso concluído",
+          message: `Parabéns! Você concluiu "${courses.find((c) => c.id === lesson.courseId)?.title ?? "o curso"}".`,
+          type: "curso",
+          href: `/aprendizagem/cursos/${lesson.courseId}`,
+        });
+      }
+      log({
+        user: currentUser.email,
+        action: `Concluiu aula '${lesson.title}'`,
+        module: "Aprendizagem",
+        severity: "info",
       });
+    };
+
+    if (useJavaApi()) {
+      void lmsApi
+        .completeLesson(lessonId, currentUser.email)
+        .then(applyLocal)
+        .catch((err) => console.error("[lms-api] completeLesson", err));
+      return;
     }
 
-    log({
-      user: currentUser.email,
-      action: `Concluiu aula '${lesson.title}'`,
-      module: "Aprendizagem",
-      severity: "info",
-    });
+    applyLocal({ userId: currentUser.id, lessonId, completedAt: now() });
+  };
+
+  const notifyNewLessons = (courseId: string, courseTitle: string, count: number, lessonId?: string) => {
+    const enrolled = inscricoes.filter(
+      (i) => i.courseId === courseId && i.status === "ativa"
+    );
+    for (const ins of enrolled) {
+      dispatchNotification({
+        userId: ins.userId,
+        title: count > 1 ? "Novas aulas disponíveis" : "Nova aula disponível",
+        message:
+          count > 1
+            ? `${count} nova(s) aula(s) em "${courseTitle}".`
+            : `Nova aula publicada em "${courseTitle}".`,
+        type: "curso",
+        href: lessonId
+          ? `/aprendizagem/cursos/${courseId}?aula=${lessonId}`
+          : `/aprendizagem/cursos/${courseId}`,
+      });
+    }
+  };
+
+  const refreshLearningCatalog = async () => {
+    const [apiModules, apiLessons] = await Promise.all([
+      lmsApi.listModules(),
+      lmsApi.listLessons(),
+    ]);
+    setCourseModules(apiModules);
+    setCourseLessons(apiLessons);
   };
 
   const importPlaylistLessons: AppState["importPlaylistLessons"] = (
@@ -901,6 +1022,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (items.length === 0) return;
 
     const course = courses.find((c) => c.id === courseId);
+
+    if (useJavaApi()) {
+      void (async () => {
+        try {
+          let moduleId = existingModuleId;
+          for (const item of items) {
+            const created = await lmsApi.publishLesson(courseId, {
+              moduleId,
+              moduleTitle: moduleId ? undefined : moduleTitle,
+              title: item.title,
+              youtubeVideoId: item.videoId,
+              videoUrl: item.videoUrl,
+              durationSec: item.durationSec,
+            });
+            moduleId = created.moduleId;
+          }
+          await refreshLearningCatalog();
+          notifyNewLessons(courseId, course?.title ?? "seu curso", items.length);
+          log({
+            user: currentUser?.email ?? "system",
+            action: `Importou ${items.length} aulas no curso '${courseId}'`,
+            module: "Aprendizagem",
+            severity: "info",
+          });
+        } catch (err) {
+          console.error("[lms-api] importPlaylistLessons", err);
+        }
+      })();
+      return;
+    }
+
     let moduleId = existingModuleId;
 
     if (!moduleId) {
@@ -938,19 +1090,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
 
     setCourseLessons((prev) => [...prev, ...newLessons]);
-
-    const enrolled = inscricoes.filter(
-      (i) => i.courseId === courseId && i.status === "ativa"
-    );
-    for (const ins of enrolled) {
-      dispatchNotification({
-        userId: ins.userId,
-        title: "Novas aulas disponíveis",
-        message: `${items.length} nova(s) aula(s) em "${course?.title ?? "seu curso"}".`,
-        type: "curso",
-        href: `/aprendizagem/cursos/${courseId}`,
-      });
-    }
+    notifyNewLessons(courseId, course?.title ?? "seu curso", items.length);
 
     log({
       user: currentUser?.email ?? "system",
@@ -964,6 +1104,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const course = courses.find((c) => c.id === params.courseId);
     if (!course) return;
     if (!params.youtubeVideoId && !params.videoUrl) return;
+
+    if (useJavaApi()) {
+      void lmsApi
+        .publishLesson(params.courseId, {
+          moduleId: params.moduleId,
+          moduleTitle: params.moduleTitle,
+          title: params.title,
+          youtubeVideoId: params.youtubeVideoId,
+          videoUrl: params.videoUrl,
+          durationSec: params.durationSec,
+        })
+        .then(async (lesson) => {
+          await refreshLearningCatalog();
+          notifyNewLessons(params.courseId, course.title, 1, lesson.id);
+          log({
+            user: currentUser?.email ?? "system",
+            action: `Publicou aula '${params.title}' no curso '${course.title}'`,
+            module: "Aprendizagem",
+            severity: "info",
+          });
+        })
+        .catch((err) => console.error("[lms-api] publishCourseLesson", err));
+      return;
+    }
 
     let moduleId = params.moduleId;
     if (!moduleId) {
@@ -1000,19 +1164,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     setCourseLessons((prev) => [...prev, lesson]);
-
-    const enrolled = inscricoes.filter(
-      (i) => i.courseId === params.courseId && i.status === "ativa"
-    );
-    for (const ins of enrolled) {
-      dispatchNotification({
-        userId: ins.userId,
-        title: "Nova aula disponível",
-        message: `"${params.title}" foi publicada em "${course.title}".`,
-        type: "curso",
-        href: `/aprendizagem/cursos/${params.courseId}?aula=${lesson.id}`,
-      });
-    }
+    notifyNewLessons(params.courseId, course.title, 1, lesson.id);
 
     log({
       user: currentUser?.email ?? "system",
@@ -1025,6 +1177,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateCourseLesson: AppState["updateCourseLesson"] = (lessonId, data) => {
     const lesson = courseLessons.find((l) => l.id === lessonId);
     if (!lesson) return;
+
+    if (useJavaApi()) {
+      void lmsApi
+        .updateLesson(lessonId, data)
+        .then((updated) => {
+          setCourseLessons((prev) =>
+            prev.map((l) => (l.id === lessonId ? updated : l))
+          );
+          log({
+            user: currentUser?.email ?? "system",
+            action: `Editou aula '${lesson.title}'`,
+            module: "Aprendizagem",
+            severity: "info",
+          });
+        })
+        .catch((err) => console.error("[lms-api] updateCourseLesson", err));
+      return;
+    }
 
     setCourseLessons((prev) =>
       prev.map((l) => (l.id === lessonId ? { ...l, ...data } : l))
@@ -1042,6 +1212,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const lesson = courseLessons.find((l) => l.id === lessonId);
     if (!lesson) return;
 
+    if (useJavaApi()) {
+      void lmsApi
+        .deleteLesson(lessonId)
+        .then(() => {
+          setCourseLessons((prev) => prev.filter((l) => l.id !== lessonId));
+          setLessonProgress((prev) => prev.filter((p) => p.lessonId !== lessonId));
+          log({
+            user: currentUser?.email ?? "system",
+            action: `Removeu aula '${lesson.title}' do curso`,
+            module: "Aprendizagem",
+            severity: "alerta",
+          });
+        })
+        .catch((err) => console.error("[lms-api] deleteCourseLesson", err));
+      return;
+    }
+
     setCourseLessons((prev) => prev.filter((l) => l.id !== lessonId));
     setLessonProgress((prev) => prev.filter((p) => p.lessonId !== lessonId));
 
@@ -1058,10 +1245,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (toRemove.length === 0) return;
 
     const removedIds = new Set(toRemove.map((l) => l.id));
+    const course = courses.find((c) => c.id === courseId);
+
+    if (useJavaApi()) {
+      void lmsApi
+        .deleteAllCourseLessons(courseId)
+        .then(() => {
+          setCourseLessons((prev) => prev.filter((l) => l.courseId !== courseId));
+          setLessonProgress((prev) => prev.filter((p) => !removedIds.has(p.lessonId)));
+          log({
+            user: currentUser?.email ?? "system",
+            action: `Removeu ${toRemove.length} aula(s) do curso '${course?.title ?? courseId}'`,
+            module: "Aprendizagem",
+            severity: "alerta",
+          });
+        })
+        .catch((err) => console.error("[lms-api] deleteAllCourseLessons", err));
+      return;
+    }
+
     setCourseLessons((prev) => prev.filter((l) => l.courseId !== courseId));
     setLessonProgress((prev) => prev.filter((p) => !removedIds.has(p.lessonId)));
 
-    const course = courses.find((c) => c.id === courseId);
     log({
       user: currentUser?.email ?? "system",
       action: `Removeu ${toRemove.length} aula(s) do curso '${course?.title ?? courseId}'`,

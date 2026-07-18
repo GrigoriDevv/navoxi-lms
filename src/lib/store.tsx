@@ -47,14 +47,6 @@ import { computeProgress, syncInscricaoProgress } from "./course-progress";
 import { useJavaApi } from "./api-config";
 import { lmsApi } from "./api-client";
 
-const VALID_ROLES: Role[] = [
-  "admin_premium",
-  "admin_unidade",
-  "gestor_conteudo",
-  "instrutor",
-  "aluno",
-];
-
 const STORAGE_USER = "navoxi-user";
 const STORAGE_PREFS = "navoxi-prefs";
 const STORAGE_LESSON_PROGRESS = "navoxi-lesson-progress";
@@ -63,53 +55,6 @@ const LEGACY_STORAGE_PREFS = "neo-lms-prefs";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase().replace("@neoenergia.com", "@navoxi.com");
-}
-
-const LEGACY_UNIT_MAP: Record<string, UnitId> = {
-  celpe: "matriz",
-  coelba: "nordeste",
-  coelce: "nordeste",
-  elektro: "sul",
-  holding: "matriz",
-};
-
-function normalizeUnitId(unitId?: string): UnitId {
-  if (!unitId) return "matriz";
-  return LEGACY_UNIT_MAP[unitId] ?? (unitId as UnitId);
-}
-
-function resolveSession(raw: string, users: User[]): AuthState | null {
-  try {
-    const parsed = JSON.parse(raw) as Partial<AuthState>;
-    if (!parsed.email || !parsed.role || !VALID_ROLES.includes(parsed.role)) {
-      return null;
-    }
-    const email = normalizeEmail(parsed.email);
-    const unitId = normalizeUnitId(parsed.unitId as string | undefined);
-    const registered = users.find((u) => u.email === email);
-    if (registered) {
-      return {
-        id: registered.id,
-        name: registered.name,
-        email: registered.email,
-        role: registered.role,
-        unitId: registered.unitId,
-        avatarColor: registered.avatarColor,
-        authProvider: parsed.authProvider,
-      };
-    }
-    return {
-      id: parsed.id ?? "guest",
-      name: parsed.name ?? email.split("@")[0],
-      email,
-      role: parsed.role,
-      unitId: unitId as UnitId,
-      avatarColor: parsed.avatarColor ?? "#2563eb",
-      authProvider: parsed.authProvider,
-    };
-  } catch {
-    return null;
-  }
 }
 
 interface AuthState {
@@ -125,7 +70,10 @@ interface AuthState {
 interface AppState {
   // auth
   currentUser: AuthState | null;
-  login: (email: string, options?: { name?: string; provider?: AuthState["authProvider"] }) => void;
+  login: (
+    email: string,
+    options?: { name?: string; provider?: AuthState["authProvider"] }
+  ) => Promise<void>;
   logout: () => void;
   // data
   users: User[];
@@ -265,29 +213,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<UserPreferences>(seed.defaultPreferences);
 
   useEffect(() => {
-    try {
-      const raw =
-        localStorage.getItem(STORAGE_USER) ??
-        localStorage.getItem(LEGACY_STORAGE_USER);
-      if (raw) {
-        const session = resolveSession(raw, seed.users);
-        if (session) {
-          setCurrentUser(session);
-          const parsed = JSON.parse(raw) as Partial<AuthState>;
-          const legacyUnit = parsed.unitId as string | undefined;
-          const migrated =
-            normalizeEmail(parsed.email ?? "") !== parsed.email ||
-            (legacyUnit && LEGACY_UNIT_MAP[legacyUnit]) ||
-            localStorage.getItem(LEGACY_STORAGE_USER);
-          if (migrated) {
-            localStorage.setItem(STORAGE_USER, JSON.stringify(session));
-            localStorage.removeItem(LEGACY_STORAGE_USER);
-          }
-        } else {
-          localStorage.removeItem(STORAGE_USER);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/session", { credentials: "same-origin" });
+        const data = (await res.json()) as {
+          authenticated?: boolean;
+          email?: string;
+          name?: string;
+          role?: AuthState["role"];
+          provider?: AuthState["authProvider"];
+        };
+        if (cancelled) return;
+        if (data.authenticated && data.email && data.role) {
+          const existing = seed.users.find(
+            (u) => u.email === normalizeEmail(data.email!)
+          );
+          const u: AuthState = {
+            id: existing?.id ?? "guest",
+            name: data.name ?? existing?.name ?? data.email.split("@")[0],
+            email: normalizeEmail(data.email),
+            role: data.role,
+            unitId: existing?.unitId ?? "matriz",
+            avatarColor: existing?.avatarColor ?? "#2563eb",
+            authProvider: data.provider ?? "password",
+          };
+          setCurrentUser(u);
+          localStorage.setItem(STORAGE_USER, JSON.stringify(u));
           localStorage.removeItem(LEGACY_STORAGE_USER);
+          return;
         }
+        localStorage.removeItem(STORAGE_USER);
+        localStorage.removeItem(LEGACY_STORAGE_USER);
+        setCurrentUser(null);
+      } catch {
+        if (!cancelled) setCurrentUser(null);
       }
+    })();
+    try {
       const prefs =
         localStorage.getItem(STORAGE_PREFS) ??
         localStorage.getItem(LEGACY_STORAGE_PREFS);
@@ -314,34 +277,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      fetch("/api/auth/session")
-        .then((r) => r.json())
-        .then(
-          (data: {
-            authenticated?: boolean;
-            email?: string;
-            name?: string;
-            provider?: AuthState["authProvider"];
-          }) => {
-            if (data.authenticated && data.email) {
-              const normalized = normalizeEmail(data.email);
-              const existing = seed.users.find((u) => u.email === normalized);
-              const u: AuthState = {
-                id: existing?.id ?? "guest",
-                name: data.name ?? existing?.name ?? normalized.split("@")[0],
-                email: normalized,
-                role: existing?.role ?? "aluno",
-                unitId: existing?.unitId ?? "matriz",
-                avatarColor: existing?.avatarColor ?? "#2563eb",
-                authProvider: data.provider ?? "microsoft",
-              };
-              setCurrentUser(u);
-              localStorage.setItem(STORAGE_USER, JSON.stringify(u));
-            }
-          }
-        )
-        .catch(() => {});
     } catch {}
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -395,17 +334,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [currentUser?.email, currentUser?.id]);
 
-  const login: AppState["login"] = (email, options) => {
+  const login: AppState["login"] = async (email, options) => {
     const normalized = normalizeEmail(email);
-    const existing = users.find((u) => u.email === normalized);
+    const res = await fetch("/api/auth/demo-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ email: normalized, name: options?.name }),
+    });
+    if (!res.ok) {
+      throw new Error("Falha ao criar sessão");
+    }
+    const data = (await res.json()) as {
+      email: string;
+      name: string;
+      role: AuthState["role"];
+      provider?: AuthState["authProvider"];
+    };
+    const existing = users.find((u) => u.email === data.email);
     const u: AuthState = {
       id: existing?.id ?? "guest",
-      name: options?.name ?? existing?.name ?? normalized.split("@")[0],
-      email: normalized,
-      role: existing?.role ?? "aluno",
+      name: data.name,
+      email: data.email,
+      role: data.role,
       unitId: existing?.unitId ?? "matriz",
       avatarColor: existing?.avatarColor ?? "#2563eb",
-      authProvider: options?.provider ?? "password",
+      authProvider: data.provider ?? options?.provider ?? "password",
     };
     setCurrentUser(u);
     try {

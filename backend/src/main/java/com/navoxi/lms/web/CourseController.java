@@ -10,6 +10,7 @@ import com.navoxi.lms.web.dto.ModuleDto;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,11 +45,15 @@ public class CourseController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize(
+      "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public CourseDto create(@Valid @RequestBody CourseRequest request) {
     return courses.create(request);
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize(
+      "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public CourseDto update(@PathVariable String id, @Valid @RequestBody CourseRequest request) {
     return courses.update(id, request);
   }
@@ -65,6 +70,8 @@ public class CourseController {
 
   @PostMapping("/{id}/lessons")
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize(
+      "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public LessonDto publishLesson(
       @PathVariable String id, @Valid @RequestBody LessonRequest request) {
     return lessons.publish(id, request);
@@ -72,6 +79,8 @@ public class CourseController {
 
   @DeleteMapping("/{id}/lessons")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize(
+      "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public void deleteAllLessons(@PathVariable String id) {
     lessons.deleteAllForCourse(id);
   }

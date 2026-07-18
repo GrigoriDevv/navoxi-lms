@@ -4,11 +4,11 @@ import {
   encodeSession,
   OAUTH_STATE_COOKIE,
   SESSION_COOKIE,
+  SESSION_MAX_AGE,
   sessionCookieOptions,
 } from "@/lib/auth-session";
 import { exchangeCodeForProfile, getAppBaseUrl } from "@/lib/microsoft-auth";
-
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 dias
+import { resolveUserProfile } from "@/lib/session-user";
 
 export async function GET(request: NextRequest) {
   const baseUrl = getAppBaseUrl();
@@ -37,9 +37,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const profile = await exchangeCodeForProfile(code);
-    const token = encodeSession({
-      email: profile.email,
-      name: profile.name,
+    const resolved = resolveUserProfile(profile.email, profile.name);
+    const token = await encodeSession({
+      email: resolved.email,
+      name: resolved.name,
+      role: resolved.role,
       provider: "microsoft",
       exp: Date.now() + SESSION_MAX_AGE * 1000,
     });

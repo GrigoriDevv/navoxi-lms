@@ -9,7 +9,6 @@ import com.navoxi.lms.web.dto.LessonProgressDto;
 import com.navoxi.lms.web.dto.UserDto;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,21 +30,19 @@ public class UserController {
   }
 
   @GetMapping
-  public UserDto me(@RequestHeader(value = "X-User-Email", required = false) String email) {
-    return CourseMapper.toDto(currentUser.require(email));
+  public UserDto me() {
+    return CourseMapper.toDto(currentUser.require());
   }
 
   @GetMapping("/enrollments")
-  public List<EnrollmentDto> enrollments(
-      @RequestHeader(value = "X-User-Email", required = false) String email) {
-    UserAccount user = currentUser.require(email);
+  public List<EnrollmentDto> enrollments() {
+    UserAccount user = currentUser.require();
     return enrollments.listForUser(user);
   }
 
   @GetMapping("/progress")
-  public List<LessonProgressDto> progress(
-      @RequestHeader(value = "X-User-Email", required = false) String email) {
-    UserAccount user = currentUser.require(email);
+  public List<LessonProgressDto> progress() {
+    UserAccount user = currentUser.require();
     return progress.listForUser(user.getId());
   }
 }

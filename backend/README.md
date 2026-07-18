@@ -62,5 +62,9 @@ No Next.js:
 
 ```env
 NEXT_PUBLIC_USE_JAVA_API=true
-NEXT_PUBLIC_API_URL=http://localhost:8080
+LMS_API_URL=http://localhost:8080
+LMS_API_TOKEN=local-dev-token
+AUTH_SECRET=dev-secret-change-me
 ```
+
+Todas as rotas `/api/v1/**` (exceto health) exigem `Authorization: Bearer <LMS_API_TOKEN>` e `X-User-Email`.

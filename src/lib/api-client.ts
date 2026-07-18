@@ -17,22 +17,29 @@ export class ApiError extends Error {
   }
 }
 
+function toBffPath(path: string): string {
+  // Browser always hits same-origin BFF: /api/lms/<rest after /api/v1/>
+  if (typeof window !== "undefined") {
+    const stripped = path.replace(/^\/api\/v1\/?/, "");
+    return `/api/lms/${stripped}`;
+  }
+  return `${apiBaseUrl()}${path}`;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit & { email?: string } = {}
 ): Promise<T> {
-  const { email, headers: initHeaders, ...rest } = options;
+  const { email: _email, headers: initHeaders, ...rest } = options;
   const headers = new Headers(initHeaders);
   if (!headers.has("Content-Type") && rest.body) {
     headers.set("Content-Type", "application/json");
   }
-  if (email) {
-    headers.set("X-User-Email", email);
-  }
 
-  const res = await fetch(`${apiBaseUrl()}${path}`, {
+  const res = await fetch(toBffPath(path), {
     ...rest,
     headers,
+    credentials: "same-origin",
   });
 
   if (res.status === 204) {

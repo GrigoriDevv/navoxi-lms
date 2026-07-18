@@ -121,12 +121,21 @@ const routeAccess: Record<string, PermissionKey[]> = {
 };
 
 export function canAccessRoute(role: Role, pathname: string): boolean {
-  const route = Object.keys(routeAccess).find(
-    (r) => pathname === r || pathname.startsWith(r + "/")
-  );
-  if (!route) return true;
+  // Match longest prefix first (fail-closed for unknown routes)
+  const route = Object.keys(routeAccess)
+    .filter((r) => pathname === r || pathname.startsWith(r + "/"))
+    .sort((a, b) => b.length - a.length)[0];
+  if (!route) return false;
   const required = routeAccess[route];
   return required.some((p) => hasPermission(role, p));
+}
+
+/** Export for middleware — same map as client RouteGuard */
+export function requiredPermissionsForPath(pathname: string): PermissionKey[] | null {
+  const route = Object.keys(routeAccess)
+    .filter((r) => pathname === r || pathname.startsWith(r + "/"))
+    .sort((a, b) => b.length - a.length)[0];
+  return route ? routeAccess[route] : null;
 }
 
 export interface NavItemDef {

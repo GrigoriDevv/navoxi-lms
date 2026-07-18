@@ -50,9 +50,9 @@ function LoginForm() {
 
   const selectedUser = users.find((u) => u.email === email);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, { provider: "password" });
+    await login(email, { provider: "password" });
     router.push("/dashboard");
   };
 

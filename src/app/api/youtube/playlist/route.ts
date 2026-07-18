@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
+import { canAccessRoute } from "@/lib/rbac";
 
 export interface PlaylistVideoItem {
   videoId: string;
@@ -40,6 +43,19 @@ function parseDuration(iso?: string): number | undefined {
 }
 
 export async function GET(request: NextRequest) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const session = token ? await decodeSession(token) : null;
+  if (!session) {
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (
+    !canAccessRoute(session.role, "/aprendizagem/publicar-aulas") &&
+    !canAccessRoute(session.role, "/repositorio")
+  ) {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
+
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

@@ -20,6 +20,16 @@ public class ApiExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
   }
 
+  @ExceptionHandler(UnauthorizedException.class)
+  public ResponseEntity<Map<String, String>> unauthorized(UnauthorizedException ex) {
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", ex.getMessage()));
+  }
+
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<Map<String, String>> forbidden(ForbiddenException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException ex) {
     String msg =
@@ -38,6 +48,18 @@ public class ApiExceptionHandler {
 
   public static class BadRequestException extends RuntimeException {
     public BadRequestException(String message) {
+      super(message);
+    }
+  }
+
+  public static class UnauthorizedException extends RuntimeException {
+    public UnauthorizedException(String message) {
+      super(message);
+    }
+  }
+
+  public static class ForbiddenException extends RuntimeException {
+    public ForbiddenException(String message) {
       super(message);
     }
   }

@@ -24,8 +24,12 @@ No front (`.env.local`):
 
 ```env
 NEXT_PUBLIC_USE_JAVA_API=true
-NEXT_PUBLIC_API_URL=http://localhost:8080
+LMS_API_URL=http://localhost:8080
+LMS_API_TOKEN=local-dev-token
+AUTH_SECRET=dev-secret-change-me
 ```
+
+O browser chama só `/api/lms/*` (BFF). O token Java nunca vai para o cliente.
 
 Detalhes: [`backend/README.md`](backend/README.md).
 

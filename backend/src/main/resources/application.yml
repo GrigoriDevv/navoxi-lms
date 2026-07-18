@@ -19,21 +19,26 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
   endpoint:
     health:
       probes:
         enabled: true
 
 lms:
+  api-token: ${LMS_API_TOKEN:local-dev-token}
+  seed:
+    enabled: ${LMS_SEED_ENABLED:false}
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,https://navoxi-lms-production.up.railway.app,https://neoenergia-lms-production.up.railway.app}
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
 
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: false
   swagger-ui:
     path: /swagger-ui.html
+    enabled: false
 
 ---
 spring:
@@ -55,13 +60,24 @@ spring:
   flyway:
     enabled: false
 
+lms:
+  seed:
+    enabled: true
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 ---
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    # Prefer JDBC_DATABASE_URL; DATABASE_URL Railway é convertido em RailwayDataSourceConfig
     url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/lms}
     username: ${DATABASE_USERNAME:}
     password: ${DATABASE_PASSWORD:}
@@ -71,3 +87,15 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+lms:
+  seed:
+    enabled: ${LMS_SEED_ENABLED:false}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:}
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

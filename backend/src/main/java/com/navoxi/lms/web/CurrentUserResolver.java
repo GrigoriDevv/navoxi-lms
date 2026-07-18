@@ -1,26 +1,19 @@
 package com.navoxi.lms.web;
 
 import com.navoxi.lms.domain.entity.UserAccount;
-import com.navoxi.lms.repository.UserAccountRepository;
-import com.navoxi.lms.web.ApiExceptionHandler.BadRequestException;
-import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
+import com.navoxi.lms.web.ApiExceptionHandler.UnauthorizedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CurrentUserResolver {
 
-  private final UserAccountRepository users;
-
-  public CurrentUserResolver(UserAccountRepository users) {
-    this.users = users;
-  }
-
-  public UserAccount require(String emailHeader) {
-    if (emailHeader == null || emailHeader.isBlank()) {
-      throw new BadRequestException("Header X-User-Email é obrigatório");
+  public UserAccount require() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null && auth.getPrincipal() instanceof UserAccount user) {
+      return user;
     }
-    return users
-        .findByEmailIgnoreCase(emailHeader.trim())
-        .orElseThrow(() -> new NotFoundException("Usuário não encontrado: " + emailHeader));
+    throw new UnauthorizedException("Usuário não autenticado");
   }
 }

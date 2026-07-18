@@ -6,12 +6,12 @@ import com.navoxi.lms.web.dto.LessonDto;
 import com.navoxi.lms.web.dto.LessonProgressDto;
 import com.navoxi.lms.web.dto.LessonUpdateRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,19 +32,22 @@ public class LessonController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize(
+      "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public LessonDto update(@PathVariable String id, @RequestBody LessonUpdateRequest request) {
     return lessons.update(id, request);
   }
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize(
+      "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public void delete(@PathVariable String id) {
     lessons.delete(id);
   }
 
   @PostMapping("/{id}/complete")
-  public LessonProgressDto complete(
-      @PathVariable String id, @RequestHeader(value = "X-User-Email", required = false) String email) {
-    return progress.complete(currentUser.require(email), id);
+  public LessonProgressDto complete(@PathVariable String id) {
+    return progress.complete(currentUser.require(), id);
   }
 }

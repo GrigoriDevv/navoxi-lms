@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ authenticated: false });
   }
 
-  const session = decodeSession(token);
+  const session = await decodeSession(token);
   if (!session) {
     return NextResponse.json({ authenticated: false });
   }
@@ -18,6 +18,7 @@ export async function GET() {
     authenticated: true,
     email: session.email,
     name: session.name,
+    role: session.role,
     provider: session.provider,
   });
 }

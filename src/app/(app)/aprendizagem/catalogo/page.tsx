@@ -117,7 +117,7 @@ export default function CatalogoPage() {
     setSelectedTurma(available.length === 1 ? available[0].id : "");
   };
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!enrollCourse) return;
 
     const available = courseTurmas(enrollCourse.id);
@@ -129,12 +129,15 @@ export default function CatalogoPage() {
       return;
     }
 
-    const result = inscreverCurso(
+    const result = await inscreverCurso(
       enrollCourse.id,
       selectedTurma || undefined
     );
 
-    const messages: Record<typeof result, string> = {
+    const messages: Record<
+      "ok" | "pending" | "duplicate" | "lotada" | "login",
+      string
+    > = {
       ok: "Inscrição confirmada! Confira na aba Inscrições.",
       pending: "Solicitação enviada! Aguarde aprovação do gestor.",
       duplicate: "Você já está inscrito ou possui solicitação pendente neste curso.",

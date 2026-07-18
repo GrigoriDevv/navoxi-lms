@@ -3,6 +3,7 @@ package com.navoxi.lms.repository;
 import com.navoxi.lms.domain.entity.Enrollment;
 import com.navoxi.lms.domain.enums.EnrollmentStatus;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, String> {
@@ -13,5 +14,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, String> 
   List<Enrollment> findByCourseIdAndStatus(String courseId, EnrollmentStatus status);
 
   boolean existsByUserIdAndCourseIdAndStatus(
+      String userId, String courseId, EnrollmentStatus status);
+
+  Optional<Enrollment> findByUserIdAndCourseIdAndStatus(
       String userId, String courseId, EnrollmentStatus status);
 }

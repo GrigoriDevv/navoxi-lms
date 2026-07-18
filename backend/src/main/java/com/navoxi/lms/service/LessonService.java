@@ -3,8 +3,12 @@ package com.navoxi.lms.service;
 import com.navoxi.lms.domain.entity.Course;
 import com.navoxi.lms.domain.entity.CourseLesson;
 import com.navoxi.lms.domain.entity.CourseModule;
+import com.navoxi.lms.domain.entity.Enrollment;
+import com.navoxi.lms.domain.enums.EnrollmentStatus;
+import com.navoxi.lms.domain.enums.NotificationType;
 import com.navoxi.lms.repository.CourseLessonRepository;
 import com.navoxi.lms.repository.CourseModuleRepository;
+import com.navoxi.lms.repository.EnrollmentRepository;
 import com.navoxi.lms.repository.LessonProgressRepository;
 import com.navoxi.lms.web.ApiExceptionHandler.BadRequestException;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
@@ -23,16 +27,22 @@ public class LessonService {
   private final CourseModuleRepository modules;
   private final CourseLessonRepository lessons;
   private final LessonProgressRepository progress;
+  private final EnrollmentRepository enrollments;
+  private final NotificationService notifications;
 
   public LessonService(
       CourseService courseService,
       CourseModuleRepository modules,
       CourseLessonRepository lessons,
-      LessonProgressRepository progress) {
+      LessonProgressRepository progress,
+      EnrollmentRepository enrollments,
+      NotificationService notifications) {
     this.courseService = courseService;
     this.modules = modules;
     this.lessons = lessons;
     this.progress = progress;
+    this.enrollments = enrollments;
+    this.notifications = notifications;
   }
 
   @Transactional(readOnly = true)
@@ -76,7 +86,21 @@ public class LessonService {
     lesson.setYoutubeVideoId(blankToNull(req.youtubeVideoId()));
     lesson.setVideoUrl(blankToNull(req.videoUrl()));
     lesson.setDurationSec(req.durationSec());
-    return CourseMapper.toDto(lessons.save(lesson));
+    CourseLesson saved = lessons.save(lesson);
+
+    for (Enrollment enrollment :
+        enrollments.findByCourseIdAndStatus(courseId, EnrollmentStatus.ativa)) {
+      notifications.notify(
+          enrollment.getUser(),
+          "Nova aula disponível",
+          "Nova aula publicada em \"" + course.getTitle() + "\".",
+          NotificationType.curso,
+          "/aprendizagem/cursos/" + courseId + "?aula=" + saved.getId(),
+          "Aprendizagem",
+          "Aula: " + saved.getTitle());
+    }
+
+    return CourseMapper.toDto(saved);
   }
 
   @Transactional

@@ -3,7 +3,14 @@ import { cookies } from "next/headers";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
 import { lmsApiToken, lmsApiUpstreamUrl } from "@/lib/api-config";
 
-const ALLOWED_PREFIXES = ["courses", "lessons", "modules", "users/me"] as const;
+const ALLOWED_PREFIXES = [
+  "courses",
+  "lessons",
+  "modules",
+  "users/me",
+  "enrollment-requests",
+  "enrollments",
+] as const;
 
 function isAllowedPath(segments: string[]): boolean {
   if (segments.length === 0) return false;

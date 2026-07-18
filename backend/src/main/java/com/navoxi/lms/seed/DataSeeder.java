@@ -4,11 +4,15 @@ import com.navoxi.lms.domain.entity.Course;
 import com.navoxi.lms.domain.entity.CourseLesson;
 import com.navoxi.lms.domain.entity.CourseModule;
 import com.navoxi.lms.domain.entity.Enrollment;
+import com.navoxi.lms.domain.entity.EnrollmentRequest;
 import com.navoxi.lms.domain.entity.LessonProgress;
+import com.navoxi.lms.domain.entity.Notification;
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.CourseModality;
 import com.navoxi.lms.domain.enums.CourseStatus;
+import com.navoxi.lms.domain.enums.EnrollmentRequestStatus;
 import com.navoxi.lms.domain.enums.EnrollmentStatus;
+import com.navoxi.lms.domain.enums.NotificationType;
 import com.navoxi.lms.domain.enums.Role;
 import com.navoxi.lms.domain.enums.UnitId;
 import com.navoxi.lms.domain.enums.UserStatus;
@@ -16,7 +20,9 @@ import com.navoxi.lms.repository.CourseLessonRepository;
 import com.navoxi.lms.repository.CourseModuleRepository;
 import com.navoxi.lms.repository.CourseRepository;
 import com.navoxi.lms.repository.EnrollmentRepository;
+import com.navoxi.lms.repository.EnrollmentRequestRepository;
 import com.navoxi.lms.repository.LessonProgressRepository;
+import com.navoxi.lms.repository.NotificationRepository;
 import com.navoxi.lms.repository.UserAccountRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +44,9 @@ public class DataSeeder {
       CourseModuleRepository modules,
       CourseLessonRepository lessons,
       EnrollmentRepository enrollments,
-      LessonProgressRepository progress) {
+      LessonProgressRepository progress,
+      EnrollmentRequestRepository enrollmentRequests,
+      NotificationRepository notifications) {
     return args -> {
       if (users.count() > 0) {
         log.info("Seed ignorado — banco já possui usuários");
@@ -48,9 +56,9 @@ public class DataSeeder {
 
       UserAccount ana = user(users, "u1", "Ana Carolina Souza", "ana.souza@navoxi.com", Role.admin_premium, UnitId.matriz, "Navoxi · Tecnologia", "#2563eb");
       UserAccount diego = user(users, "u4", "Diego Alves", "diego.alves@navoxi.com", Role.aluno, UnitId.matriz, "Navoxi · Operações", "#0ea5e9");
-      user(users, "u3", "Carla Mendes", "carla.mendes@navoxi.com", Role.gestor_conteudo, UnitId.matriz, "Navoxi · RH", "#3b82f6");
+      UserAccount carla = user(users, "u3", "Carla Mendes", "carla.mendes@navoxi.com", Role.gestor_conteudo, UnitId.matriz, "Navoxi · RH", "#3b82f6");
       UserAccount henrique = user(users, "u8", "Henrique Castro", "henrique.castro@navoxi.com", Role.instrutor, UnitId.matriz, "Navoxi · Engenharia", "#3b82f6");
-      user(users, "u2", "Bruno Ferreira", "bruno.ferreira@navoxi.com", Role.admin_unidade, UnitId.matriz, "Navoxi · Gestão Regional", "#1d4ed8");
+      UserAccount bruno = user(users, "u2", "Bruno Ferreira", "bruno.ferreira@navoxi.com", Role.admin_unidade, UnitId.matriz, "Navoxi · Gestão Regional", "#1d4ed8");
 
       Course c1 = course(courses, "c1", "Segurança da Informação e Dados", "Segurança", "Carla Mendes", UnitId.matriz, CourseModality.hibrido, "Operações", 40, CourseStatus.publicado, 312, 78, "#1d4ed8");
       Course c2 = course(courses, "c2", "Compliance e Código de Ética", "Compliance", "Henrique Castro", UnitId.matriz, CourseModality.online, "Todos colaboradores", 8, CourseStatus.publicado, 1240, 92, "#2563eb");
@@ -91,6 +99,44 @@ public class DataSeeder {
       progress(progress, diego, l24, "2026-05-22 16:00");
       progress(progress, diego, l31, "2026-06-02 11:00");
       progress(progress, diego, l32, "2026-06-05 15:30");
+
+      request(
+          enrollmentRequests,
+          "sol1",
+          diego,
+          c1,
+          "t1",
+          "Segurança da Informação · Turma 2026.1",
+          EnrollmentRequestStatus.pendente,
+          null);
+      notify(
+          notifications,
+          ana,
+          "Nova solicitação de matrícula",
+          diego.getName() + " solicitou inscrição em \"" + c1.getTitle() + "\".",
+          NotificationType.alerta,
+          "/aprendizagem/solicitacoes?status=pendente");
+      notify(
+          notifications,
+          bruno,
+          "Nova solicitação de matrícula",
+          diego.getName() + " solicitou inscrição em \"" + c1.getTitle() + "\".",
+          NotificationType.alerta,
+          "/aprendizagem/solicitacoes?status=pendente");
+      notify(
+          notifications,
+          carla,
+          "Nova solicitação de matrícula",
+          diego.getName() + " solicitou inscrição em \"" + c1.getTitle() + "\".",
+          NotificationType.alerta,
+          "/aprendizagem/solicitacoes?status=pendente");
+      notify(
+          notifications,
+          diego,
+          "Solicitação enviada",
+          "Sua inscrição em \"" + c1.getTitle() + "\" aguarda aprovação.",
+          NotificationType.info,
+          "/aprendizagem/catalogo?tab=inscricoes");
 
       log.info("Seed concluído (users={}, courses={})", users.count(), courses.count());
       log.info("Demo: {} / {}", henrique.getEmail(), diego.getEmail());
@@ -211,5 +257,48 @@ public class DataSeeder {
     p.setLesson(lesson);
     p.setCompletedAt(at);
     repo.save(p);
+  }
+
+  private static void request(
+      EnrollmentRequestRepository repo,
+      String id,
+      UserAccount user,
+      Course course,
+      String turmaId,
+      String turmaName,
+      EnrollmentRequestStatus status,
+      String reviewer) {
+    EnrollmentRequest r = new EnrollmentRequest();
+    r.setId(id);
+    r.setUser(user);
+    r.setCourse(course);
+    r.setUserName(user.getName());
+    r.setCourseTitle(course.getTitle());
+    r.setTurmaId(turmaId);
+    r.setTurmaName(turmaName);
+    r.setUnitId(user.getUnitId());
+    r.setRequestedAt("2026-06-10 14:30");
+    r.setStatus(status);
+    r.setReviewer(reviewer);
+    repo.save(r);
+  }
+
+  private static void notify(
+      NotificationRepository repo,
+      UserAccount user,
+      String title,
+      String message,
+      NotificationType type,
+      String href) {
+    Notification n = new Notification();
+    n.setUser(user);
+    n.setTitle(title);
+    n.setMessage(message);
+    n.setType(type);
+    n.setReadFlag(false);
+    n.setTimestampLabel("Agora");
+    n.setHref(href);
+    n.setModule("Aprendizagem");
+    repo.save(n);
   }
 }

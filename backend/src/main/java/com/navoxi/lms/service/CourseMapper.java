@@ -4,13 +4,17 @@ import com.navoxi.lms.domain.entity.Course;
 import com.navoxi.lms.domain.entity.CourseLesson;
 import com.navoxi.lms.domain.entity.CourseModule;
 import com.navoxi.lms.domain.entity.Enrollment;
+import com.navoxi.lms.domain.entity.EnrollmentRequest;
 import com.navoxi.lms.domain.entity.LessonProgress;
+import com.navoxi.lms.domain.entity.Notification;
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.web.dto.CourseDto;
 import com.navoxi.lms.web.dto.EnrollmentDto;
+import com.navoxi.lms.web.dto.EnrollmentRequestDto;
 import com.navoxi.lms.web.dto.LessonDto;
 import com.navoxi.lms.web.dto.LessonProgressDto;
 import com.navoxi.lms.web.dto.ModuleDto;
+import com.navoxi.lms.web.dto.NotificationDto;
 import com.navoxi.lms.web.dto.UserDto;
 
 public final class CourseMapper {
@@ -79,5 +83,34 @@ public final class CourseMapper {
         u.getStatus(),
         u.getLastAccess(),
         u.getAvatarColor());
+  }
+
+  public static EnrollmentRequestDto toDto(EnrollmentRequest r) {
+    return new EnrollmentRequestDto(
+        r.getId(),
+        r.getUser().getId(),
+        r.getUserName(),
+        r.getCourse().getId(),
+        r.getCourseTitle(),
+        r.getTurmaId(),
+        r.getTurmaName(),
+        r.getUnitId(),
+        r.getRequestedAt(),
+        r.getStatus(),
+        r.getReviewer());
+  }
+
+  public static NotificationDto toDto(Notification n) {
+    return new NotificationDto(
+        n.getId(),
+        n.getUser().getId(),
+        n.getTitle(),
+        n.getMessage(),
+        n.getType(),
+        n.isReadFlag(),
+        n.getTimestampLabel(),
+        n.getHref(),
+        n.getModule(),
+        n.getDetails());
   }
 }

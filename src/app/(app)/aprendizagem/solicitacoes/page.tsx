@@ -30,7 +30,11 @@ export default function SolicitacoesPage() {
   const filtered =
     filter === "todas" ? solicitacoes : solicitacoes.filter((s) => s.status === filter);
 
-  const canManage = can("manage_turmas") || can("manage_users_all") || can("manage_users_unit");
+  const canManage =
+    can("review_enrollments") ||
+    can("manage_turmas") ||
+    can("manage_users_all") ||
+    can("manage_users_unit");
 
   return (
     <div>
@@ -89,8 +93,8 @@ export default function SolicitacoesPage() {
             {canManage && detail.status === "pendente" && (
               <div className="flex gap-2 pt-2">
                 <Button
-                  onClick={() => {
-                    updateSolicitacao(detail.id, "aprovada");
+                  onClick={async () => {
+                    await updateSolicitacao(detail.id, "aprovada");
                     setDetail(null);
                   }}
                 >
@@ -98,8 +102,8 @@ export default function SolicitacoesPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    updateSolicitacao(detail.id, "rejeitada");
+                  onClick={async () => {
+                    await updateSolicitacao(detail.id, "rejeitada");
                     setDetail(null);
                   }}
                 >

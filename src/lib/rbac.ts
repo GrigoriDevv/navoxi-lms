@@ -54,7 +54,8 @@ export type PermissionKey =
   | "view_all_units"
   | "consume_learning"
   | "manage_own_session"
-  | "publish_lessons";
+  | "publish_lessons"
+  | "review_enrollments";
 
 const rolePermissions: Record<Role, PermissionKey[]> = {
   admin_premium: [
@@ -71,6 +72,7 @@ const rolePermissions: Record<Role, PermissionKey[]> = {
     "view_all_units",
     "consume_learning",
     "manage_own_session",
+    "review_enrollments",
   ],
   admin_unidade: [
     "manage_users_unit",
@@ -81,8 +83,15 @@ const rolePermissions: Record<Role, PermissionKey[]> = {
     "send_communications",
     "consume_learning",
     "manage_own_session",
+    "review_enrollments",
   ],
-  gestor_conteudo: ["manage_content", "manage_courses", "consume_learning", "manage_own_session"],
+  gestor_conteudo: [
+    "manage_content",
+    "manage_courses",
+    "consume_learning",
+    "manage_own_session",
+    "review_enrollments",
+  ],
   instrutor: ["manage_courses", "manage_turmas", "consume_learning", "manage_own_session", "publish_lessons"],
   aluno: ["consume_learning", "manage_own_session"],
 };
@@ -108,7 +117,12 @@ const routeAccess: Record<string, PermissionKey[]> = {
   "/aprendizagem/salas": ["manage_turmas", "manage_courses"],
   "/aprendizagem/certificados": ["consume_learning", "manage_courses", "manage_turmas"],
   "/aprendizagem/interesses": ["manage_courses", "manage_turmas", "consume_learning"],
-  "/aprendizagem/solicitacoes": ["manage_turmas", "manage_users_all", "manage_users_unit"],
+  "/aprendizagem/solicitacoes": [
+    "review_enrollments",
+    "manage_turmas",
+    "manage_users_all",
+    "manage_users_unit",
+  ],
   "/aprendizagem/calendario": ["manage_courses", "consume_learning"],
   "/aprendizagem/publicar-aulas": ["publish_lessons"],
   "/repositorio": ["manage_content"],
@@ -255,7 +269,7 @@ export const navItems: NavItemDef[] = [
     label: "Solicitações",
     href: "/aprendizagem/solicitacoes",
     icon: "mail",
-    permissions: ["manage_turmas", "manage_users_all", "manage_users_unit"],
+    permissions: ["review_enrollments", "manage_turmas", "manage_users_all", "manage_users_unit"],
     group: "Aprendizagem",
     module: "aprendizagem",
   },

@@ -115,8 +115,20 @@ interface AppState {
   addTrilha: (t: Omit<Trilha, "id" | "progress">) => void;
   updateTrilha: (id: string, data: Partial<Trilha>) => void;
   addSala: (s: Omit<Sala, "id">) => void;
-  updateSolicitacao: (id: string, status: SolicitacaoMatricula["status"]) => void;
-  inscreverCurso: (courseId: string, turmaId?: string) => "ok" | "duplicate" | "pending" | "lotada" | "login";
+  updateSolicitacao: (
+    id: string,
+    status: SolicitacaoMatricula["status"]
+  ) => void | Promise<void>;
+  inscreverCurso: (
+    courseId: string,
+    turmaId?: string
+  ) =>
+    | "ok"
+    | "duplicate"
+    | "pending"
+    | "lotada"
+    | "login"
+    | Promise<"ok" | "duplicate" | "pending" | "lotada" | "login">;
   cancelarInscricao: (id: string) => void;
   completeLesson: (lessonId: string) => void;
   importPlaylistLessons: (
@@ -170,8 +182,8 @@ interface AppState {
   toggleScheduledJob: (id: string) => void;
   updateSettings: (s: Partial<Settings>) => void;
   updatePreferences: (p: Partial<UserPreferences>) => void;
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
+  markNotificationRead: (id: string) => void | Promise<void>;
+  markAllNotificationsRead: () => void | Promise<void>;
   log: (entry: Omit<AuditLog, "id" | "timestamp" | "ip">) => void;
 }
 
@@ -314,8 +326,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void Promise.all([
       lmsApi.listMyEnrollments(currentUser.email),
       lmsApi.listMyProgress(currentUser.email),
+      lmsApi.listEnrollmentRequests(),
+      lmsApi.listMyNotifications(),
     ])
-      .then(([apiEnrollments, apiProgress]) => {
+      .then(([apiEnrollments, apiProgress, apiRequests, apiNotifications]) => {
         if (cancelled) return;
         setInscricoes((prev) => {
           const others = prev.filter((i) => i.userId !== currentUser.id);
@@ -325,9 +339,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const others = prev.filter((p) => p.userId !== currentUser.id);
           return [...apiProgress, ...others];
         });
+        setSolicitacoes(apiRequests);
+        setNotifications(apiNotifications);
       })
       .catch((err) => {
-        console.error("[lms-api] falha ao carregar matrículas/progresso", err);
+        console.error("[lms-api] falha ao carregar matrículas/progresso/solicitações", err);
       });
     return () => {
       cancelled = true;
@@ -746,7 +762,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateSolicitacao: AppState["updateSolicitacao"] = (id, status) => {
+  const refreshMyLearning = async () => {
+    if (!currentUser?.email || !useJavaApi()) return;
+    const [apiEnrollments, apiProgress, apiRequests, apiNotifications] =
+      await Promise.all([
+        lmsApi.listMyEnrollments(currentUser.email),
+        lmsApi.listMyProgress(currentUser.email),
+        lmsApi.listEnrollmentRequests(),
+        lmsApi.listMyNotifications(),
+      ]);
+    setInscricoes((prev) => {
+      const others = prev.filter((i) => i.userId !== currentUser.id);
+      return [...apiEnrollments, ...others];
+    });
+    setLessonProgress((prev) => {
+      const others = prev.filter((p) => p.userId !== currentUser.id);
+      return [...apiProgress, ...others];
+    });
+    setSolicitacoes(apiRequests);
+    setNotifications(apiNotifications);
+  };
+
+  const updateSolicitacao: AppState["updateSolicitacao"] = async (id, status) => {
+    if (useJavaApi()) {
+      if (status !== "aprovada" && status !== "rejeitada") return;
+      try {
+        const updated = await lmsApi.decideEnrollmentRequest(id, status);
+        setSolicitacoes((prev) => prev.map((s) => (s.id === id ? updated : s)));
+        await refreshMyLearning();
+        log({
+          user: currentUser?.email ?? "system",
+          action: `Solicitação '${id}' → ${status}`,
+          module: "Aprendizagem",
+          severity: "info",
+        });
+      } catch (err) {
+        console.error("[lms-api] updateSolicitacao", err);
+      }
+      return;
+    }
+
     const sol = solicitacoes.find((s) => s.id === id);
     if (sol && status === "aprovada" && sol.status === "pendente") {
       const turma = sol.turmaId ? turmas.find((t) => t.id === sol.turmaId) : undefined;
@@ -777,7 +832,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     log({ user: currentUser?.email ?? "system", action: `Solicitação '${id}' → ${status}`, module: "Aprendizagem", severity: "info" });
   };
 
-  const inscreverCurso: AppState["inscreverCurso"] = (courseId, turmaId) => {
+  const inscreverCurso: AppState["inscreverCurso"] = async (courseId, turmaId) => {
     if (!currentUser) return "login";
 
     const course = courses.find((c) => c.id === courseId);
@@ -801,6 +856,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
         s.status === "pendente"
     );
     if (pending) return "duplicate";
+
+    if (useJavaApi()) {
+      try {
+        if (settings.approvalRequired) {
+          const created = await lmsApi.createEnrollmentRequest(
+            course.id,
+            turmaId,
+            turma?.name
+          );
+          setSolicitacoes((prev) => [created, ...prev]);
+          const notes = await lmsApi.listMyNotifications();
+          setNotifications(notes);
+          log({
+            user: currentUser.email,
+            action: `Solicitou matrícula em '${course.title}'`,
+            module: "Aprendizagem",
+            severity: "info",
+          });
+          return "pending";
+        }
+        const enrolled = await lmsApi.enroll(course.id, turmaId, turma?.name);
+        setInscricoes((prev) => [enrolled, ...prev.filter((i) => i.id !== enrolled.id)]);
+        const notes = await lmsApi.listMyNotifications();
+        setNotifications(notes);
+        log({
+          user: currentUser.email,
+          action: `Inscreveu-se em '${course.title}'`,
+          module: "Aprendizagem",
+          severity: "info",
+        });
+        return "ok";
+      } catch (err) {
+        console.error("[lms-api] inscreverCurso", err);
+        return "duplicate";
+      }
+    }
 
     if (settings.approvalRequired) {
       const id = "sol" + Math.random().toString(36).slice(2, 7);
@@ -930,7 +1021,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (useJavaApi()) {
       void lmsApi
         .completeLesson(lessonId, currentUser.email)
-        .then(applyLocal)
+        .then(async (entry) => {
+          applyLocal(entry);
+          try {
+            await refreshMyLearning();
+          } catch (err) {
+            console.error("[lms-api] refresh after completeLesson", err);
+          }
+        })
         .catch((err) => console.error("[lms-api] completeLesson", err));
       return;
     }
@@ -1293,14 +1391,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const markNotificationRead: AppState["markNotificationRead"] = (id) => {
+  const markNotificationRead: AppState["markNotificationRead"] = async (id) => {
+    if (useJavaApi()) {
+      try {
+        const updated = await lmsApi.markNotificationRead(id);
+        setNotifications((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      } catch (err) {
+        console.error("[lms-api] markNotificationRead", err);
+      }
+      return;
+    }
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
   };
 
-  const markAllNotificationsRead: AppState["markAllNotificationsRead"] = () => {
+  const markAllNotificationsRead: AppState["markAllNotificationsRead"] = async () => {
     if (!currentUser) return;
+    if (useJavaApi()) {
+      try {
+        await lmsApi.markAllNotificationsRead();
+        setNotifications((prev) =>
+          prev.map((n) => (n.userId === currentUser.id ? { ...n, read: true } : n))
+        );
+      } catch (err) {
+        console.error("[lms-api] markAllNotificationsRead", err);
+      }
+      return;
+    }
     setNotifications((prev) =>
       prev.map((n) => (n.userId === currentUser.id ? { ...n, read: true } : n))
     );

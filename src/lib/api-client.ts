@@ -4,6 +4,8 @@ import type {
   CourseModule,
   InscricaoCurso,
   LessonProgress,
+  Notification,
+  SolicitacaoMatricula,
 } from "./types";
 import { apiBaseUrl } from "./api-config";
 
@@ -277,4 +279,114 @@ export const lmsApi = {
         }) satisfies LessonProgress
     );
   },
+
+  enroll: async (courseId: string, turmaId?: string, turmaName?: string) => {
+    const data = await request<ApiEnrollment>("/api/v1/enrollments", {
+      method: "POST",
+      body: JSON.stringify({ courseId, turmaId, turmaName }),
+    });
+    return mapEnrollment(data);
+  },
+
+  listEnrollmentRequests: async () => {
+    const data = await request<ApiEnrollmentRequest[]>("/api/v1/enrollment-requests");
+    return data.map(mapEnrollmentRequest);
+  },
+
+  createEnrollmentRequest: async (courseId: string, turmaId?: string, turmaName?: string) => {
+    const data = await request<ApiEnrollmentRequest>("/api/v1/enrollment-requests", {
+      method: "POST",
+      body: JSON.stringify({ courseId, turmaId, turmaName }),
+    });
+    return mapEnrollmentRequest(data);
+  },
+
+  decideEnrollmentRequest: async (
+    id: string,
+    status: Extract<SolicitacaoMatricula["status"], "aprovada" | "rejeitada">
+  ) => {
+    const data = await request<ApiEnrollmentRequest>(
+      `/api/v1/enrollment-requests/${id}/decision`,
+      {
+        method: "POST",
+        body: JSON.stringify({ status }),
+      }
+    );
+    return mapEnrollmentRequest(data);
+  },
+
+  listMyNotifications: async () => {
+    const data = await request<ApiNotification[]>("/api/v1/users/me/notifications");
+    return data.map(mapNotification);
+  },
+
+  markNotificationRead: async (id: string) => {
+    const data = await request<ApiNotification>(
+      `/api/v1/users/me/notifications/${id}/read`,
+      { method: "POST" }
+    );
+    return mapNotification(data);
+  },
+
+  markAllNotificationsRead: () =>
+    request<{ updated: number }>("/api/v1/users/me/notifications/read-all", {
+      method: "POST",
+    }),
 };
+
+type ApiEnrollmentRequest = {
+  id: string;
+  userId: string;
+  userName: string;
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: SolicitacaoMatricula["unitId"];
+  requestedAt: string;
+  status: SolicitacaoMatricula["status"];
+  reviewer?: string | null;
+};
+
+type ApiNotification = {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: Notification["type"];
+  read: boolean;
+  timestamp: string;
+  href?: string | null;
+  module?: string | null;
+  details?: string | null;
+};
+
+function mapEnrollmentRequest(r: ApiEnrollmentRequest): SolicitacaoMatricula {
+  return {
+    id: r.id,
+    userId: r.userId,
+    userName: r.userName,
+    courseId: r.courseId,
+    courseTitle: r.courseTitle,
+    turmaId: r.turmaId ?? undefined,
+    unitId: r.unitId,
+    requestedAt: r.requestedAt,
+    status: r.status,
+    reviewer: r.reviewer ?? undefined,
+  };
+}
+
+function mapNotification(n: ApiNotification): Notification {
+  return {
+    id: n.id,
+    userId: n.userId,
+    title: n.title,
+    message: n.message,
+    type: n.type,
+    read: n.read,
+    timestamp: n.timestamp,
+    href: n.href ?? undefined,
+    module: n.module ?? undefined,
+    details: n.details ?? undefined,
+  };
+}

@@ -72,7 +72,11 @@ interface AppState {
   currentUser: AuthState | null;
   login: (
     email: string,
-    options?: { name?: string; provider?: AuthState["authProvider"] }
+    options?: {
+      name?: string;
+      password?: string;
+      provider?: AuthState["authProvider"];
+    }
   ) => Promise<void>;
   logout: () => void;
   // data
@@ -356,10 +360,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify({ email: normalized, name: options?.name }),
+      body: JSON.stringify({
+        email: normalized,
+        name: options?.name,
+        password: options?.password,
+      }),
     });
     if (!res.ok) {
-      throw new Error("Falha ao criar sessão");
+      const data = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(data?.error || "Falha ao criar sessão");
     }
     const data = (await res.json()) as {
       email: string;

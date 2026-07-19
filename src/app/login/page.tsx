@@ -38,6 +38,8 @@ function LoginForm() {
   const [email, setEmail] = useState("diego.alves@navoxi.com");
   const [password, setPassword] = useState("demo1234");
   const [mfa, setMfa] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
   const authError = searchParams.get("error");
 
@@ -52,8 +54,18 @@ function LoginForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, { provider: "password" });
-    router.push("/dashboard");
+    setFormError(null);
+    setSubmitting(true);
+    try {
+      await login(email, { provider: "password", password });
+      router.push("/dashboard");
+    } catch (err) {
+      setFormError(
+        err instanceof Error ? err.message : "Falha ao autenticar"
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -100,9 +112,9 @@ function LoginForm() {
             O perfil e a unidade são definidos pelo cadastro do usuário.
           </p>
 
-          {authError && (
+          {(authError || formError) && (
             <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-              {authError}
+              {formError || authError}
             </div>
           )}
 
@@ -167,10 +179,11 @@ function LoginForm() {
 
           <button
             type="submit"
-            className="mt-6 w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm"
+            disabled={submitting}
+            className="mt-6 w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm"
           >
             <Icon name="logout" className="w-4 h-4" />
-            Entrar
+            {submitting ? "Entrando…" : "Entrar"}
           </button>
 
           <div className="mt-6">

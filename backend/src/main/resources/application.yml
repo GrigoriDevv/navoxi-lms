@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: neoenergia-lms-api
+    name: navoxi-lms-api
   profiles:
     default: local
   jpa:

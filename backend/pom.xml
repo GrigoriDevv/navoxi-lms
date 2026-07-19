@@ -12,10 +12,10 @@
   </parent>
 
   <groupId>com.navoxi</groupId>
-  <artifactId>neoenergia-lms-api</artifactId>
+  <artifactId>navoxi-lms-api</artifactId>
   <version>0.1.0-SNAPSHOT</version>
-  <name>neoenergia-lms-api</name>
-  <description>Backend Java do Neoenergia LMS (Navoxi)</description>
+  <name>navoxi-lms-api</name>
+  <description>Backend Java do Navoxi LMS</description>
 
   <properties>
     <java.version>21</java.version>

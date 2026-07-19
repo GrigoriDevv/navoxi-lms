@@ -11,6 +11,6 @@ public class HealthController {
 
   @GetMapping("/health")
   public Map<String, String> health() {
-    return Map.of("status", "UP", "service", "neoenergia-lms-api");
+    return Map.of("status", "UP", "service", "navoxi-lms-api");
   }
 }

@@ -1,4 +1,4 @@
-# Neoenergia LMS API (Java / Spring Boot)
+# Navoxi LMS API (Java / Spring Boot)
 
 Backend da Fase 1: cursos, módulos, aulas, progresso e matrículas.
 
@@ -17,7 +17,7 @@ Pré-requisito: JDK 21+ e Maven 3.9+.
 ```bash
 cd backend
 mvn -DskipTests package
-java -jar target/neoenergia-lms-api-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+java -jar target/navoxi-lms-api-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
 # ou:
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```

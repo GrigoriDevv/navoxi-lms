@@ -299,7 +299,7 @@ Este projeto é uma **prova de conceito front-end**. Não há backend real, banc
 
 ## Repositório
 
-Código-fonte: [github.com/GrigoriDevv/navoxi-platform](https://github.com/GrigoriDevv/navoxi-platform)
+Código-fonte: [github.com/GrigoriDevv/navoxi-lms](https://github.com/GrigoriDevv/navoxi-lms)
 
 ---
 

@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
         unitId: backendUser.unitId,
         avatarColor: backendUser.avatarColor,
         provider: "password",
+        accessToken: backendUser.accessToken,
       },
       Date.now() + SESSION_MAX_AGE * 1000
     );

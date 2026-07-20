@@ -27,6 +27,9 @@ management:
 
 lms:
   api-token: ${LMS_API_TOKEN:local-dev-token}
+  jwt:
+    secret: ${LMS_JWT_SECRET:${LMS_API_TOKEN:local-dev-token}}
+    ttl-seconds: ${LMS_JWT_TTL_SECONDS:604800}
   demo:
     block-seed-logins: ${LMS_BLOCK_DEMO_SEED_LOGINS:false}
   auth:

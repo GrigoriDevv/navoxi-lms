@@ -10,4 +10,5 @@ public record AuthSessionDto(
     Role role,
     UnitId unitId,
     String avatarColor,
-    String provider) {}
+    String provider,
+    String accessToken) {}

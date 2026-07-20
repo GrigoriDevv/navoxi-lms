@@ -55,6 +55,7 @@ class AuthServiceTest {
     assertThat(session.email()).isEqualTo("auth.test@navoxi.com");
     assertThat(session.provider()).isEqualTo("password");
     assertThat(session.role()).isEqualTo(Role.aluno);
+    assertThat(session.accessToken()).isNotBlank();
   }
 
   @Test

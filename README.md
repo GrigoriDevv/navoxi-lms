@@ -8,7 +8,7 @@
 |---|---|
 | Front | [Next.js 16](https://nextjs.org/) (App Router) + React 19 + TypeScript |
 | Estilo | Tailwind CSS v4 |
-| Estado UI | React Context (`src/lib/store.tsx`) |
+| Estado UI | React Context (`src/lib/store.tsx` + `src/lib/store/*` por domínio) |
 | Backend (Fase 1) | Java 21 + Spring Boot em [`backend/`](backend/) |
 | Persistência API | H2 (local) / PostgreSQL + Flyway (prod) |
 | Fallback demo | Mock em `src/lib/mock-data.ts` quando `NEXT_PUBLIC_USE_JAVA_API` ≠ `true` |
@@ -231,7 +231,13 @@ src/
 └── lib/
     ├── types.ts                    # Tipos de domínio
     ├── mock-data.ts                # Seed de demonstração
-    ├── store.tsx                   # Estado global e ações
+    ├── store.tsx                   # Fachada AppProvider / useApp
+    ├── store/                      # Domínios: auth, learning, notifications
+    │   ├── types.ts
+    │   ├── shared.ts
+    │   ├── use-auth-store.ts
+    │   ├── use-learning-store.ts
+    │   └── use-notifications-store.ts
     ├── rbac.ts                     # Perfis, permissões, menu
     ├── use-auth-scope.ts           # Escopo por unidade/perfil
     ├── aprendizagem.ts             # Labels (modalidade, status…)
@@ -243,7 +249,7 @@ src/
 
 ```mermaid
 flowchart LR
-  UI[Páginas React] --> Store[AppProvider / store.tsx]
+  UI[Páginas React] --> Store[AppProvider / store.tsx + store/*]
   Store --> Mock[mock-data.ts]
   Store --> LS[(localStorage)]
   UI --> Scope[useAuthScope]

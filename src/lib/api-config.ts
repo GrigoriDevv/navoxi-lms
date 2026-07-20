@@ -1,7 +1,10 @@
 /** Feature flag: quando true, cursos/aulas/progresso vêm do backend Java via BFF. */
-export function useJavaApi(): boolean {
+export function isJavaApiEnabled(): boolean {
   return process.env.NEXT_PUBLIC_USE_JAVA_API === "true";
 }
+
+/** @deprecated Use `isJavaApiEnabled` — nome antigo dispara falso positivo do eslint react-hooks. */
+export const useJavaApi = isJavaApiEnabled;
 
 /**
  * Base URL usada pelo browser — always same-origin BFF.

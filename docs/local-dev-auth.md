@@ -15,6 +15,15 @@ ALLOW_DEMO_LOGIN=true
 
 `AUTH_DEMO_ENABLED` continua funcionando como alias legado de `ALLOW_DEMO_LOGIN`.
 
+Microsoft SSO (opcional em local):
+
+```env
+AZURE_AD_CLIENT_ID=...
+AZURE_AD_CLIENT_SECRET=...
+AZURE_AD_TENANT_ID=...
+AUTH_ALLOWED_EMAIL_DOMAIN=navoxi.com
+```
+
 ## Backend local
 
 ```bash
@@ -23,6 +32,15 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 Profile `local` ativa seed (`LMS_SEED_ENABLED=true` implícito) e senha inicial `LMS_SEED_PASSWORD` (default `demo1234`).
+
+JIT Microsoft (opcional em local):
+
+```env
+LMS_JIT_PROVISIONING=true
+LMS_ALLOWED_EMAIL_DOMAINS=navoxi.com
+LMS_BOOTSTRAP_ADMIN_EMAILS=voce@navoxi.com
+LMS_JIT_DEFAULT_UNIT=matriz
+```
 
 ## Contas seed (somente local)
 
@@ -41,11 +59,13 @@ Senha inicial: valor de `LMS_SEED_PASSWORD` / `demo1234`.
 
 | Fluxo | Quando |
 |---|---|
-| `POST /api/auth/login` → Java BCrypt | Backend disponível (preferencial) |
+| Microsoft Entra SSO | `AZURE_AD_*` configurado — caminho principal; JIT cria user no Postgres se habilitado |
+| `POST /api/auth/login` → Java BCrypt | Break-glass para contas `local`/`both` já no DB |
 | Fallback mock (`demo1234` / `DEMO_LOGIN_PASSWORD`) | `ALLOW_DEMO_LOGIN=true` e backend indisponível |
-| Microsoft Entra SSO | `AZURE_AD_*` configurado |
 
 A rota `POST /api/auth/demo-login` foi removida; use apenas `/api/auth/login`.
+
+Role/unit após SSO vêm **sempre do Postgres** (`UserAccount`). Novos usuários JIT entram como `aluno` (ou `admin_premium` se banco vazio / e-mail em `LMS_BOOTSTRAP_ADMIN_EMAILS`). Promoção: Administração → PATCH `/api/v1/users/{id}`.
 
 ## Produção pública
 
@@ -55,6 +75,10 @@ A rota `POST /api/auth/demo-login` foi removida; use apenas `/api/auth/login`.
 | `AUTH_DEMO_ENABLED` | deprecated — não setar |
 | `LMS_SEED_ENABLED` | `false` |
 | `LMS_BLOCK_DEMO_SEED_LOGINS` | `true` (default profile `prod`) |
+| `LMS_JIT_PROVISIONING` | `true` (default profile `prod`) |
+| `LMS_ALLOWED_EMAIL_DOMAINS` | domínio corporativo (ex. `navoxi.com`) |
+| `LMS_BOOTSTRAP_ADMIN_EMAILS` | e-mail(s) do primeiro admin real |
 | `AZURE_AD_TENANT_ID` | tenant específico (não `common`) |
+| `AUTH_ALLOWED_EMAIL_DOMAIN` | mesmo domínio (obrigatório em prod com SSO) |
 
-Login permitido: **SSO Microsoft** + **senha real** (usuários cadastrados no backend com BCrypt).
+Login: **SSO Microsoft (principal)** + **senha BCrypt break-glass** para contas `local`/`both` já provisionadas. Não usar seed em prod pública.

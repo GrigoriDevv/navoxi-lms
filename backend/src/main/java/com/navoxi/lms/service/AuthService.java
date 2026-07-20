@@ -1,7 +1,10 @@
 package com.navoxi.lms.service;
 
+import com.navoxi.lms.config.JitAuthProperties;
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.AuthProvider;
+import com.navoxi.lms.domain.enums.Role;
+import com.navoxi.lms.domain.enums.UnitId;
 import com.navoxi.lms.domain.enums.UserStatus;
 import com.navoxi.lms.repository.UserAccountRepository;
 import com.navoxi.lms.security.DemoSeedGuard;
@@ -10,6 +13,7 @@ import com.navoxi.lms.web.ApiExceptionHandler.UnauthorizedException;
 import com.navoxi.lms.web.dto.AuthSessionDto;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,17 +24,24 @@ public class AuthService {
   private static final DateTimeFormatter LAST_ACCESS_FMT =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+  private static final String[] AVATAR_COLORS = {
+    "#2563eb", "#7c3aed", "#0ea5e9", "#059669", "#d97706", "#dc2626"
+  };
+
   private final UserAccountRepository users;
   private final PasswordEncoder passwordEncoder;
   private final DemoSeedGuard demoSeedGuard;
+  private final JitAuthProperties jitAuth;
 
   public AuthService(
       UserAccountRepository users,
       PasswordEncoder passwordEncoder,
-      DemoSeedGuard demoSeedGuard) {
+      DemoSeedGuard demoSeedGuard,
+      JitAuthProperties jitAuth) {
     this.users = users;
     this.passwordEncoder = passwordEncoder;
     this.demoSeedGuard = demoSeedGuard;
+    this.jitAuth = jitAuth;
   }
 
   @Transactional
@@ -59,25 +70,85 @@ public class AuthService {
 
   @Transactional
   public AuthSessionDto resolveMicrosoftLogin(String email, String name, String microsoftOid) {
-    UserAccount user =
-        users
-            .findByEmailIgnoreCase(normalizeEmail(email))
-            .orElseThrow(
-                () ->
-                    new ForbiddenException(
-                        "Conta não autorizada. Solicite acesso ao administrador."));
+    String normalizedEmail = normalizeEmail(email);
+    String oid = microsoftOid == null || microsoftOid.isBlank() ? null : microsoftOid.trim();
 
-    assertActive(user);
-    assertMicrosoftAllowed(user);
+    if (oid != null) {
+      users
+          .findByMicrosoftOid(oid)
+          .ifPresent(
+              existing -> {
+                if (!existing.getEmail().equalsIgnoreCase(normalizedEmail)) {
+                  throw new ForbiddenException(
+                      "Conta não autorizada. Solicite acesso ao administrador.");
+                }
+              });
+    }
 
-    if (name != null && !name.isBlank() && !name.equals(user.getName())) {
-      user.setName(name.trim());
+    UserAccount user = users.findByEmailIgnoreCase(normalizedEmail).orElse(null);
+    if (user == null) {
+      if (!jitAuth.isJitProvisioningEnabled()) {
+        throw new ForbiddenException(
+            "Conta não autorizada. Solicite acesso ao administrador.");
+      }
+      user = provisionJitUser(normalizedEmail, name, oid);
+    } else {
+      assertActive(user);
+      assertMicrosoftAllowed(user);
+
+      if (name != null && !name.isBlank() && !name.equals(user.getName())) {
+        user.setName(name.trim());
+      }
+      if (oid != null) {
+        user.setMicrosoftOid(oid);
+      }
     }
-    if (microsoftOid != null && !microsoftOid.isBlank()) {
-      user.setMicrosoftOid(microsoftOid.trim());
-    }
+
     touchLastAccess(user);
     return toSession(user, "microsoft");
+  }
+
+  private UserAccount provisionJitUser(String normalizedEmail, String name, String oid) {
+    if (!jitAuth.isDomainAllowed(normalizedEmail)) {
+      throw new ForbiddenException("Domínio de e-mail não autorizado para esta organização");
+    }
+
+    Role role =
+        (users.count() == 0 || jitAuth.isBootstrapAdmin(normalizedEmail))
+            ? Role.admin_premium
+            : Role.aluno;
+
+    UnitId unitId;
+    try {
+      unitId = UnitId.valueOf(jitAuth.getDefaultUnitId());
+    } catch (IllegalArgumentException ex) {
+      unitId = UnitId.matriz;
+    }
+
+    String displayName =
+        name != null && !name.isBlank()
+            ? name.trim()
+            : normalizedEmail.split("@")[0];
+
+    UserAccount user = new UserAccount();
+    user.setName(displayName);
+    user.setEmail(normalizedEmail);
+    user.setRole(role);
+    user.setUnitId(unitId);
+    user.setDepartment("—");
+    user.setStatus(UserStatus.ativo);
+    user.setLastAccess("—");
+    user.setAvatarColor(pickAvatarColor(normalizedEmail));
+    user.setAuthProvider(AuthProvider.microsoft);
+    if (oid != null) {
+      user.setMicrosoftOid(oid);
+    }
+    return users.save(user);
+  }
+
+  private static String pickAvatarColor(String email) {
+    int idx = Math.floorMod(email.hashCode(), AVATAR_COLORS.length);
+    return AVATAR_COLORS[idx];
   }
 
   private static void assertActive(UserAccount user) {
@@ -106,7 +177,7 @@ public class AuthService {
   }
 
   private static String normalizeEmail(String email) {
-    return email.trim().toLowerCase();
+    return email.trim().toLowerCase(Locale.ROOT);
   }
 
   static AuthSessionDto toSession(UserAccount user, String provider) {

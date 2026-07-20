@@ -65,6 +65,9 @@ Em **produção pública**, login mock com senha compartilhada é bloqueado. Log
 - `AUTH_DEMO_ENABLED` — deprecated; não setar
 - `LMS_SEED_ENABLED=false`
 - `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod` do backend)
+- `LMS_JIT_PROVISIONING=true` (default no profile `prod`)
+- `LMS_ALLOWED_EMAIL_DOMAINS` + `AUTH_ALLOWED_EMAIL_DOMAIN` (mesmo domínio)
+- `LMS_BOOTSTRAP_ADMIN_EMAILS` (primeiro admin real)
 - `LMS_SEED_PASSWORD` forte ou seed desligado
 - Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
 

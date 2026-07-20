@@ -35,6 +35,7 @@ function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
   const [demoAuthEnabled, setDemoAuthEnabled] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const authError = searchParams.get("error");
 
   useEffect(() => {
@@ -50,6 +51,7 @@ function LoginForm() {
   }, []);
 
   const selectedUser = users.find((u) => u.email === email);
+  const passwordFormVisible = !microsoftEnabled || showPasswordForm;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +102,7 @@ function LoginForm() {
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6 bg-white">
-        <form onSubmit={submit} className="w-full max-w-md">
+        <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 text-white grid place-items-center font-bold shadow-sm">
               N
@@ -109,7 +111,9 @@ function LoginForm() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Acessar plataforma</h2>
           <p className="text-sm text-slate-500 mt-1">
-            O perfil e a unidade são definidos pelo cadastro do usuário.
+            {microsoftEnabled
+              ? "Acesso corporativo via Microsoft Entra ID. Senha local disponível como break-glass."
+              : "O perfil e a unidade são definidos pelo cadastro do usuário."}
           </p>
 
           {(authError || formError) && (
@@ -121,101 +125,129 @@ function LoginForm() {
           <div className="mt-6">
             <MicrosoftSignInButton enabled={microsoftEnabled} />
             <p className="mt-2 text-[11px] text-slate-400 text-center">
-              Identidade verificada pela Microsoft (Entra ID)
+              {microsoftEnabled
+                ? "Caminho principal · identidade verificada pela Microsoft"
+                : "Identidade verificada pela Microsoft (Entra ID)"}
             </p>
           </div>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-3 text-slate-400">ou entre com e-mail</span>
-            </div>
-          </div>
-
-          <label className="block text-sm font-medium text-slate-700">
-            E-mail corporativo
-          </label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            required
-            placeholder="nome@navoxi.com"
-            className="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm"
-          />
-
-          {demoAuthEnabled && selectedUser && (
-            <div className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm">
-              <div className="font-medium text-slate-800">{roleLabels[selectedUser.role]}</div>
-              <div className="text-xs text-slate-500 mt-0.5">{roleDescriptions[selectedUser.role]}</div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <Badge color="green">{unitLabels[selectedUser.unitId]}</Badge>
-              </div>
-            </div>
+          {microsoftEnabled && !showPasswordForm && (
+            <button
+              type="button"
+              onClick={() => setShowPasswordForm(true)}
+              className="mt-6 w-full text-center text-xs text-slate-500 hover:text-slate-700 underline-offset-2 hover:underline"
+            >
+              Acesso local com e-mail e senha (break-glass)
+            </button>
           )}
 
-          <label className="block mt-4 text-sm font-medium text-slate-700">
-            Senha
-          </label>
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            required
-            className="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm"
-          />
+          {passwordFormVisible && (
+            <form onSubmit={submit} className="mt-6">
+              {microsoftEnabled && (
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-white px-3 text-slate-400">acesso local</span>
+                  </div>
+                </div>
+              )}
+              {!microsoftEnabled && (
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-white px-3 text-slate-400">ou entre com e-mail</span>
+                  </div>
+                </div>
+              )}
 
-          <label className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={mfa}
-              onChange={(e) => setMfa(e.target.checked)}
-              className="rounded border-slate-300 text-brand focus:ring-brand"
-            />
-            Autenticação multifator (MFA)
-          </label>
+              <label className="block text-sm font-medium text-slate-700">
+                E-mail corporativo
+              </label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                required
+                placeholder="nome@navoxi.com"
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm"
+              />
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-6 w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm"
-          >
-            <Icon name="logout" className="w-4 h-4" />
-            {submitting ? "Entrando…" : "Entrar"}
-          </button>
+              {demoAuthEnabled && selectedUser && (
+                <div className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+                  <div className="font-medium text-slate-800">{roleLabels[selectedUser.role]}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{roleDescriptions[selectedUser.role]}</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <Badge color="green">{unitLabels[selectedUser.unitId]}</Badge>
+                  </div>
+                </div>
+              )}
 
-          {demoAuthEnabled && (
-            <div className="mt-6">
-              <p className="text-xs text-slate-400 mb-2">Acesso rápido por perfil (demo):</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {DEMO_SEED_EMAILS.map((demoEmail) => {
-                  const u = users.find((x) => x.email === demoEmail);
-                  if (!u) return null;
-                  return (
-                    <button
-                      key={demoEmail}
-                      type="button"
-                      onClick={() => setEmail(demoEmail)}
-                      className={`text-left px-3 py-2.5 rounded-lg border text-xs transition ${
-                        email === demoEmail
-                          ? "border-brand bg-blue-50/60"
-                          : "border-slate-200 hover:border-brand hover:bg-blue-50/50"
-                      }`}
-                    >
-                      <span className="font-medium text-slate-700 block">
-                        {roleLabels[u.role]}
-                      </span>
-                      <span className="text-slate-400 truncate block">{u.email}</span>
-                      <span className="text-slate-400 block">{unitLabels[u.unitId]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              <label className="block mt-4 text-sm font-medium text-slate-700">
+                Senha
+              </label>
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                required
+                className="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm"
+              />
+
+              <label className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={mfa}
+                  onChange={(e) => setMfa(e.target.checked)}
+                  className="rounded border-slate-300 text-brand focus:ring-brand"
+                />
+                Autenticação multifator (MFA)
+              </label>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="mt-6 w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Icon name="logout" className="w-4 h-4" />
+                {submitting ? "Entrando…" : "Entrar"}
+              </button>
+
+              {demoAuthEnabled && (
+                <div className="mt-6">
+                  <p className="text-xs text-slate-400 mb-2">Acesso rápido por perfil (demo):</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {DEMO_SEED_EMAILS.map((demoEmail) => {
+                      const u = users.find((x) => x.email === demoEmail);
+                      if (!u) return null;
+                      return (
+                        <button
+                          key={demoEmail}
+                          type="button"
+                          onClick={() => setEmail(demoEmail)}
+                          className={`text-left px-3 py-2.5 rounded-lg border text-xs transition ${
+                            email === demoEmail
+                              ? "border-brand bg-blue-50/60"
+                              : "border-slate-200 hover:border-brand hover:bg-blue-50/50"
+                          }`}
+                        >
+                          <span className="font-medium text-slate-700 block">
+                            {roleLabels[u.role]}
+                          </span>
+                          <span className="text-slate-400 truncate block">{u.email}</span>
+                          <span className="text-slate-400 block">{unitLabels[u.unitId]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </form>
           )}
-        </form>
+        </div>
       </div>
     </div>
   );

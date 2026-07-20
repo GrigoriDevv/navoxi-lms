@@ -22,14 +22,13 @@ function authStateFromSession(data: {
   provider?: AuthState["authProvider"];
 }): AuthState {
   const email = normalizeEmail(data.email);
-  const existing = seed.users.find((u) => u.email === email);
   return {
-    id: data.id ?? existing?.id ?? "guest",
-    name: data.name ?? existing?.name ?? email.split("@")[0],
+    id: data.id ?? "guest",
+    name: data.name?.trim() || email.split("@")[0] || "Usuário",
     email,
     role: data.role,
-    unitId: data.unitId ?? existing?.unitId ?? "matriz",
-    avatarColor: data.avatarColor ?? existing?.avatarColor ?? "#2563eb",
+    unitId: data.unitId ?? "matriz",
+    avatarColor: data.avatarColor ?? "#2563eb",
     authProvider: data.provider ?? "password",
   };
 }

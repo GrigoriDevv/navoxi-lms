@@ -12,9 +12,13 @@ LMS_JWT_SECRET=local-dev-jwt-secret-at-least-32-chars
 AUTH_SECRET=dev-secret-change-me
 LMS_SEED_PASSWORD=demo1234
 ALLOW_DEMO_LOGIN=true
+# Em prod os mocks ficam ocultos; para staging com UI demo:
+# NEXT_PUBLIC_SHOW_MOCK_MODULES=true
 ```
 
 `AUTH_DEMO_ENABLED` continua funcionando como alias legado de `ALLOW_DEMO_LOGIN`.
+
+Em produção, módulos mock (auditoria, config, comunicação, integrações, certificados, avaliações) ficam ocultos salvo `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`. Ver `src/lib/mock-module-gates.ts`.
 
 O login Java devolve `accessToken` (JWT HS256). O BFF Next guarda na cookie de sessão e envia `Authorization: Bearer <JWT>` para `/api/v1/**` — **não** usa mais `X-User-Email`.
 

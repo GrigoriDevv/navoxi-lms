@@ -1,4 +1,5 @@
 import type { PermissionKey } from "./rbac";
+import { shouldHidePath } from "./mock-module-gates";
 
 export interface QuickShortcut {
   id: string;
@@ -129,15 +130,22 @@ export const quickActions: QuickActionDef[] = [
 export function getShortcutsForPermissions(
   can: (p: PermissionKey) => boolean
 ): QuickShortcut[] {
-  return quickShortcuts.filter((s) =>
-    s.permissions.some((p) => can(p))
-  );
+  return quickShortcuts.filter((s) => {
+    if (shouldHidePath(s.href)) return false;
+    return s.permissions.some((p) => can(p));
+  });
 }
 
 export function getActionsForPermissions(
   can: (p: PermissionKey) => boolean
 ): QuickActionDef[] {
-  return quickActions.filter((a) =>
-    a.permissions.some((p) => can(p))
-  );
+  return quickActions.filter((a) => {
+    if (a.action === "publish_post" && shouldHidePath("/comunicacao")) {
+      return false;
+    }
+    if (a.action === "create_user" && shouldHidePath("/administracao")) {
+      return false;
+    }
+    return a.permissions.some((p) => can(p));
+  });
 }

@@ -6,12 +6,17 @@ import {
   SESSION_MAX_AGE,
   sessionCookieOptions,
 } from "@/lib/auth-session";
+import { isValidDemoPassword } from "@/lib/demo-password";
 import { resolveUserProfile } from "@/lib/session-user";
 
 export async function POST(request: NextRequest) {
-  let body: { email?: string; name?: string };
+  let body: { email?: string; name?: string; password?: string };
   try {
-    body = (await request.json()) as { email?: string; name?: string };
+    body = (await request.json()) as {
+      email?: string;
+      name?: string;
+      password?: string;
+    };
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
@@ -19,6 +24,13 @@ export async function POST(request: NextRequest) {
   const email = body.email?.trim();
   if (!email) {
     return NextResponse.json({ error: "Email é obrigatório" }, { status: 400 });
+  }
+
+  if (!isValidDemoPassword(body.password)) {
+    return NextResponse.json(
+      { error: "E-mail ou senha inválidos" },
+      { status: 401 }
+    );
   }
 
   const profile = resolveUserProfile(email, body.name);

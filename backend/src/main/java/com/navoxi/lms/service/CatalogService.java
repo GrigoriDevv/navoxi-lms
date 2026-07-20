@@ -1,7 +1,9 @@
 package com.navoxi.lms.service;
 
+import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.repository.CourseLessonRepository;
 import com.navoxi.lms.repository.CourseModuleRepository;
+import com.navoxi.lms.security.UnitScope;
 import com.navoxi.lms.web.dto.LessonDto;
 import com.navoxi.lms.web.dto.ModuleDto;
 import java.util.Comparator;
@@ -21,20 +23,24 @@ public class CatalogService {
   }
 
   @Transactional(readOnly = true)
-  public List<ModuleDto> allModules() {
+  public List<ModuleDto> allModules(UserAccount actor) {
     return modules.findAll().stream()
+        .filter(m -> UnitScope.canAccessCourse(actor, m.getCourse()))
         .sorted(
-            Comparator.comparing((com.navoxi.lms.domain.entity.CourseModule m) -> m.getCourse().getId())
+            Comparator.comparing(
+                    (com.navoxi.lms.domain.entity.CourseModule m) -> m.getCourse().getId())
                 .thenComparing(com.navoxi.lms.domain.entity.CourseModule::getSortOrder))
         .map(CourseMapper::toDto)
         .toList();
   }
 
   @Transactional(readOnly = true)
-  public List<LessonDto> allLessons() {
+  public List<LessonDto> allLessons(UserAccount actor) {
     return lessons.findAll().stream()
+        .filter(l -> UnitScope.canAccessCourse(actor, l.getCourse()))
         .sorted(
-            Comparator.comparing((com.navoxi.lms.domain.entity.CourseLesson l) -> l.getCourse().getId())
+            Comparator.comparing(
+                    (com.navoxi.lms.domain.entity.CourseLesson l) -> l.getCourse().getId())
                 .thenComparing(com.navoxi.lms.domain.entity.CourseLesson::getSortOrder))
         .map(CourseMapper::toDto)
         .toList();

@@ -27,12 +27,23 @@ final class LearningTestFixtures {
       String email,
       Role role,
       String password) {
+    return saveUser(users, encoder, id, email, role, UnitId.matriz, password);
+  }
+
+  static UserAccount saveUser(
+      UserAccountRepository users,
+      PasswordEncoder encoder,
+      String id,
+      String email,
+      Role role,
+      UnitId unitId,
+      String password) {
     UserAccount u = new UserAccount();
     u.setId(id);
     u.setName(email);
     u.setEmail(email);
     u.setRole(role);
-    u.setUnitId(UnitId.matriz);
+    u.setUnitId(unitId);
     u.setDepartment("QA");
     u.setStatus(UserStatus.ativo);
     u.setLastAccess("—");
@@ -43,12 +54,16 @@ final class LearningTestFixtures {
   }
 
   static Course saveCourse(CourseRepository courses, String id, String title) {
+    return saveCourse(courses, id, title, UnitId.matriz);
+  }
+
+  static Course saveCourse(CourseRepository courses, String id, String title, UnitId unitId) {
     Course c = new Course();
     c.setId(id);
     c.setTitle(title);
     c.setCategory("Compliance");
     c.setInstructor("Instrutor QA");
-    c.setUnitId(UnitId.matriz);
+    c.setUnitId(unitId);
     c.setModality(CourseModality.online);
     c.setAudience("Todos");
     c.setWorkload(8);

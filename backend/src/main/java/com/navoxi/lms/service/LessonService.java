@@ -4,12 +4,14 @@ import com.navoxi.lms.domain.entity.Course;
 import com.navoxi.lms.domain.entity.CourseLesson;
 import com.navoxi.lms.domain.entity.CourseModule;
 import com.navoxi.lms.domain.entity.Enrollment;
+import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.EnrollmentStatus;
 import com.navoxi.lms.domain.enums.NotificationType;
 import com.navoxi.lms.repository.CourseLessonRepository;
 import com.navoxi.lms.repository.CourseModuleRepository;
 import com.navoxi.lms.repository.EnrollmentRepository;
 import com.navoxi.lms.repository.LessonProgressRepository;
+import com.navoxi.lms.security.UnitScope;
 import com.navoxi.lms.web.ApiExceptionHandler.BadRequestException;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.LessonDto;
@@ -46,29 +48,29 @@ public class LessonService {
   }
 
   @Transactional(readOnly = true)
-  public List<ModuleDto> listModules(String courseId) {
-    courseService.require(courseId);
+  public List<ModuleDto> listModules(UserAccount actor, String courseId) {
+    courseService.requireAccessible(actor, courseId);
     return modules.findByCourseIdOrderBySortOrderAsc(courseId).stream()
         .map(CourseMapper::toDto)
         .toList();
   }
 
   @Transactional(readOnly = true)
-  public List<LessonDto> listLessons(String courseId) {
-    courseService.require(courseId);
+  public List<LessonDto> listLessons(UserAccount actor, String courseId) {
+    courseService.requireAccessible(actor, courseId);
     return lessons.findByCourseIdOrderBySortOrderAsc(courseId).stream()
         .map(CourseMapper::toDto)
         .toList();
   }
 
   @Transactional
-  public LessonDto publish(String courseId, LessonRequest req) {
+  public LessonDto publish(UserAccount actor, String courseId, LessonRequest req) {
     if ((req.youtubeVideoId() == null || req.youtubeVideoId().isBlank())
         && (req.videoUrl() == null || req.videoUrl().isBlank())) {
       throw new BadRequestException("Informe youtubeVideoId ou videoUrl");
     }
 
-    Course course = courseService.require(courseId);
+    Course course = courseService.requireAccessible(actor, courseId);
     CourseModule module = resolveModule(course, req.moduleId(), req.moduleTitle());
 
     int nextOrder =
@@ -104,9 +106,10 @@ public class LessonService {
   }
 
   @Transactional
-  public LessonDto update(String lessonId, LessonUpdateRequest req) {
+  public LessonDto update(UserAccount actor, String lessonId, LessonUpdateRequest req) {
     CourseLesson lesson =
         lessons.findById(lessonId).orElseThrow(() -> new NotFoundException("Aula não encontrada"));
+    UnitScope.assertCanAccessCourse(actor, lesson.getCourse());
 
     if (req.title() != null && !req.title().isBlank()) {
       lesson.setTitle(req.title().trim());
@@ -140,17 +143,17 @@ public class LessonService {
   }
 
   @Transactional
-  public void delete(String lessonId) {
-    if (!lessons.existsById(lessonId)) {
-      throw new NotFoundException("Aula não encontrada");
-    }
+  public void delete(UserAccount actor, String lessonId) {
+    CourseLesson lesson =
+        lessons.findById(lessonId).orElseThrow(() -> new NotFoundException("Aula não encontrada"));
+    UnitScope.assertCanAccessCourse(actor, lesson.getCourse());
     progress.deleteByLessonId(lessonId);
     lessons.deleteById(lessonId);
   }
 
   @Transactional
-  public void deleteAllForCourse(String courseId) {
-    courseService.require(courseId);
+  public void deleteAllForCourse(UserAccount actor, String courseId) {
+    courseService.requireAccessible(actor, courseId);
     progress.deleteByLesson_Course_Id(courseId);
     lessons.deleteByCourseId(courseId);
   }

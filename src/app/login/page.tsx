@@ -8,14 +8,7 @@ import { users } from "@/lib/mock-data";
 import { Icon } from "@/components/Icon";
 import { Badge } from "@/components/ui";
 import { MicrosoftSignInButton } from "@/components/auth/MicrosoftSignInButton";
-
-const demoEmails = [
-  "ana.souza@navoxi.com",
-  "bruno.ferreira@navoxi.com",
-  "carla.mendes@navoxi.com",
-  "henrique.castro@navoxi.com",
-  "diego.alves@navoxi.com",
-];
+import { DEMO_SEED_EMAILS } from "@/lib/demo-seed-emails";
 
 export default function LoginPage() {
   return (
@@ -41,6 +34,7 @@ function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
+  const [demoAuthEnabled, setDemoAuthEnabled] = useState(false);
   const authError = searchParams.get("error");
 
   useEffect(() => {
@@ -48,6 +42,11 @@ function LoginForm() {
       .then((r) => r.json())
       .then((data: { enabled?: boolean }) => setMicrosoftEnabled(!!data.enabled))
       .catch(() => setMicrosoftEnabled(false));
+
+    fetch("/api/auth/demo-status")
+      .then((r) => r.json())
+      .then((data: { enabled?: boolean }) => setDemoAuthEnabled(!!data.enabled))
+      .catch(() => setDemoAuthEnabled(false));
   }, []);
 
   const selectedUser = users.find((u) => u.email === email);
@@ -94,7 +93,8 @@ function LoginForm() {
           </div>
         </div>
         <p className="text-white/60 text-sm relative z-10">
-          © 2026 Navoxi · Ambiente de demonstração (MVP)
+          © 2026 Navoxi
+          {demoAuthEnabled ? " · Ambiente de demonstração (MVP)" : " · Sistema Inteligente"}
         </p>
         <div className="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-white/10 blur-2xl" />
       </div>
@@ -146,7 +146,7 @@ function LoginForm() {
             className="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm"
           />
 
-          {selectedUser && (
+          {demoAuthEnabled && selectedUser && (
             <div className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm">
               <div className="font-medium text-slate-800">{roleLabels[selectedUser.role]}</div>
               <div className="text-xs text-slate-500 mt-0.5">{roleDescriptions[selectedUser.role]}</div>
@@ -186,32 +186,35 @@ function LoginForm() {
             {submitting ? "Entrando…" : "Entrar"}
           </button>
 
-          <div className="mt-6">
-            <p className="text-xs text-slate-400 mb-2">Acesso rápido por perfil (demo):</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {demoEmails.map((demoEmail) => {
-                const u = users.find((x) => x.email === demoEmail)!;
-                return (
-                  <button
-                    key={demoEmail}
-                    type="button"
-                    onClick={() => setEmail(demoEmail)}
-                    className={`text-left px-3 py-2.5 rounded-lg border text-xs transition ${
-                      email === demoEmail
-                        ? "border-brand bg-blue-50/60"
-                        : "border-slate-200 hover:border-brand hover:bg-blue-50/50"
-                    }`}
-                  >
-                    <span className="font-medium text-slate-700 block">
-                      {roleLabels[u.role]}
-                    </span>
-                    <span className="text-slate-400 truncate block">{u.email}</span>
-                    <span className="text-slate-400 block">{unitLabels[u.unitId]}</span>
-                  </button>
-                );
-              })}
+          {demoAuthEnabled && (
+            <div className="mt-6">
+              <p className="text-xs text-slate-400 mb-2">Acesso rápido por perfil (demo):</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {DEMO_SEED_EMAILS.map((demoEmail) => {
+                  const u = users.find((x) => x.email === demoEmail);
+                  if (!u) return null;
+                  return (
+                    <button
+                      key={demoEmail}
+                      type="button"
+                      onClick={() => setEmail(demoEmail)}
+                      className={`text-left px-3 py-2.5 rounded-lg border text-xs transition ${
+                        email === demoEmail
+                          ? "border-brand bg-blue-50/60"
+                          : "border-slate-200 hover:border-brand hover:bg-blue-50/50"
+                      }`}
+                    >
+                      <span className="font-medium text-slate-700 block">
+                        {roleLabels[u.role]}
+                      </span>
+                      <span className="text-slate-400 truncate block">{u.email}</span>
+                      <span className="text-slate-400 block">{unitLabels[u.unitId]}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </form>
       </div>
     </div>

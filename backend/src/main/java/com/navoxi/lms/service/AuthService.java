@@ -4,6 +4,7 @@ import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.AuthProvider;
 import com.navoxi.lms.domain.enums.UserStatus;
 import com.navoxi.lms.repository.UserAccountRepository;
+import com.navoxi.lms.security.DemoSeedGuard;
 import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
 import com.navoxi.lms.web.ApiExceptionHandler.UnauthorizedException;
 import com.navoxi.lms.web.dto.AuthSessionDto;
@@ -21,17 +22,27 @@ public class AuthService {
 
   private final UserAccountRepository users;
   private final PasswordEncoder passwordEncoder;
+  private final DemoSeedGuard demoSeedGuard;
 
-  public AuthService(UserAccountRepository users, PasswordEncoder passwordEncoder) {
+  public AuthService(
+      UserAccountRepository users,
+      PasswordEncoder passwordEncoder,
+      DemoSeedGuard demoSeedGuard) {
     this.users = users;
     this.passwordEncoder = passwordEncoder;
+    this.demoSeedGuard = demoSeedGuard;
   }
 
   @Transactional
   public AuthSessionDto login(String email, String password) {
+    String normalizedEmail = normalizeEmail(email);
+    if (demoSeedGuard.isBlocked(normalizedEmail)) {
+      throw new UnauthorizedException("E-mail ou senha inválidos");
+    }
+
     UserAccount user =
         users
-            .findByEmailIgnoreCase(normalizeEmail(email))
+            .findByEmailIgnoreCase(normalizedEmail)
             .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos"));
 
     assertActive(user);

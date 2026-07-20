@@ -28,14 +28,14 @@ LMS_API_URL=http://localhost:8080
 LMS_API_TOKEN=local-dev-token
 AUTH_SECRET=dev-secret-change-me
 LMS_SEED_PASSWORD=demo1234
-AUTH_DEMO_ENABLED=true
+ALLOW_DEMO_LOGIN=true
 ```
 
 O browser chama só `/api/lms/*` e `/api/auth/*` (BFF). O token Java nunca vai para o cliente.
 
-Login por senha: `POST /api/auth/login` → backend Java (`BCrypt`). Fallback demo local só se `AUTH_DEMO_ENABLED=true` e o backend estiver indisponível.
+Login por senha: `POST /api/auth/login` → backend Java (`BCrypt`). Fallback mock local só se `ALLOW_DEMO_LOGIN=true` e o backend estiver indisponível.
 
-Detalhes: [`backend/README.md`](backend/README.md).
+Detalhes e contas seed: [`docs/local-dev-auth.md`](docs/local-dev-auth.md) · [`backend/README.md`](backend/README.md).
 
 ## Início rápido
 
@@ -44,7 +44,7 @@ npm install
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000). Com backend Java rodando, use e-mail cadastrado + senha seed (`LMS_SEED_PASSWORD`, default `demo1234`).
+Abra [http://localhost:3000](http://localhost:3000). Com backend Java rodando, use e-mail cadastrado + senha seed — ver [`docs/local-dev-auth.md`](docs/local-dev-auth.md).
 
 Build de produção:
 
@@ -53,18 +53,20 @@ npm run build
 npm start
 ```
 
-## Contas de demonstração
+## Autenticação local
 
-Senha inicial (usuários seed, profile `local`): `LMS_SEED_PASSWORD` / `demo1234`. Produção: `AUTH_DEMO_ENABLED=false`, `AZURE_AD_TENANT_ID` específico (não `common`).
+Contas seed, senha demo e variáveis de ambiente para desenvolvimento estão em [`docs/local-dev-auth.md`](docs/local-dev-auth.md).
 
-| E-mail | Perfil | Unidade |
-|---|---|---|
-| `ana.souza@navoxi.com` | Administrador Premium | Navoxi · Matriz |
-| `bruno.ferreira@navoxi.com` | Administrador de Unidade | Navoxi · Matriz |
-| `carla.mendes@navoxi.com` | Gestor de Conteúdo | Navoxi · Matriz |
-| `henrique.castro@navoxi.com` | Instrutor | Navoxi · Matriz |
-| `diego.alves@navoxi.com` | Aluno | Navoxi · Matriz |
-| `felipe.rocha@navoxi.com` | Administrador de Unidade | Navoxi · Nordeste |
+Em **produção pública**, login mock com senha compartilhada é bloqueado. Login permitido: SSO Microsoft + senha real (BCrypt/Java).
+
+### Checklist produção pública
+
+- `ALLOW_DEMO_LOGIN=false` ou omitido (default em produção)
+- `AUTH_DEMO_ENABLED` — deprecated; não setar
+- `LMS_SEED_ENABLED=false`
+- `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod` do backend)
+- `LMS_SEED_PASSWORD` forte ou seed desligado
+- Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
 
 O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são filtrados automaticamente conforme **RBAC** e escopo de unidade.
 

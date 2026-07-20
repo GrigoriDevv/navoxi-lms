@@ -27,6 +27,8 @@ management:
 
 lms:
   api-token: ${LMS_API_TOKEN:local-dev-token}
+  demo:
+    block-seed-logins: ${LMS_BLOCK_DEMO_SEED_LOGINS:false}
   seed:
     enabled: ${LMS_SEED_ENABLED:false}
     password: ${LMS_SEED_PASSWORD:demo1234}
@@ -90,6 +92,8 @@ spring:
     locations: classpath:db/migration
 
 lms:
+  demo:
+    block-seed-logins: ${LMS_BLOCK_DEMO_SEED_LOGINS:true}
   seed:
     enabled: ${LMS_SEED_ENABLED:false}
   cors:

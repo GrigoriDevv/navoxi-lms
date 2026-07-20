@@ -27,10 +27,13 @@ NEXT_PUBLIC_USE_JAVA_API=true
 LMS_API_URL=http://localhost:8080
 LMS_API_TOKEN=local-dev-token
 AUTH_SECRET=dev-secret-change-me
-DEMO_LOGIN_PASSWORD=demo1234
+LMS_SEED_PASSWORD=demo1234
+AUTH_DEMO_ENABLED=true
 ```
 
-O browser chama só `/api/lms/*` (BFF). O token Java nunca vai para o cliente.
+O browser chama só `/api/lms/*` e `/api/auth/*` (BFF). O token Java nunca vai para o cliente.
+
+Login por senha: `POST /api/auth/login` → backend Java (`BCrypt`). Fallback demo local só se `AUTH_DEMO_ENABLED=true` e o backend estiver indisponível.
 
 Detalhes: [`backend/README.md`](backend/README.md).
 
@@ -41,7 +44,7 @@ npm install
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000). Na tela de login, use os botões de acesso rápido ou informe um e-mail cadastrado. Senha demo: `demo1234` (ou o valor de `DEMO_LOGIN_PASSWORD`).
+Abra [http://localhost:3000](http://localhost:3000). Com backend Java rodando, use e-mail cadastrado + senha seed (`LMS_SEED_PASSWORD`, default `demo1234`).
 
 Build de produção:
 
@@ -52,7 +55,7 @@ npm start
 
 ## Contas de demonstração
 
-Senha compartilhada (todas as contas): `demo1234` — configurável via `DEMO_LOGIN_PASSWORD`. O endpoint `/api/auth/demo-login` rejeita senha incorreta com HTTP 401.
+Senha inicial (usuários seed, profile `local`): `LMS_SEED_PASSWORD` / `demo1234`. Produção: `AUTH_DEMO_ENABLED=false`, `AZURE_AD_TENANT_ID` específico (não `common`).
 
 | E-mail | Perfil | Unidade |
 |---|---|---|
@@ -280,7 +283,7 @@ Este projeto é uma **prova de conceito front-end**. Não há backend real, banc
 
 | Aspecto | Estado atual |
 |---|---|
-| Autenticação | Demo e-mail + senha (`DEMO_LOGIN_PASSWORD`) ou Microsoft Entra |
+| Autenticação | Senha BCrypt (backend) + Microsoft Entra (whitelist) |
 | Persistência | Sessão e preferências em `localStorage`; demais dados resetam ao recarregar* |
 | Upload de arquivos | Simulado (metadados apenas) |
 | E-mail / push / SMS | Simulados na UI |

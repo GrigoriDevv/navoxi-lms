@@ -28,6 +28,10 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 
 Demo header: `X-User-Email: henrique.castro@navoxi.com` ou `diego.alves@navoxi.com`.
 
+Autenticação por senha (BCrypt): `POST /api/v1/auth/login` com body `{ "email", "password" }` e header `Authorization: Bearer <LMS_API_TOKEN>`. Senha inicial dos usuários seed: `LMS_SEED_PASSWORD` (default `demo1234` no profile `local`).
+
+Microsoft SSO (whitelist): `POST /api/v1/auth/sso/microsoft` com `{ "email", "name", "microsoftOid" }` — só usuários já cadastrados e ativos.
+
 ## Endpoints principais
 
 | Método | Rota |
@@ -42,6 +46,8 @@ Demo header: `X-User-Email: henrique.castro@navoxi.com` ou `diego.alves@navoxi.c
 | GET | `/api/v1/lessons` |
 | PUT/DELETE | `/api/v1/lessons/{id}` |
 | POST | `/api/v1/lessons/{id}/complete` |
+| POST | `/api/v1/auth/login` |
+| POST | `/api/v1/auth/sso/microsoft` |
 | GET | `/api/v1/users/me` |
 | GET | `/api/v1/users/me/enrollments` |
 | GET | `/api/v1/users/me/progress` |

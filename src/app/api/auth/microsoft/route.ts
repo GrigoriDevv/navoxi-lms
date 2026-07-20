@@ -7,7 +7,9 @@ import {
 } from "@/lib/auth-session";
 import {
   buildMicrosoftAuthorizeUrl,
+  createPkcePair,
   getMicrosoftAuthConfig,
+  OAUTH_PKCE_COOKIE,
 } from "@/lib/microsoft-auth";
 
 export async function GET() {
@@ -23,11 +25,12 @@ export async function GET() {
   }
 
   const state = createOAuthState();
+  const { verifier, challenge } = createPkcePair();
   const cookieStore = await cookies();
-  cookieStore.set(OAUTH_STATE_COOKIE, state, {
-    ...sessionCookieOptions(600),
-    httpOnly: true,
-  });
+  const cookieOpts = { ...sessionCookieOptions(600), httpOnly: true };
 
-  return NextResponse.redirect(buildMicrosoftAuthorizeUrl(state));
+  cookieStore.set(OAUTH_STATE_COOKIE, state, cookieOpts);
+  cookieStore.set(OAUTH_PKCE_COOKIE, verifier, cookieOpts);
+
+  return NextResponse.redirect(buildMicrosoftAuthorizeUrl(state, challenge));
 }

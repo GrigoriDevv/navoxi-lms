@@ -16,9 +16,12 @@ export async function GET() {
 
   return NextResponse.json({
     authenticated: true,
+    id: session.userId,
     email: session.email,
     name: session.name,
     role: session.role,
+    unitId: session.unitId,
+    avatarColor: session.avatarColor,
     provider: session.provider,
   });
 }

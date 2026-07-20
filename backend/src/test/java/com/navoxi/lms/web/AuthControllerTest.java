@@ -1,0 +1,46 @@
+package com.navoxi.lms.web;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("local")
+@Transactional
+class AuthControllerTest {
+
+  @Autowired private MockMvc mockMvc;
+
+  @Test
+  void loginEndpointRequiresApiToken() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"diego.alves@navoxi.com\",\"password\":\"demo1234\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void loginEndpointWithToken() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .header("Authorization", "Bearer local-dev-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"diego.alves@navoxi.com\",\"password\":\"demo1234\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.email").value("diego.alves@navoxi.com"))
+        .andExpect(jsonPath("$.provider").value("password"));
+  }
+}

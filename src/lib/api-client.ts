@@ -6,6 +6,7 @@ import type {
   LessonProgress,
   Notification,
   SolicitacaoMatricula,
+  User,
 } from "./types";
 import { apiBaseUrl } from "./api-config";
 
@@ -332,6 +333,22 @@ export const lmsApi = {
     request<{ updated: number }>("/api/v1/users/me/notifications/read-all", {
       method: "POST",
     }),
+
+  listUsers: async () => {
+    const data = await request<ApiUser[]>("/api/v1/users");
+    return data.map(mapUser);
+  },
+
+  updateUser: async (
+    id: string,
+    body: Partial<Pick<User, "role" | "unitId" | "status">>
+  ) => {
+    const data = await request<ApiUser>(`/api/v1/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    return mapUser(data);
+  },
 };
 
 type ApiEnrollmentRequest = {
@@ -346,6 +363,18 @@ type ApiEnrollmentRequest = {
   requestedAt: string;
   status: SolicitacaoMatricula["status"];
   reviewer?: string | null;
+};
+
+type ApiUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: User["role"];
+  unitId: User["unitId"];
+  department: string;
+  status: User["status"];
+  lastAccess: string;
+  avatarColor: string;
 };
 
 type ApiNotification = {
@@ -388,5 +417,19 @@ function mapNotification(n: ApiNotification): Notification {
     href: n.href ?? undefined,
     module: n.module ?? undefined,
     details: n.details ?? undefined,
+  };
+}
+
+function mapUser(u: ApiUser): User {
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    unitId: u.unitId,
+    department: u.department,
+    status: u.status,
+    lastAccess: u.lastAccess ?? "—",
+    avatarColor: u.avatarColor,
   };
 }

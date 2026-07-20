@@ -20,8 +20,8 @@ export function UserMenu() {
 
   if (!currentUser) return null;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 

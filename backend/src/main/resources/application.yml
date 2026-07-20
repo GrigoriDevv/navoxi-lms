@@ -27,8 +27,16 @@ management:
 
 lms:
   api-token: ${LMS_API_TOKEN:local-dev-token}
+  demo:
+    block-seed-logins: ${LMS_BLOCK_DEMO_SEED_LOGINS:false}
+  auth:
+    jit-provisioning-enabled: ${LMS_JIT_PROVISIONING:false}
+    default-unit-id: ${LMS_JIT_DEFAULT_UNIT:matriz}
+    allowed-email-domains: ${LMS_ALLOWED_EMAIL_DOMAINS:}
+    bootstrap-admin-emails: ${LMS_BOOTSTRAP_ADMIN_EMAILS:}
   seed:
     enabled: ${LMS_SEED_ENABLED:false}
+    password: ${LMS_SEED_PASSWORD:demo1234}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
 
@@ -89,6 +97,10 @@ spring:
     locations: classpath:db/migration
 
 lms:
+  demo:
+    block-seed-logins: ${LMS_BLOCK_DEMO_SEED_LOGINS:true}
+  auth:
+    jit-provisioning-enabled: ${LMS_JIT_PROVISIONING:true}
   seed:
     enabled: ${LMS_SEED_ENABLED:false}
   cors:

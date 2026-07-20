@@ -1,5 +1,6 @@
 package com.navoxi.lms.domain.entity;
 
+import com.navoxi.lms.domain.enums.AuthProvider;
 import com.navoxi.lms.domain.enums.Role;
 import com.navoxi.lms.domain.enums.UnitId;
 import com.navoxi.lms.domain.enums.UserStatus;
@@ -46,6 +47,16 @@ public class UserAccount {
 
   @Column(name = "avatar_color", nullable = false)
   private String avatarColor;
+
+  @Column(name = "password_hash")
+  private String passwordHash;
+
+  @Column(name = "microsoft_oid", length = 128)
+  private String microsoftOid;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "auth_provider", nullable = false, length = 16)
+  private AuthProvider authProvider = AuthProvider.local;
 
   @PrePersist
   void onCreate() {
@@ -124,5 +135,29 @@ public class UserAccount {
 
   public void setAvatarColor(String avatarColor) {
     this.avatarColor = avatarColor;
+  }
+
+  public String getPasswordHash() {
+    return passwordHash;
+  }
+
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
+
+  public String getMicrosoftOid() {
+    return microsoftOid;
+  }
+
+  public void setMicrosoftOid(String microsoftOid) {
+    this.microsoftOid = microsoftOid;
+  }
+
+  public AuthProvider getAuthProvider() {
+    return authProvider;
+  }
+
+  public void setAuthProvider(AuthProvider authProvider) {
+    this.authProvider = authProvider;
   }
 }

@@ -33,7 +33,7 @@ public class UserContextFilter extends OncePerRequestFilter {
     if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
       return true;
     }
-    return ApiTokenFilter.isPublicPath(path);
+    return ApiTokenFilter.isPublicPath(path) || ApiTokenFilter.isAuthPath(path);
   }
 
   @Override

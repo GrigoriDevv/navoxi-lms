@@ -8,7 +8,7 @@
 |---|---|
 | Front | [Next.js 16](https://nextjs.org/) (App Router) + React 19 + TypeScript |
 | Estilo | Tailwind CSS v4 |
-| Estado UI | React Context (`src/lib/store.tsx`) |
+| Estado UI | React Context (`src/lib/store.tsx` + `src/lib/store/*` por domínio) |
 | Backend (Fase 1) | Java 21 + Spring Boot em [`backend/`](backend/) |
 | Persistência API | H2 (local) / PostgreSQL + Flyway (prod) |
 | Fallback demo | Mock em `src/lib/mock-data.ts` quando `NEXT_PUBLIC_USE_JAVA_API` ≠ `true` |
@@ -27,12 +27,15 @@ NEXT_PUBLIC_USE_JAVA_API=true
 LMS_API_URL=http://localhost:8080
 LMS_API_TOKEN=local-dev-token
 AUTH_SECRET=dev-secret-change-me
-DEMO_LOGIN_PASSWORD=demo1234
+LMS_SEED_PASSWORD=demo1234
+ALLOW_DEMO_LOGIN=true
 ```
 
-O browser chama só `/api/lms/*` (BFF). O token Java nunca vai para o cliente.
+O browser chama só `/api/lms/*` e `/api/auth/*` (BFF). O token Java nunca vai para o cliente.
 
-Detalhes: [`backend/README.md`](backend/README.md).
+Login por senha: `POST /api/auth/login` → backend Java (`BCrypt`). Fallback mock local só se `ALLOW_DEMO_LOGIN=true` e o backend estiver indisponível.
+
+Detalhes e contas seed: [`docs/local-dev-auth.md`](docs/local-dev-auth.md) · [`backend/README.md`](backend/README.md).
 
 ## Início rápido
 
@@ -41,7 +44,7 @@ npm install
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000). Na tela de login, use os botões de acesso rápido ou informe um e-mail cadastrado. Senha demo: `demo1234` (ou o valor de `DEMO_LOGIN_PASSWORD`).
+Abra [http://localhost:3000](http://localhost:3000). Com backend Java rodando, use e-mail cadastrado + senha seed — ver [`docs/local-dev-auth.md`](docs/local-dev-auth.md).
 
 Build de produção:
 
@@ -50,18 +53,23 @@ npm run build
 npm start
 ```
 
-## Contas de demonstração
+## Autenticação local
 
-Senha compartilhada (todas as contas): `demo1234` — configurável via `DEMO_LOGIN_PASSWORD`. O endpoint `/api/auth/demo-login` rejeita senha incorreta com HTTP 401.
+Contas seed, senha demo e variáveis de ambiente para desenvolvimento estão em [`docs/local-dev-auth.md`](docs/local-dev-auth.md).
 
-| E-mail | Perfil | Unidade |
-|---|---|---|
-| `ana.souza@navoxi.com` | Administrador Premium | Navoxi · Matriz |
-| `bruno.ferreira@navoxi.com` | Administrador de Unidade | Navoxi · Matriz |
-| `carla.mendes@navoxi.com` | Gestor de Conteúdo | Navoxi · Matriz |
-| `henrique.castro@navoxi.com` | Instrutor | Navoxi · Matriz |
-| `diego.alves@navoxi.com` | Aluno | Navoxi · Matriz |
-| `felipe.rocha@navoxi.com` | Administrador de Unidade | Navoxi · Nordeste |
+Em **produção pública**, login mock com senha compartilhada é bloqueado. Login permitido: SSO Microsoft + senha real (BCrypt/Java).
+
+### Checklist produção pública
+
+- `ALLOW_DEMO_LOGIN=false` ou omitido (default em produção)
+- `AUTH_DEMO_ENABLED` — deprecated; não setar
+- `LMS_SEED_ENABLED=false`
+- `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod` do backend)
+- `LMS_JIT_PROVISIONING=true` (default no profile `prod`)
+- `LMS_ALLOWED_EMAIL_DOMAINS` + `AUTH_ALLOWED_EMAIL_DOMAIN` (mesmo domínio)
+- `LMS_BOOTSTRAP_ADMIN_EMAILS` (primeiro admin real)
+- `LMS_SEED_PASSWORD` forte ou seed desligado
+- Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
 
 O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são filtrados automaticamente conforme **RBAC** e escopo de unidade.
 
@@ -231,7 +239,13 @@ src/
 └── lib/
     ├── types.ts                    # Tipos de domínio
     ├── mock-data.ts                # Seed de demonstração
-    ├── store.tsx                   # Estado global e ações
+    ├── store.tsx                   # Fachada AppProvider / useApp
+    ├── store/                      # Domínios: auth, learning, notifications
+    │   ├── types.ts
+    │   ├── shared.ts
+    │   ├── use-auth-store.ts
+    │   ├── use-learning-store.ts
+    │   └── use-notifications-store.ts
     ├── rbac.ts                     # Perfis, permissões, menu
     ├── use-auth-scope.ts           # Escopo por unidade/perfil
     ├── aprendizagem.ts             # Labels (modalidade, status…)
@@ -243,7 +257,7 @@ src/
 
 ```mermaid
 flowchart LR
-  UI[Páginas React] --> Store[AppProvider / store.tsx]
+  UI[Páginas React] --> Store[AppProvider / store.tsx + store/*]
   Store --> Mock[mock-data.ts]
   Store --> LS[(localStorage)]
   UI --> Scope[useAuthScope]
@@ -274,7 +288,7 @@ Este projeto é uma **prova de conceito front-end**. Não há backend real, banc
 
 | Aspecto | Estado atual |
 |---|---|
-| Autenticação | Demo e-mail + senha (`DEMO_LOGIN_PASSWORD`) ou Microsoft Entra |
+| Autenticação | Senha BCrypt (backend) + Microsoft Entra (whitelist) |
 | Persistência | Sessão e preferências em `localStorage`; demais dados resetam ao recarregar* |
 | Upload de arquivos | Simulado (metadados apenas) |
 | E-mail / push / SMS | Simulados na UI |

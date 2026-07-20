@@ -26,7 +26,15 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 - Swagger: http://localhost:8080/swagger-ui.html
 - H2 console: http://localhost:8080/h2-console (`jdbc:h2:mem:lms`)
 
-Demo header: `X-User-Email: henrique.castro@navoxi.com` ou `diego.alves@navoxi.com`.
+Autenticação por senha (BCrypt): `POST /api/v1/auth/login` com body `{ "email", "password" }` e header `Authorization: Bearer <LMS_API_TOKEN>`. Contas seed e senha local: [`docs/local-dev-auth.md`](../docs/local-dev-auth.md).
+
+Em **local**, para simular usuário autenticado nas rotas protegidas, use header `X-User-Email` com um e-mail cadastrado (ex.: durante testes manuais). **Não use contas seed em produção.**
+
+**Bloqueio de contas demo em produção:** `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod`) impede login das contas seed, mesmo que existam no banco. No front, `ALLOW_DEMO_LOGIN=false` desliga fallback mock com senha compartilhada.
+
+Microsoft SSO: `POST /api/v1/auth/sso/microsoft` com `{ "email", "name", "microsoftOid" }`. Com `LMS_JIT_PROVISIONING=true` (default em `prod`), cria `UserAccount` no primeiro login (default `aluno`; bootstrap admin via `LMS_BOOTSTRAP_ADMIN_EMAILS` ou banco vazio). Domínio: `LMS_ALLOWED_EMAIL_DOMAINS`.
+
+Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unidade`).
 
 ## Endpoints principais
 
@@ -42,6 +50,10 @@ Demo header: `X-User-Email: henrique.castro@navoxi.com` ou `diego.alves@navoxi.c
 | GET | `/api/v1/lessons` |
 | PUT/DELETE | `/api/v1/lessons/{id}` |
 | POST | `/api/v1/lessons/{id}/complete` |
+| POST | `/api/v1/auth/login` |
+| POST | `/api/v1/auth/sso/microsoft` |
+| GET | `/api/v1/users` |
+| PATCH | `/api/v1/users/{id}` |
 | GET | `/api/v1/users/me` |
 | GET | `/api/v1/users/me/enrollments` |
 | GET | `/api/v1/users/me/progress` |
@@ -55,6 +67,10 @@ Demo header: `X-User-Email: henrique.castro@navoxi.com` ou `diego.alves@navoxi.c
    - `DATABASE_USERNAME` / `DATABASE_PASSWORD`
    - `CORS_ORIGINS` com a URL do front
 3. Healthcheck: `/api/v1/health`
+4. Variáveis recomendadas:
+   - `LMS_SEED_ENABLED=false`
+   - `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default com `SPRING_PROFILES_ACTIVE=prod`)
+   - `LMS_API_TOKEN` com valor forte
 
 ## Front
 

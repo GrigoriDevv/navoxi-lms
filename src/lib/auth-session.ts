@@ -1,4 +1,4 @@
-import type { Role } from "./types";
+import type { Role, UnitId } from "./types";
 
 export const SESSION_COOKIE = "navoxi-auth-session";
 export const OAUTH_STATE_COOKIE = "navoxi-ms-oauth-state";
@@ -6,9 +6,12 @@ export const OAUTH_STATE_COOKIE = "navoxi-ms-oauth-state";
 export type AuthProvider = "microsoft" | "password";
 
 export interface SessionPayload {
+  userId?: string;
   email: string;
   name: string;
   role: Role;
+  unitId?: UnitId;
+  avatarColor?: string;
   provider: AuthProvider;
   exp: number;
 }

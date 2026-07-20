@@ -35,6 +35,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(HttpMethod.GET, "/api/v1/health")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/**")
+                    .permitAll()
                     .requestMatchers("/actuator/health", "/actuator/health/**")
                     .permitAll()
                     .requestMatchers("/h2-console", "/h2-console/**")

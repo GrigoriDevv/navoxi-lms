@@ -38,6 +38,8 @@ Microsoft SSO: `POST /api/v1/auth/sso/microsoft` com `{ "email", "name", "micros
 
 Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unidade`).
 
+**Escopo de unidade:** list/get/mutate de cursos, catálogo, aulas e matrículas filtram por `UserAccount.unitId` no servidor (`UnitScope`). Só `admin_premium` vê todas as unidades. O `useAuthScope` do front é UX — não substitui o filtro da API.
+
 ## Endpoints principais
 
 | Método | Rota |

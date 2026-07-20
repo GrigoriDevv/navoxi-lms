@@ -1,5 +1,6 @@
 package com.navoxi.lms.web;
 
+import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.service.CourseService;
 import com.navoxi.lms.service.LessonService;
 import com.navoxi.lms.web.dto.CourseDto;
@@ -27,20 +28,23 @@ public class CourseController {
 
   private final CourseService courses;
   private final LessonService lessons;
+  private final CurrentUserResolver currentUser;
 
-  public CourseController(CourseService courses, LessonService lessons) {
+  public CourseController(
+      CourseService courses, LessonService lessons, CurrentUserResolver currentUser) {
     this.courses = courses;
     this.lessons = lessons;
+    this.currentUser = currentUser;
   }
 
   @GetMapping
   public List<CourseDto> list() {
-    return courses.list();
+    return courses.list(currentUser.require());
   }
 
   @GetMapping("/{id}")
   public CourseDto get(@PathVariable String id) {
-    return courses.get(id);
+    return courses.get(currentUser.require(), id);
   }
 
   @PostMapping
@@ -48,24 +52,24 @@ public class CourseController {
   @PreAuthorize(
       "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public CourseDto create(@Valid @RequestBody CourseRequest request) {
-    return courses.create(request);
+    return courses.create(currentUser.require(), request);
   }
 
   @PutMapping("/{id}")
   @PreAuthorize(
       "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public CourseDto update(@PathVariable String id, @Valid @RequestBody CourseRequest request) {
-    return courses.update(id, request);
+    return courses.update(currentUser.require(), id, request);
   }
 
   @GetMapping("/{id}/modules")
   public List<ModuleDto> modules(@PathVariable String id) {
-    return lessons.listModules(id);
+    return lessons.listModules(currentUser.require(), id);
   }
 
   @GetMapping("/{id}/lessons")
   public List<LessonDto> courseLessons(@PathVariable String id) {
-    return lessons.listLessons(id);
+    return lessons.listLessons(currentUser.require(), id);
   }
 
   @PostMapping("/{id}/lessons")
@@ -74,7 +78,7 @@ public class CourseController {
       "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public LessonDto publishLesson(
       @PathVariable String id, @Valid @RequestBody LessonRequest request) {
-    return lessons.publish(id, request);
+    return lessons.publish(currentUser.require(), id, request);
   }
 
   @DeleteMapping("/{id}/lessons")
@@ -82,6 +86,6 @@ public class CourseController {
   @PreAuthorize(
       "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public void deleteAllLessons(@PathVariable String id) {
-    lessons.deleteAllForCourse(id);
+    lessons.deleteAllForCourse(currentUser.require(), id);
   }
 }

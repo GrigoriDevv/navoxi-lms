@@ -10,7 +10,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "node --test scripts/demo-auth-config.test.mjs scripts/mock-module-gates.test.mjs"
+    "test": "npm run test:unit && npm run test:bff",
+    "test:unit": "node --test scripts/demo-auth-config.test.mjs scripts/mock-module-gates.test.mjs",
+    "test:bff": "vitest run",
+    "test:backend": "cd backend && mvn test -q",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "next": "16.2.9",
@@ -18,6 +22,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -25,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

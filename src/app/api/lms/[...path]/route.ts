@@ -2,29 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
 import { lmsApiUpstreamUrl } from "@/lib/api-config";
-
-const ALLOWED_PREFIXES = [
-  "courses",
-  "lessons",
-  "modules",
-  "users",
-  "enrollment-requests",
-  "enrollments",
-] as const;
-
-function isAllowedPath(segments: string[]): boolean {
-  if (segments.length === 0) return false;
-  if (segments.some((s) => s.includes("..") || s.includes("\\") || s.includes("\0"))) {
-    return false;
-  }
-  const joined = segments.join("/");
-  return ALLOWED_PREFIXES.some(
-    (prefix) => joined === prefix || joined.startsWith(`${prefix}/`)
-  );
-}
+import { bffSessionGateError, isAllowedLmsPath } from "@/lib/lms-bff-path";
 
 async function proxy(request: NextRequest, pathSegments: string[]) {
-  if (!isAllowedPath(pathSegments)) {
+  if (!isAllowedLmsPath(pathSegments)) {
     return NextResponse.json({ error: "Path não permitido" }, { status: 404 });
   }
 
@@ -35,11 +16,11 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
   }
 
   const session = await decodeSession(token);
-  if (!session) {
+  const gate = bffSessionGateError(session);
+  if (gate === "unauthenticated" || gate === "invalid") {
     return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
   }
-
-  if (!session.accessToken) {
+  if (gate === "missing_access_token") {
     return NextResponse.json(
       { error: "Sessão sem token de API. Faça login novamente." },
       { status: 401 }
@@ -53,7 +34,7 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
   });
 
   const headers = new Headers();
-  headers.set("Authorization", `Bearer ${session.accessToken}`);
+  headers.set("Authorization", `Bearer ${session!.accessToken}`);
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
 

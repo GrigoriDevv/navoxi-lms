@@ -48,6 +48,11 @@ public class ApiTokenFilter extends OncePerRequestFilter {
         || path.startsWith("/v3/api-docs");
   }
 
+  /** Rotas de autenticação: exigem token de API, mas não identidade do usuário final. */
+  static boolean isAuthPath(String path) {
+    return path.startsWith("/api/v1/auth/");
+  }
+
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

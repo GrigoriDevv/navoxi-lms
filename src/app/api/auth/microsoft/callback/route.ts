@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { toSessionPayload } from "@/lib/auth-profile";
 import {
   encodeSession,
   OAUTH_STATE_COOKIE,
@@ -7,8 +8,13 @@ import {
   SESSION_MAX_AGE,
   sessionCookieOptions,
 } from "@/lib/auth-session";
-import { exchangeCodeForProfile, getAppBaseUrl } from "@/lib/microsoft-auth";
-import { resolveUserProfile } from "@/lib/session-user";
+import { resolveMicrosoftWithBackend } from "@/lib/lms-auth-api";
+import {
+  exchangeCodeForProfile,
+  getAppBaseUrl,
+  OAUTH_PKCE_COOKIE,
+  safeEqualStrings,
+} from "@/lib/microsoft-auth";
 
 export async function GET(request: NextRequest) {
   const baseUrl = getAppBaseUrl();
@@ -27,32 +33,53 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get("state");
   const cookieStore = await cookies();
   const savedState = cookieStore.get(OAUTH_STATE_COOKIE)?.value;
+  const codeVerifier = cookieStore.get(OAUTH_PKCE_COOKIE)?.value;
 
   cookieStore.delete(OAUTH_STATE_COOKIE);
+  cookieStore.delete(OAUTH_PKCE_COOKIE);
 
-  if (!code || !state || !savedState || state !== savedState) {
+  if (
+    !code ||
+    !state ||
+    !savedState ||
+    !codeVerifier ||
+    !safeEqualStrings(state, savedState)
+  ) {
     loginUrl.searchParams.set("error", "Sessão de login Microsoft inválida ou expirada");
     return NextResponse.redirect(loginUrl);
   }
 
   try {
-    const profile = await exchangeCodeForProfile(code);
-    const resolved = resolveUserProfile(profile.email, profile.name);
-    const token = await encodeSession({
-      email: resolved.email,
-      name: resolved.name,
-      role: resolved.role,
-      provider: "microsoft",
-      exp: Date.now() + SESSION_MAX_AGE * 1000,
-    });
+    const profile = await exchangeCodeForProfile(code, codeVerifier);
+    const backendUser = await resolveMicrosoftWithBackend(
+      profile.email,
+      profile.name,
+      profile.id
+    );
 
+    const sessionPayload = toSessionPayload(
+      {
+        userId: backendUser.id,
+        email: backendUser.email,
+        name: backendUser.name,
+        role: backendUser.role,
+        unitId: backendUser.unitId,
+        avatarColor: backendUser.avatarColor,
+        provider: "microsoft",
+      },
+      Date.now() + SESSION_MAX_AGE * 1000
+    );
+
+    const token = await encodeSession(sessionPayload);
     cookieStore.set(SESSION_COOKIE, token, sessionCookieOptions(SESSION_MAX_AGE));
 
     return NextResponse.redirect(new URL("/dashboard", baseUrl));
   } catch (e) {
     loginUrl.searchParams.set(
       "error",
-      e instanceof Error ? e.message : "Falha na autenticação Microsoft"
+      e instanceof Error
+        ? e.message
+        : "Falha na autenticação Microsoft"
     );
     return NextResponse.redirect(loginUrl);
   }

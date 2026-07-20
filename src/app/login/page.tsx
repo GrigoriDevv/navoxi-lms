@@ -35,8 +35,8 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useApp();
-  const [email, setEmail] = useState("diego.alves@navoxi.com");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [mfa, setMfa] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

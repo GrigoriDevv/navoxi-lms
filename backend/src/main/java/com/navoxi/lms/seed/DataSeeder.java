@@ -8,6 +8,7 @@ import com.navoxi.lms.domain.entity.EnrollmentRequest;
 import com.navoxi.lms.domain.entity.LessonProgress;
 import com.navoxi.lms.domain.entity.Notification;
 import com.navoxi.lms.domain.entity.UserAccount;
+import com.navoxi.lms.domain.enums.AuthProvider;
 import com.navoxi.lms.domain.enums.CourseModality;
 import com.navoxi.lms.domain.enums.CourseStatus;
 import com.navoxi.lms.domain.enums.EnrollmentRequestStatus;
@@ -26,10 +27,12 @@ import com.navoxi.lms.repository.NotificationRepository;
 import com.navoxi.lms.repository.UserAccountRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @ConditionalOnProperty(name = "lms.seed.enabled", havingValue = "true")
@@ -46,7 +49,9 @@ public class DataSeeder {
       EnrollmentRepository enrollments,
       LessonProgressRepository progress,
       EnrollmentRequestRepository enrollmentRequests,
-      NotificationRepository notifications) {
+      NotificationRepository notifications,
+      PasswordEncoder passwordEncoder,
+      @Value("${lms.seed.password:demo1234}") String seedPassword) {
     return args -> {
       if (users.count() > 0) {
         log.info("Seed ignorado — banco já possui usuários");
@@ -54,11 +59,71 @@ public class DataSeeder {
       }
       log.info("Populando dados demo do LMS...");
 
-      UserAccount ana = user(users, "u1", "Ana Carolina Souza", "ana.souza@navoxi.com", Role.admin_premium, UnitId.matriz, "Navoxi · Tecnologia", "#2563eb");
-      UserAccount diego = user(users, "u4", "Diego Alves", "diego.alves@navoxi.com", Role.aluno, UnitId.matriz, "Navoxi · Operações", "#0ea5e9");
-      UserAccount carla = user(users, "u3", "Carla Mendes", "carla.mendes@navoxi.com", Role.gestor_conteudo, UnitId.matriz, "Navoxi · RH", "#3b82f6");
-      UserAccount henrique = user(users, "u8", "Henrique Castro", "henrique.castro@navoxi.com", Role.instrutor, UnitId.matriz, "Navoxi · Engenharia", "#3b82f6");
-      UserAccount bruno = user(users, "u2", "Bruno Ferreira", "bruno.ferreira@navoxi.com", Role.admin_unidade, UnitId.matriz, "Navoxi · Gestão Regional", "#1d4ed8");
+      UserAccount ana =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u1",
+              "Ana Carolina Souza",
+              "ana.souza@navoxi.com",
+              Role.admin_premium,
+              UnitId.matriz,
+              "Navoxi · Tecnologia",
+              "#2563eb",
+              AuthProvider.both);
+      UserAccount diego =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u4",
+              "Diego Alves",
+              "diego.alves@navoxi.com",
+              Role.aluno,
+              UnitId.matriz,
+              "Navoxi · Operações",
+              "#0ea5e9",
+              AuthProvider.both);
+      UserAccount carla =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u3",
+              "Carla Mendes",
+              "carla.mendes@navoxi.com",
+              Role.gestor_conteudo,
+              UnitId.matriz,
+              "Navoxi · RH",
+              "#3b82f6",
+              AuthProvider.both);
+      UserAccount henrique =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u8",
+              "Henrique Castro",
+              "henrique.castro@navoxi.com",
+              Role.instrutor,
+              UnitId.matriz,
+              "Navoxi · Engenharia",
+              "#3b82f6",
+              AuthProvider.both);
+      UserAccount bruno =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u2",
+              "Bruno Ferreira",
+              "bruno.ferreira@navoxi.com",
+              Role.admin_unidade,
+              UnitId.matriz,
+              "Navoxi · Gestão Regional",
+              "#1d4ed8",
+              AuthProvider.both);
 
       Course c1 = course(courses, "c1", "Segurança da Informação e Dados", "Segurança", "Carla Mendes", UnitId.matriz, CourseModality.hibrido, "Operações", 40, CourseStatus.publicado, 312, 78, "#1d4ed8");
       Course c2 = course(courses, "c2", "Compliance e Código de Ética", "Compliance", "Henrique Castro", UnitId.matriz, CourseModality.online, "Todos colaboradores", 8, CourseStatus.publicado, 1240, 92, "#2563eb");
@@ -146,13 +211,16 @@ public class DataSeeder {
 
   private static UserAccount user(
       UserAccountRepository repo,
+      PasswordEncoder passwordEncoder,
+      String seedPassword,
       String id,
       String name,
       String email,
       Role role,
       UnitId unitId,
       String department,
-      String color) {
+      String color,
+      AuthProvider authProvider) {
     UserAccount u = new UserAccount();
     u.setId(id);
     u.setName(name);
@@ -163,6 +231,8 @@ public class DataSeeder {
     u.setStatus(UserStatus.ativo);
     u.setLastAccess("2026-06-12 09:00");
     u.setAvatarColor(color);
+    u.setAuthProvider(authProvider);
+    u.setPasswordHash(passwordEncoder.encode(seedPassword));
     return repo.save(u);
   }
 

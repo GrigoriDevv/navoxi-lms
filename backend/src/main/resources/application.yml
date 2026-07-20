@@ -29,6 +29,7 @@ lms:
   api-token: ${LMS_API_TOKEN:local-dev-token}
   seed:
     enabled: ${LMS_SEED_ENABLED:false}
+    password: ${LMS_SEED_PASSWORD:demo1234}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
 

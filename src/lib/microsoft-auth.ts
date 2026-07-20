@@ -39,6 +39,14 @@ export function getMicrosoftAuthConfig(): MicrosoftAuthConfig | null {
 
   try {
     const tenantId = resolveTenantId();
+    if (process.env.NODE_ENV === "production") {
+      const allowedDomain = process.env.AUTH_ALLOWED_EMAIL_DOMAIN?.trim();
+      if (!allowedDomain) {
+        throw new Error(
+          "AUTH_ALLOWED_EMAIL_DOMAIN é obrigatório em produção com Microsoft SSO"
+        );
+      }
+    }
     const redirectUri = `${getAppBaseUrl()}/api/auth/microsoft/callback`;
     return { clientId, clientSecret, tenantId, redirectUri };
   } catch {
@@ -48,6 +56,11 @@ export function getMicrosoftAuthConfig(): MicrosoftAuthConfig | null {
 
 export function isMicrosoftAuthConfigured(): boolean {
   return getMicrosoftAuthConfig() !== null;
+}
+
+/** Password form remains available as break-glass for local/both accounts. */
+export function isPasswordBreakGlassVisible(): boolean {
+  return true;
 }
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -137,6 +150,9 @@ function validateIdToken(idToken: string, config: MicrosoftAuthConfig): void {
 
 function assertAllowedEmailDomain(email: string): void {
   const allowed = process.env.AUTH_ALLOWED_EMAIL_DOMAIN?.trim().toLowerCase();
+  if (process.env.NODE_ENV === "production" && !allowed) {
+    throw new Error("AUTH_ALLOWED_EMAIL_DOMAIN é obrigatório em produção");
+  }
   if (!allowed) return;
   const domain = email.split("@")[1]?.toLowerCase();
   if (domain !== allowed) {

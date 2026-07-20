@@ -11,7 +11,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserAccountRepository extends JpaRepository<UserAccount, String> {
   Optional<UserAccount> findByEmailIgnoreCase(String email);
 
+  Optional<UserAccount> findByMicrosoftOid(String microsoftOid);
+
   List<UserAccount> findByRole(Role role);
+
+  List<UserAccount> findByUnitId(UnitId unitId);
 
   List<UserAccount> findByRoleInAndUnitId(Collection<Role> roles, UnitId unitId);
 }

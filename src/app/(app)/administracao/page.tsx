@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/lib/store";
 import { useAuthScope } from "@/lib/use-auth-scope";
 import { roleLabels, unitLabels } from "@/lib/rbac";
+import { isJavaApiEnabled } from "@/lib/api-config";
+import { lmsApi } from "@/lib/api-client";
 import {
   PageHeader,
   Card,
@@ -17,13 +19,19 @@ import {
   inputClass,
 } from "@/components/ui";
 import { Icon } from "@/components/Icon";
-import type { Role, UnitId } from "@/lib/types";
+import type { Role, UnitId, User } from "@/lib/types";
 
 export default function AdministracaoPage() {
   const { addUser } = useApp();
-  const { users, role, unitId, isGlobal, unitLabel, can } = useAuthScope();
+  const { users: scopedMockUsers, role, unitId, isGlobal, unitLabel, can } =
+    useAuthScope();
+  const javaApi = isJavaApiEnabled();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [apiUsers, setApiUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(javaApi);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -32,6 +40,26 @@ export default function AdministracaoPage() {
     department: "Operações",
     status: "ativo" as const,
   });
+
+  const loadApiUsers = useCallback(async () => {
+    if (!javaApi) return;
+    setLoading(true);
+    setApiError(null);
+    try {
+      const list = await lmsApi.listUsers();
+      setApiUsers(list);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Falha ao carregar usuários");
+    } finally {
+      setLoading(false);
+    }
+  }, [javaApi]);
+
+  useEffect(() => {
+    void loadApiUsers();
+  }, [loadApiUsers]);
+
+  const users = javaApi ? apiUsers : scopedMockUsers;
 
   const filtered = users.filter(
     (u) =>
@@ -47,6 +75,7 @@ export default function AdministracaoPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (javaApi) return;
     addUser(form);
     setOpen(false);
     setForm({
@@ -63,6 +92,22 @@ export default function AdministracaoPage() {
     ? ["admin_premium", "admin_unidade", "gestor_conteudo", "instrutor", "aluno"]
     : ["gestor_conteudo", "instrutor", "aluno"];
 
+  const patchUser = async (
+    id: string,
+    body: Partial<Pick<User, "role" | "unitId" | "status">>
+  ) => {
+    setSavingId(id);
+    setApiError(null);
+    try {
+      const updated = await lmsApi.updateUser(id, body);
+      setApiUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Falha ao atualizar usuário");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -73,6 +118,7 @@ export default function AdministracaoPage() {
             : `Gestão de usuários · escopo: ${unitLabel}`
         }
         action={
+          !javaApi &&
           (can("manage_users_all") || can("manage_users_unit")) && (
             <Button onClick={() => setOpen(true)}>
               <Icon name="plus" className="w-4 h-4" />
@@ -81,6 +127,15 @@ export default function AdministracaoPage() {
           )
         }
       />
+
+      {javaApi && (
+        <Card className="p-4 mb-4 bg-slate-50 border-slate-200">
+          <p className="text-sm text-slate-700">
+            Usuários vêm do Postgres. Novos acessos entram via Microsoft SSO (JIT).
+            Altere perfil/unidade abaixo para promover contas.
+          </p>
+        </Card>
+      )}
 
       {!isGlobal && (
         <Card className="p-4 mb-4 bg-blue-50/50 border-blue-200">
@@ -91,11 +146,17 @@ export default function AdministracaoPage() {
         </Card>
       )}
 
+      {apiError && (
+        <Card className="p-3 mb-4 border-red-200 bg-red-50 text-sm text-red-700">
+          {apiError}
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Usuários no escopo" value={users.length.toString()} icon={<Icon name="users" className="w-5 h-5" />} />
-        <StatCard label="Ativos" value={users.filter((u) => u.status === "ativo").length.toString()} icon={<Icon name="check" className="w-5 h-5" />} color="#2563eb" />
-        <StatCard label="Departamentos" value={departments.length.toString()} icon={<Icon name="grid" className="w-5 h-5" />} color="#7c3aed" />
-        <StatCard label="Bloqueados" value={users.filter((u) => u.status === "bloqueado").length.toString()} icon={<Icon name="shield" className="w-5 h-5" />} color="#d97706" />
+        <StatCard label="Usuários no escopo" value={loading ? "…" : users.length.toString()} icon={<Icon name="users" className="w-5 h-5" />} />
+        <StatCard label="Ativos" value={loading ? "…" : users.filter((u) => u.status === "ativo").length.toString()} icon={<Icon name="check" className="w-5 h-5" />} color="#2563eb" />
+        <StatCard label="Departamentos" value={loading ? "…" : departments.length.toString()} icon={<Icon name="grid" className="w-5 h-5" />} color="#7c3aed" />
+        <StatCard label="Bloqueados" value={loading ? "…" : users.filter((u) => u.status === "bloqueado").length.toString()} icon={<Icon name="shield" className="w-5 h-5" />} color="#d97706" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -123,7 +184,13 @@ export default function AdministracaoPage() {
               />
             </div>
           </div>
-          <Table head={["Usuário", "Perfil", "Unidade", "Departamento", "Status"]}>
+          <Table
+            head={
+              javaApi
+                ? ["Usuário", "Perfil", "Unidade", "Status"]
+                : ["Usuário", "Perfil", "Unidade", "Departamento", "Status"]
+            }
+          >
             {filtered.map((u) => (
               <tr key={u.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3">
@@ -135,13 +202,81 @@ export default function AdministracaoPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-slate-600 text-xs">{roleLabels[u.role]}</td>
-                <td className="px-4 py-3 text-slate-600 text-xs">{unitLabels[u.unitId]}</td>
-                <td className="px-4 py-3 text-slate-600">{u.department}</td>
+                <td className="px-4 py-3 text-slate-600 text-xs">
+                  {javaApi && (can("manage_users_all") || can("manage_users_unit")) ? (
+                    <select
+                      className="rounded border border-slate-200 bg-white px-2 py-1 text-xs"
+                      value={u.role}
+                      disabled={savingId === u.id}
+                      onChange={(e) =>
+                        void patchUser(u.id, { role: e.target.value as Role })
+                      }
+                    >
+                      {assignableRoles.map((r) => (
+                        <option key={r} value={r}>
+                          {roleLabels[r]}
+                        </option>
+                      ))}
+                      {!assignableRoles.includes(u.role) && (
+                        <option value={u.role}>{roleLabels[u.role]}</option>
+                      )}
+                    </select>
+                  ) : (
+                    roleLabels[u.role]
+                  )}
+                </td>
+                <td className="px-4 py-3 text-slate-600 text-xs">
+                  {javaApi && can("manage_users_all") ? (
+                    <select
+                      className="rounded border border-slate-200 bg-white px-2 py-1 text-xs"
+                      value={u.unitId}
+                      disabled={savingId === u.id}
+                      onChange={(e) =>
+                        void patchUser(u.id, { unitId: e.target.value as UnitId })
+                      }
+                    >
+                      {Object.entries(unitLabels).map(([id, label]) => (
+                        <option key={id} value={id}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    unitLabels[u.unitId]
+                  )}
+                </td>
+                {!javaApi && (
+                  <td className="px-4 py-3 text-slate-600">{u.department}</td>
+                )}
                 <td className="px-4 py-3">
-                  <Badge color={u.status === "ativo" ? "green" : u.status === "bloqueado" ? "red" : "slate"}>
-                    {u.status}
-                  </Badge>
+                  {javaApi && (can("manage_users_all") || can("manage_users_unit")) ? (
+                    <select
+                      className="rounded border border-slate-200 bg-white px-2 py-1 text-xs"
+                      value={u.status}
+                      disabled={savingId === u.id}
+                      onChange={(e) =>
+                        void patchUser(u.id, {
+                          status: e.target.value as User["status"],
+                        })
+                      }
+                    >
+                      <option value="ativo">ativo</option>
+                      <option value="inativo">inativo</option>
+                      <option value="bloqueado">bloqueado</option>
+                    </select>
+                  ) : (
+                    <Badge
+                      color={
+                        u.status === "ativo"
+                          ? "green"
+                          : u.status === "bloqueado"
+                            ? "red"
+                            : "slate"
+                      }
+                    >
+                      {u.status}
+                    </Badge>
+                  )}
                 </td>
               </tr>
             ))}

@@ -7,10 +7,12 @@ import {
   SESSION_MAX_AGE,
   sessionCookieOptions,
 } from "@/lib/auth-session";
-import { isDemoAuthEnabled } from "@/lib/demo-auth-config";
+import { isDemoLoginAllowed } from "@/lib/demo-auth-config";
 import { isDemoAccountLoginBlocked } from "@/lib/demo-account-guard";
 import { handleDemoLogin } from "@/lib/demo-login-handler";
 import { loginWithBackend } from "@/lib/lms-auth-api";
+
+const GENERIC_AUTH_ERROR = "E-mail ou senha inválidos";
 
 export async function POST(request: NextRequest) {
   let body: { email?: string; password?: string };
@@ -30,10 +32,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (isDemoAccountLoginBlocked(email)) {
-    return NextResponse.json(
-      { error: "E-mail ou senha inválidos" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
   }
 
   try {
@@ -65,13 +64,9 @@ export async function POST(request: NextRequest) {
       avatarColor: sessionPayload.avatarColor,
       provider: sessionPayload.provider,
     });
-  } catch (backendError) {
-    if (!isDemoAuthEnabled()) {
-      const message =
-        backendError instanceof Error
-          ? backendError.message
-          : "E-mail ou senha inválidos";
-      return NextResponse.json({ error: message }, { status: 401 });
+  } catch {
+    if (!isDemoLoginAllowed()) {
+      return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
 
     const demo = await handleDemoLogin(email, password);

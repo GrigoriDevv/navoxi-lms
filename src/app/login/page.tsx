@@ -146,7 +146,7 @@ function LoginForm() {
             className="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm"
           />
 
-          {selectedUser && (
+          {demoAuthEnabled && selectedUser && (
             <div className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm">
               <div className="font-medium text-slate-800">{roleLabels[selectedUser.role]}</div>
               <div className="text-xs text-slate-500 mt-0.5">{roleDescriptions[selectedUser.role]}</div>

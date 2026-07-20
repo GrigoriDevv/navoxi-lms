@@ -26,11 +26,11 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 - Swagger: http://localhost:8080/swagger-ui.html
 - H2 console: http://localhost:8080/h2-console (`jdbc:h2:mem:lms`)
 
-Autenticação por senha (BCrypt): `POST /api/v1/auth/login` com body `{ "email", "password" }` e header `Authorization: Bearer <LMS_API_TOKEN>`. Senha inicial dos usuários seed: `LMS_SEED_PASSWORD` (default `demo1234` no profile `local`).
+Autenticação por senha (BCrypt): `POST /api/v1/auth/login` com body `{ "email", "password" }` e header `Authorization: Bearer <LMS_API_TOKEN>`. Contas seed e senha local: [`docs/local-dev-auth.md`](../docs/local-dev-auth.md).
 
 Em **local**, para simular usuário autenticado nas rotas protegidas, use header `X-User-Email` com um e-mail cadastrado (ex.: durante testes manuais). **Não use contas seed em produção.**
 
-**Bloqueio de contas demo em produção:** `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod`) impede login das contas seed documentadas no README, mesmo que existam no banco.
+**Bloqueio de contas demo em produção:** `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod`) impede login das contas seed, mesmo que existam no banco. No front, `ALLOW_DEMO_LOGIN=false` desliga fallback mock com senha compartilhada.
 
 Microsoft SSO (whitelist): `POST /api/v1/auth/sso/microsoft` com `{ "email", "name", "microsoftOid" }` — só usuários já cadastrados e ativos.
 

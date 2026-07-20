@@ -1,6 +1,6 @@
-import { isDemoAuthEnabled } from "@/lib/demo-auth-config";
+import { isDemoLoginAllowed } from "@/lib/demo-auth-config";
 import { isDemoSeedEmail } from "@/lib/demo-seed-emails";
 
 export function isDemoAccountLoginBlocked(email: string): boolean {
-  return !isDemoAuthEnabled() && isDemoSeedEmail(email);
+  return !isDemoLoginAllowed() && isDemoSeedEmail(email);
 }

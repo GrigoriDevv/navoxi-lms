@@ -334,6 +334,18 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuá
 4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF.
 5. **Filas** — Jobs agendados (lembretes, sincronização, relatórios) via worker/cron.
 
+## Testes
+
+Suíte mínima (auth, BFF, enroll/progress, PreAuthorize):
+
+| Comando | O quê |
+|---|---|
+| `npm test` | Unit (node) + Vitest BFF (`lms-bff-path`) |
+| `npm run test:backend` | JUnit (`mvn test`) — auth, JWT, JIT, enroll, progress, PreAuthorize |
+| `npm run test:e2e` | Playwright smoke (`/login` + `demo-status`; sobe `webServer` local) |
+
+E2E é opt-in local (não obrigatório em CI sem browsers). Relatórios Playwright ficam em pastas ignoradas pelo git.
+
 ## Scripts npm
 
 | Comando | Ação |
@@ -342,6 +354,9 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuá
 | `npm run build` | Build de produção |
 | `npm start` | Servidor de produção |
 | `npm run lint` | ESLint |
+| `npm test` | Unit + Vitest BFF |
+| `npm run test:backend` | JUnit backend |
+| `npm run test:e2e` | Playwright smoke auth |
 
 ## Repositório
 

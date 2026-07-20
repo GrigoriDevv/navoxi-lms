@@ -8,12 +8,15 @@
 NEXT_PUBLIC_USE_JAVA_API=true
 LMS_API_URL=http://localhost:8080
 LMS_API_TOKEN=local-dev-token
+LMS_JWT_SECRET=local-dev-jwt-secret-at-least-32-chars
 AUTH_SECRET=dev-secret-change-me
 LMS_SEED_PASSWORD=demo1234
 ALLOW_DEMO_LOGIN=true
 ```
 
 `AUTH_DEMO_ENABLED` continua funcionando como alias legado de `ALLOW_DEMO_LOGIN`.
+
+O login Java devolve `accessToken` (JWT HS256). O BFF Next guarda na cookie de sessão e envia `Authorization: Bearer <JWT>` para `/api/v1/**` — **não** usa mais `X-User-Email`.
 
 Microsoft SSO (opcional em local):
 
@@ -80,5 +83,7 @@ Role/unit após SSO vêm **sempre do Postgres** (`UserAccount`). Novos usuários
 | `LMS_BOOTSTRAP_ADMIN_EMAILS` | e-mail(s) do primeiro admin real |
 | `AZURE_AD_TENANT_ID` | tenant específico (não `common`) |
 | `AUTH_ALLOWED_EMAIL_DOMAIN` | mesmo domínio (obrigatório em prod com SSO) |
+| `LMS_JWT_SECRET` | secret HS256 ≥32 chars (obrigatório em prod) |
+| `LMS_API_TOKEN` | só para Next → `POST /api/v1/auth/**` |
 
 Login: **SSO Microsoft (principal)** + **senha BCrypt break-glass** para contas `local`/`both` já provisionadas. Não usar seed em prod pública.

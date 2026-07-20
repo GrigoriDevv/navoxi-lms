@@ -9,6 +9,7 @@ export interface AuthProfile {
   unitId: UnitId;
   avatarColor: string;
   provider: AuthProvider;
+  accessToken?: string;
 }
 
 export function toSessionProfileFromMock(profile: {
@@ -39,6 +40,7 @@ export function toSessionPayload(
     unitId: profile.unitId,
     avatarColor: profile.avatarColor,
     provider: profile.provider,
+    accessToken: profile.accessToken,
     exp,
   };
 }

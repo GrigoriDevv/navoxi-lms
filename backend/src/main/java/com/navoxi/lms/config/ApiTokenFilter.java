@@ -17,8 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Exige Authorization: Bearer &lt;LMS_API_TOKEN&gt; em rotas protegidas. A identidade do usuário
- * (roles) é carregada depois em {@link UserContextFilter}.
+ * Exige Authorization: Bearer &lt;LMS_API_TOKEN&gt; apenas em rotas /api/v1/auth/** (Next → Java).
  */
 @Component
 public class ApiTokenFilter extends OncePerRequestFilter {
@@ -31,11 +30,11 @@ public class ApiTokenFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    String path = request.getRequestURI();
     if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
       return true;
     }
-    return isPublicPath(path);
+    String path = request.getRequestURI();
+    return !isAuthPath(path);
   }
 
   static boolean isPublicPath(String path) {
@@ -48,7 +47,6 @@ public class ApiTokenFilter extends OncePerRequestFilter {
         || path.startsWith("/v3/api-docs");
   }
 
-  /** Rotas de autenticação: exigem token de API, mas não identidade do usuário final. */
   static boolean isAuthPath(String path) {
     return path.startsWith("/api/v1/auth/");
   }
@@ -68,13 +66,10 @@ public class ApiTokenFilter extends OncePerRequestFilter {
       return;
     }
 
-    // Placeholder até UserContextFilter enriquecer com o usuário real
-    if (SecurityContextHolder.getContext().getAuthentication() == null) {
-      SecurityContextHolder.getContext()
-          .setAuthentication(
-              new UsernamePasswordAuthenticationToken(
-                  "api", null, List.of(new SimpleGrantedAuthority("ROLE_API"))));
-    }
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new UsernamePasswordAuthenticationToken(
+                "api", null, List.of(new SimpleGrantedAuthority("ROLE_API"))));
     filterChain.doFilter(request, response);
   }
 

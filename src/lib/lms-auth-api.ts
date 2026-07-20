@@ -9,6 +9,7 @@ export interface BackendAuthSession {
   unitId: UnitId;
   avatarColor: string;
   provider: "password" | "microsoft";
+  accessToken: string;
 }
 
 export async function loginWithBackend(
@@ -38,7 +39,7 @@ export async function loginWithBackend(
     throw new Error(message);
   }
 
-  if (!data || !("id" in data)) {
+  if (!data || !("id" in data) || !data.accessToken) {
     throw new Error("Resposta inválida do servidor de autenticação");
   }
 
@@ -73,7 +74,7 @@ export async function resolveMicrosoftWithBackend(
     throw new Error(message);
   }
 
-  if (!data || !("id" in data)) {
+  if (!data || !("id" in data) || !data.accessToken) {
     throw new Error("Resposta inválida do servidor de autenticação");
   }
 

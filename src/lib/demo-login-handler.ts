@@ -7,9 +7,14 @@ import {
   sessionCookieOptions,
 } from "@/lib/auth-session";
 import { isValidDemoPassword } from "@/lib/demo-password";
+import { isDemoAccountLoginBlocked } from "@/lib/demo-account-guard";
 import { resolveUserProfile } from "@/lib/session-user";
 
 export async function handleDemoLogin(email: string, password: string) {
+  if (isDemoAccountLoginBlocked(email)) {
+    return { ok: false as const, status: 401, error: "E-mail ou senha inválidos" };
+  }
+
   if (!isValidDemoPassword(password)) {
     return { ok: false as const, status: 401, error: "E-mail ou senha inválidos" };
   }

@@ -8,6 +8,7 @@ import {
   sessionCookieOptions,
 } from "@/lib/auth-session";
 import { isDemoAuthEnabled } from "@/lib/demo-auth-config";
+import { isDemoAccountLoginBlocked } from "@/lib/demo-account-guard";
 import { handleDemoLogin } from "@/lib/demo-login-handler";
 import { loginWithBackend } from "@/lib/lms-auth-api";
 
@@ -25,6 +26,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "E-mail e senha são obrigatórios" },
       { status: 400 }
+    );
+  }
+
+  if (isDemoAccountLoginBlocked(email)) {
+    return NextResponse.json(
+      { error: "E-mail ou senha inválidos" },
+      { status: 401 }
     );
   }
 

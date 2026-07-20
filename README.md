@@ -55,7 +55,9 @@ npm start
 
 ## Contas de demonstração
 
-Senha inicial (usuários seed, profile `local`): `LMS_SEED_PASSWORD` / `demo1234`. Produção: `AUTH_DEMO_ENABLED=false`, `AZURE_AD_TENANT_ID` específico (não `common`).
+> **Somente desenvolvimento local** — profile `local`, `AUTH_DEMO_ENABLED=true`, seed ativo.
+
+Senha inicial (usuários seed, profile `local`): `LMS_SEED_PASSWORD` / `demo1234`.
 
 | E-mail | Perfil | Unidade |
 |---|---|---|
@@ -65,6 +67,16 @@ Senha inicial (usuários seed, profile `local`): `LMS_SEED_PASSWORD` / `demo1234
 | `henrique.castro@navoxi.com` | Instrutor | Navoxi · Matriz |
 | `diego.alves@navoxi.com` | Aluno | Navoxi · Matriz |
 | `felipe.rocha@navoxi.com` | Administrador de Unidade | Navoxi · Nordeste |
+
+Em **produção pública**, login com essas contas é bloqueado (Next.js + backend Java). Botões de acesso rápido demo só aparecem com `AUTH_DEMO_ENABLED=true`.
+
+### Checklist produção pública
+
+- `AUTH_DEMO_ENABLED=false` (default em produção)
+- `LMS_SEED_ENABLED=false`
+- `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod` do backend)
+- `LMS_SEED_PASSWORD` forte ou seed desligado
+- Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
 
 O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são filtrados automaticamente conforme **RBAC** e escopo de unidade.
 

@@ -1,4 +1,5 @@
 import type { Role, Settings } from "./types";
+import { shouldHidePath } from "./mock-module-gates";
 
 export const roleLabels: Record<Role, string> = {
   admin_premium: "Administrador Premium",
@@ -135,6 +136,7 @@ const routeAccess: Record<string, PermissionKey[]> = {
 };
 
 export function canAccessRoute(role: Role, pathname: string): boolean {
+  if (shouldHidePath(pathname)) return false;
   // Match longest prefix first (fail-closed for unknown routes)
   const route = Object.keys(routeAccess)
     .filter((r) => pathname === r || pathname.startsWith(r + "/"))
@@ -344,6 +346,7 @@ export function getNavItemsForRole(
   modules?: Settings["modules"]
 ): NavItemDef[] {
   return navItems.filter((item) => {
+    if (shouldHidePath(item.href)) return false;
     if (!item.permissions.some((p) => hasPermission(role, p))) return false;
     if (item.module && modules && !modules[item.module]) return false;
     return true;

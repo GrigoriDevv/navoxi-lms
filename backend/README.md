@@ -26,9 +26,11 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 - Swagger: http://localhost:8080/swagger-ui.html
 - H2 console: http://localhost:8080/h2-console (`jdbc:h2:mem:lms`)
 
-Autenticação por senha (BCrypt): `POST /api/v1/auth/login` com body `{ "email", "password" }` e header `Authorization: Bearer <LMS_API_TOKEN>`. Contas seed e senha local: [`docs/local-dev-auth.md`](../docs/local-dev-auth.md).
+Autenticação por senha (BCrypt): `POST /api/v1/auth/login` com body `{ "email", "password" }` e header `Authorization: Bearer <LMS_API_TOKEN>`. Resposta inclui `accessToken` (JWT). Contas seed: [`docs/local-dev-auth.md`](../docs/local-dev-auth.md).
 
-Em **local**, para simular usuário autenticado nas rotas protegidas, use header `X-User-Email` com um e-mail cadastrado (ex.: durante testes manuais). **Não use contas seed em produção.**
+Rotas de dados exigem `Authorization: Bearer <accessToken JWT>` emitido no login — **não** use `X-User-Email`. Em testes manuais, faça login e copie o `accessToken`.
+
+**JWT:** `LMS_JWT_SECRET` (prod obrigatório, ≥32 chars). TTL default 7d (`LMS_JWT_TTL_SECONDS`).
 
 **Bloqueio de contas demo em produção:** `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod`) impede login das contas seed, mesmo que existam no banco. No front, `ALLOW_DEMO_LOGIN=false` desliga fallback mock com senha compartilhada.
 
@@ -70,7 +72,8 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
 4. Variáveis recomendadas:
    - `LMS_SEED_ENABLED=false`
    - `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default com `SPRING_PROFILES_ACTIVE=prod`)
-   - `LMS_API_TOKEN` com valor forte
+   - `LMS_API_TOKEN` com valor forte (só auth)
+   - `LMS_JWT_SECRET` ≥32 chars (obrigatório em prod)
 
 ## Front
 
@@ -80,7 +83,9 @@ No Next.js:
 NEXT_PUBLIC_USE_JAVA_API=true
 LMS_API_URL=http://localhost:8080
 LMS_API_TOKEN=local-dev-token
+LMS_JWT_SECRET=local-dev-jwt-secret-at-least-32-chars
 AUTH_SECRET=dev-secret-change-me
 ```
 
-Todas as rotas `/api/v1/**` (exceto health) exigem `Authorization: Bearer <LMS_API_TOKEN>` e `X-User-Email`.
+- `POST /api/v1/auth/**` (Next→Java): `Authorization: Bearer <LMS_API_TOKEN>`
+- Demais `/api/v1/**`: `Authorization: Bearer <accessToken JWT>` do login (via BFF)

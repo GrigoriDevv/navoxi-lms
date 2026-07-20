@@ -13,6 +13,8 @@ export interface SessionPayload {
   unitId?: UnitId;
   avatarColor?: string;
   provider: AuthProvider;
+  /** JWT emitido pelo backend Java — obrigatório para /api/lms */
+  accessToken?: string;
   exp: number;
 }
 

@@ -8,6 +8,7 @@ import com.navoxi.lms.domain.enums.UnitId;
 import com.navoxi.lms.domain.enums.UserStatus;
 import com.navoxi.lms.repository.UserAccountRepository;
 import com.navoxi.lms.security.DemoSeedGuard;
+import com.navoxi.lms.security.JwtService;
 import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
 import com.navoxi.lms.web.ApiExceptionHandler.UnauthorizedException;
 import com.navoxi.lms.web.dto.AuthSessionDto;
@@ -32,16 +33,19 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final DemoSeedGuard demoSeedGuard;
   private final JitAuthProperties jitAuth;
+  private final JwtService jwtService;
 
   public AuthService(
       UserAccountRepository users,
       PasswordEncoder passwordEncoder,
       DemoSeedGuard demoSeedGuard,
-      JitAuthProperties jitAuth) {
+      JitAuthProperties jitAuth,
+      JwtService jwtService) {
     this.users = users;
     this.passwordEncoder = passwordEncoder;
     this.demoSeedGuard = demoSeedGuard;
     this.jitAuth = jitAuth;
+    this.jwtService = jwtService;
   }
 
   @Transactional
@@ -180,7 +184,7 @@ public class AuthService {
     return email.trim().toLowerCase(Locale.ROOT);
   }
 
-  static AuthSessionDto toSession(UserAccount user, String provider) {
+  private AuthSessionDto toSession(UserAccount user, String provider) {
     return new AuthSessionDto(
         user.getId(),
         user.getEmail(),
@@ -188,6 +192,7 @@ public class AuthService {
         user.getRole(),
         user.getUnitId(),
         user.getAvatarColor(),
-        provider);
+        provider,
+        jwtService.issue(user));
   }
 }

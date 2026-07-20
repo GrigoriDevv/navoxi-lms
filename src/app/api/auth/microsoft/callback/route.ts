@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
         unitId: backendUser.unitId,
         avatarColor: backendUser.avatarColor,
         provider: "microsoft",
+        accessToken: backendUser.accessToken,
       },
       Date.now() + SESSION_MAX_AGE * 1000
     );

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
-import { lmsApiToken, lmsApiUpstreamUrl } from "@/lib/api-config";
+import { lmsApiUpstreamUrl } from "@/lib/api-config";
 
 const ALLOWED_PREFIXES = [
   "courses",
   "lessons",
   "modules",
-  "users/me",
+  "users",
   "enrollment-requests",
   "enrollments",
 ] as const;
@@ -39,6 +39,13 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
     return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
   }
 
+  if (!session.accessToken) {
+    return NextResponse.json(
+      { error: "Sessão sem token de API. Faça login novamente." },
+      { status: 401 }
+    );
+  }
+
   const upstreamPath = `/api/v1/${pathSegments.join("/")}`;
   const url = new URL(upstreamPath, lmsApiUpstreamUrl());
   request.nextUrl.searchParams.forEach((value, key) => {
@@ -46,8 +53,7 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
   });
 
   const headers = new Headers();
-  headers.set("Authorization", `Bearer ${lmsApiToken()}`);
-  headers.set("X-User-Email", session.email);
+  headers.set("Authorization", `Bearer ${session.accessToken}`);
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
 

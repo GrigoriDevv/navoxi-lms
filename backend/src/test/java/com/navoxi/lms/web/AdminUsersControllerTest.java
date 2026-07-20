@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.AuthProvider;
 import com.navoxi.lms.domain.enums.Role;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,11 +35,14 @@ class AdminUsersControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UserAccountRepository users;
+  @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired private ObjectMapper objectMapper;
 
   private String alunoId;
+  private String adminJwt;
 
   @BeforeEach
-  void seed() {
+  void seed() throws Exception {
     users.deleteAll();
     UserAccount admin = new UserAccount();
     admin.setId("u-admin");
@@ -50,6 +55,7 @@ class AdminUsersControllerTest {
     admin.setLastAccess("—");
     admin.setAvatarColor("#2563eb");
     admin.setAuthProvider(AuthProvider.both);
+    admin.setPasswordHash(passwordEncoder.encode("secret123"));
     users.save(admin);
 
     UserAccount aluno = new UserAccount();
@@ -62,18 +68,19 @@ class AdminUsersControllerTest {
     aluno.setStatus(UserStatus.ativo);
     aluno.setLastAccess("—");
     aluno.setAvatarColor("#0ea5e9");
-    aluno.setAuthProvider(AuthProvider.microsoft);
+    aluno.setAuthProvider(AuthProvider.both);
+    aluno.setPasswordHash(passwordEncoder.encode("secret123"));
     users.save(aluno);
     alunoId = aluno.getId();
+
+    adminJwt =
+        AuthTestSupport.loginAccessToken(mockMvc, objectMapper, "admin@navoxi.com", "secret123");
   }
 
   @Test
   void listUsersAsAdmin() throws Exception {
     mockMvc
-        .perform(
-            get("/api/v1/users")
-                .header("Authorization", "Bearer local-dev-token")
-                .header("X-User-Email", "admin@navoxi.com"))
+        .perform(get("/api/v1/users").header("Authorization", "Bearer " + adminJwt))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].email").exists());
   }
@@ -83,8 +90,7 @@ class AdminUsersControllerTest {
     mockMvc
         .perform(
             patch("/api/v1/users/" + alunoId)
-                .header("Authorization", "Bearer local-dev-token")
-                .header("X-User-Email", "admin@navoxi.com")
+                .header("Authorization", "Bearer " + adminJwt)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"role\":\"instrutor\"}"))
         .andExpect(status().isOk())
@@ -93,11 +99,10 @@ class AdminUsersControllerTest {
 
   @Test
   void listForbiddenForAluno() throws Exception {
+    String alunoJwt =
+        AuthTestSupport.loginAccessToken(mockMvc, objectMapper, "aluno@navoxi.com", "secret123");
     mockMvc
-        .perform(
-            get("/api/v1/users")
-                .header("Authorization", "Bearer local-dev-token")
-                .header("X-User-Email", "aluno@navoxi.com"))
+        .perform(get("/api/v1/users").header("Authorization", "Bearer " + alunoJwt))
         .andExpect(status().isForbidden());
   }
 }

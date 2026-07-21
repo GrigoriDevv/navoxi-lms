@@ -71,7 +71,8 @@ Em **produção pública**, login mock com senha compartilhada é bloqueado. Log
 - `LMS_ALLOWED_EMAIL_DOMAINS` + `AUTH_ALLOWED_EMAIL_DOMAIN` (mesmo domínio)
 - `LMS_BOOTSTRAP_ADMIN_EMAILS` (primeiro admin real)
 - `LMS_JWT_SECRET` (≥32 chars; obrigatório em prod)
-- `LMS_SEED_PASSWORD` forte ou seed desligado
+- `LMS_API_TOKEN` forte (≥24 chars; **não** `local-dev-token` — fail-fast)
+- `CORS_ORIGINS` com URL do front (obrigatório no profile `prod`)
 - Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
 - **Não** setar `NEXT_PUBLIC_SHOW_MOCK_MODULES` em produção pública (default: módulos mock ocultos)
 

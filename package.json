@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "npm run test:unit && npm run test:bff",
-    "test:unit": "node --test scripts/demo-auth-config.test.mjs scripts/mock-module-gates.test.mjs",
+    "test:unit": "node --test scripts/demo-auth-config.test.mjs scripts/mock-module-gates.test.mjs scripts/api-config.test.mjs",
     "test:bff": "vitest run",
     "test:backend": "cd backend && mvn test -q",
     "test:e2e": "playwright test"

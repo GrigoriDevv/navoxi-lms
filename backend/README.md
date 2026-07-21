@@ -59,8 +59,16 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
 | GET | `/api/v1/users` |
 | PATCH | `/api/v1/users/{id}` |
 | GET | `/api/v1/users/me` |
+| GET | `/api/v1/users/me/export` |
+| DELETE | `/api/v1/users/me` |
 | GET | `/api/v1/users/me/enrollments` |
 | GET | `/api/v1/users/me/progress` |
+
+### LGPD (MVP)
+
+- Tabela `access_log` (Flyway `V4`): quem, ação, recurso, IP, user-agent, quando. Escrita em login, SSO, `GET /users/me`, export e delete.
+- `GET /api/v1/users/me/export` — portabilidade JSON (perfil, matrículas, progresso, solicitações, notificações, access_log do titular).
+- `DELETE /api/v1/users/me` — direito ao esquecimento via scrub irreversível de PII + `status=inativo` (evita cascade em matrículas/progresso). JWT deixa de autenticar.
 
 ## Produção (Railway)
 

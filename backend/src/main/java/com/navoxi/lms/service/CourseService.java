@@ -1,7 +1,9 @@
 package com.navoxi.lms.service;
 
 import com.navoxi.lms.domain.entity.Course;
+import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.repository.CourseRepository;
+import com.navoxi.lms.security.UnitScope;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.CourseDto;
 import com.navoxi.lms.web.dto.CourseRequest;
@@ -19,17 +21,20 @@ public class CourseService {
   }
 
   @Transactional(readOnly = true)
-  public List<CourseDto> list() {
-    return courses.findAll().stream().map(CourseMapper::toDto).toList();
+  public List<CourseDto> list(UserAccount actor) {
+    List<Course> list =
+        UnitScope.isGlobal(actor) ? courses.findAll() : courses.findByUnitId(actor.getUnitId());
+    return list.stream().map(CourseMapper::toDto).toList();
   }
 
   @Transactional(readOnly = true)
-  public CourseDto get(String id) {
-    return CourseMapper.toDto(require(id));
+  public CourseDto get(UserAccount actor, String id) {
+    return CourseMapper.toDto(requireAccessible(actor, id));
   }
 
   @Transactional
-  public CourseDto create(CourseRequest req) {
+  public CourseDto create(UserAccount actor, CourseRequest req) {
+    UnitScope.assertCanAccessUnit(actor, req.unitId());
     Course c = new Course();
     apply(c, req);
     if (c.getCover() == null || c.getCover().isBlank()) {
@@ -39,14 +44,21 @@ public class CourseService {
   }
 
   @Transactional
-  public CourseDto update(String id, CourseRequest req) {
-    Course c = require(id);
+  public CourseDto update(UserAccount actor, String id, CourseRequest req) {
+    Course c = requireAccessible(actor, id);
+    UnitScope.assertCanAccessUnit(actor, req.unitId());
     apply(c, req);
     return CourseMapper.toDto(courses.save(c));
   }
 
   Course require(String id) {
     return courses.findById(id).orElseThrow(() -> new NotFoundException("Curso não encontrado"));
+  }
+
+  Course requireAccessible(UserAccount actor, String id) {
+    Course c = require(id);
+    UnitScope.assertCanAccessCourse(actor, c);
+    return c;
   }
 
   private void apply(Course c, CourseRequest req) {

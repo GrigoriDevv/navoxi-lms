@@ -7,6 +7,7 @@ import com.navoxi.lms.domain.enums.EnrollmentStatus;
 import com.navoxi.lms.domain.enums.NotificationType;
 import com.navoxi.lms.repository.CourseRepository;
 import com.navoxi.lms.repository.EnrollmentRepository;
+import com.navoxi.lms.security.UnitScope;
 import com.navoxi.lms.service.CourseMapper;
 import com.navoxi.lms.service.EnrollmentService;
 import com.navoxi.lms.service.NotificationService;
@@ -53,6 +54,7 @@ public class EnrollmentController {
         courses
             .findById(body.courseId())
             .orElseThrow(() -> new NotFoundException("Curso não encontrado"));
+    UnitScope.assertCanAccessCourse(user, course);
     if (enrollments.existsByUserIdAndCourseIdAndStatus(
         user.getId(), course.getId(), EnrollmentStatus.ativa)) {
       throw new BadRequestException("Já existe matrícula ativa neste curso");

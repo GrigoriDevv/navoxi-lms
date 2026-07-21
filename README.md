@@ -1,6 +1,8 @@
-# Plataforma para Sistema Inteligente — MVP
+# Plataforma para Sistema Inteligente — Fase 1
 
-**Navoxi** — plataforma corporativa de **gestão de aprendizagem, conteúdos e operações**. Este repositório contém um **MVP funcional** para demonstração de requisitos, fluxos de negócio e experiência de uso — com dados simulados e persistência local.
+**Navoxi** — plataforma corporativa de **gestão de aprendizagem, conteúdos e operações**.
+
+Este repositório entrega a **Fase 1** (auth, cursos, matrículas, progresso, admin de usuários com API Java) e, em desenvolvimento local, **UI de demonstração (Fase 2 / mock)** para módulos ainda não persistidos. Em **produção**, as rotas mock ficam ocultas por padrão — não vender preview como produto pronto.
 
 ## Stack
 
@@ -71,8 +73,33 @@ Em **produção pública**, login mock com senha compartilhada é bloqueado. Log
 - `LMS_JWT_SECRET` (≥32 chars; obrigatório em prod)
 - `LMS_SEED_PASSWORD` forte ou seed desligado
 - Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
+- **Não** setar `NEXT_PUBLIC_SHOW_MOCK_MODULES` em produção pública (default: módulos mock ocultos)
 
-O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são filtrados automaticamente conforme **RBAC** e escopo de unidade.
+### Fase 1 pronta (vendável)
+
+Com `NEXT_PUBLIC_USE_JAVA_API=true` + backend Java:
+
+- Login senha (BCrypt) e Microsoft Entra (SSO)
+- Cursos, módulos, aulas, progresso
+- Matrículas e solicitações de matrícula
+- Notificações (API)
+- Administração de usuários (listagem/promoção via API)
+
+### Demo UI / Fase 2 (mock — oculto em produção)
+
+Rotas abaixo usam seed/`localStorage` e **não** têm backend Java. Em `NODE_ENV=production` ficam bloqueadas (nav + deep link → redirect `/dashboard`), salvo `NEXT_PUBLIC_SHOW_MOCK_MODULES=true` (staging/demo controlada).
+
+| Rota | Status |
+|---|---|
+| `/auditoria` | Mock (export sem handler; IP seed `10.2.31.5`) |
+| `/configuracoes` | Mock |
+| `/comunicacao` | Mock |
+| `/integracoes` | Mock (SSO/RH/BI só UI) |
+| `/aprendizagem/certificados` | Mock |
+| `/aprendizagem/avaliacoes` | Mock |
+| `/administracao` | **Fase 1** com Java API; oculto em prod se `NEXT_PUBLIC_USE_JAVA_API` ≠ `true` |
+
+O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são filtrados automaticamente conforme **RBAC**, escopo de unidade e o gate de módulos mock (`src/lib/mock-module-gates.ts`).
 
 ## Visão geral dos módulos
 
@@ -87,27 +114,27 @@ O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são fil
 
 ### Administração e identidade
 
-| Rota | Requisitos | Descrição |
-|---|---|---|
-| `/identidade` | Admin Premium | Perfis, matriz de permissões, políticas de segurança, sessões |
-| `/administracao` | Admin Premium / Unidade | Gestão de usuários, busca, departamentos, cadastro |
+| Rota | Requisitos | Status | Descrição |
+|---|---|---|---|
+| `/identidade` | Admin Premium | Preview / parcial | Perfis, matriz de permissões, políticas de segurança, sessões |
+| `/administracao` | Admin Premium / Unidade | **Fase 1** (com Java API) | Gestão de usuários, busca, departamentos |
 
 ### Aprendizagem
 
-| Rota | Descrição |
-|---|---|
-| `/aprendizagem/catalogo` | Catálogo navegável + aba **Minhas inscrições** (matrículas e solicitações pendentes) |
-| `/aprendizagem/cursos` | CRUD de cursos (publicar, arquivar, rascunho) + importação de aulas via YouTube |
-| `/aprendizagem/cursos/[courseId]` | Player de aulas com vídeos YouTube (estilo biblioteca digital) e progresso por aula |
-| `/aprendizagem/turmas` | Gestão de turmas vinculadas a cursos e salas |
-| `/aprendizagem/trilhas` | Trilhas com etapas sequenciais e progresso |
-| `/aprendizagem/calendario` | Calendário acadêmico de eventos |
-| `/aprendizagem/biblioteca` | Biblioteca de materiais de aprendizagem |
-| `/aprendizagem/salas` | Cadastro de salas e recursos presenciais |
-| `/aprendizagem/certificados` | Emissão e gestão de certificados |
-| `/aprendizagem/interesses` | Registro de interesse em cursos futuros |
-| `/aprendizagem/solicitacoes` | Aprovação/rejeição de solicitações de matrícula |
-| `/aprendizagem/avaliacoes` | Criação, edição e aplicação de avaliações |
+| Rota | Status | Descrição |
+|---|---|---|
+| `/aprendizagem/catalogo` | Fase 1 | Catálogo navegável + aba **Minhas inscrições** |
+| `/aprendizagem/cursos` | Fase 1 | CRUD de cursos + importação de aulas via YouTube |
+| `/aprendizagem/cursos/[courseId]` | Fase 1 | Player de aulas e progresso |
+| `/aprendizagem/turmas` | Fase 1 / parcial | Gestão de turmas vinculadas a cursos e salas |
+| `/aprendizagem/trilhas` | Preview | Trilhas com etapas sequenciais e progresso |
+| `/aprendizagem/calendario` | Preview | Calendário acadêmico de eventos |
+| `/aprendizagem/biblioteca` | Preview | Biblioteca de materiais de aprendizagem |
+| `/aprendizagem/salas` | Preview | Cadastro de salas e recursos presenciais |
+| `/aprendizagem/certificados` | **Demo UI / Fase 2** | Emissão e gestão de certificados (mock) |
+| `/aprendizagem/interesses` | Preview | Registro de interesse em cursos futuros |
+| `/aprendizagem/solicitacoes` | Fase 1 | Aprovação/rejeição de solicitações de matrícula |
+| `/aprendizagem/avaliacoes` | **Demo UI / Fase 2** | Avaliações (mock) |
 
 **Modalidades suportadas:** EAD/online, presencial e híbrido.
 
@@ -164,20 +191,20 @@ NEXT_PUBLIC_APP_URL=https://neoenergia-lms-production.up.railway.app
 
 ### Comunicação
 
-| Rota | Descrição |
-|---|---|
-| `/comunicacao` | Destaques, posts, notificações, alertas, correio interno e campanhas multicanal |
+| Rota | Status | Descrição |
+|---|---|---|
+| `/comunicacao` | **Demo UI / Fase 2** | Destaques, posts, alertas, correio e campanhas (mock) |
 
-O banner de destaques no dashboard pode ser ligado/desligado em **Configurações → Interface**.
+O banner de destaques no dashboard pode ser ligado/desligado em **Configurações → Interface** (só em ambiente com mocks visíveis).
 
 ### Inteligência e sistema
 
-| Rota | Descrição |
-|---|---|
-| `/relatorios` | KPIs, gráficos de matrícula, conclusão e perfis |
-| `/configuracoes` | Parâmetros gerais, módulos, interface, integrações, permissões, jobs agendados |
-| `/integracoes` | SSO, RH, BI, webhooks, automações e jobs |
-| `/auditoria` | Trilha de auditoria com filtros por severidade |
+| Rota | Status | Descrição |
+|---|---|---|
+| `/relatorios` | Preview | KPIs e gráficos |
+| `/configuracoes` | **Demo UI / Fase 2** | Parâmetros gerais, módulos, interface (mock) |
+| `/integracoes` | **Demo UI / Fase 2** | SSO, RH, BI, webhooks (mock) |
+| `/auditoria` | **Demo UI / Fase 2** | Trilha de auditoria mock; export sem handler |
 
 ## Controle de acesso (RBAC)
 
@@ -283,28 +310,41 @@ Toda mutação relevante (criar curso, inscrever aluno, alterar configuração) 
 | `Integration` / `Automation` / `ScheduledJob` | Integrações e automações |
 | `AuditLog` / `Notification` | Auditoria e alertas |
 
-## Limitações do MVP
+## Limitações do MVP / o que não vender como pronto
 
-Este projeto é uma **prova de conceito front-end**. Não há backend real, banco de dados nem integrações externas funcionais.
+A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuários. O restante abaixo é **demo UI** (seed / estado local) e fica **oculto em produção** sem `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`.
 
 | Aspecto | Estado atual |
 |---|---|
-| Autenticação | Senha BCrypt (backend) + Microsoft Entra (whitelist) |
-| Persistência | Sessão e preferências em `localStorage`; demais dados resetam ao recarregar* |
+| Autenticação | Senha BCrypt (backend) + Microsoft Entra; JWT de usuário nas rotas de dados |
+| Aprendizagem core | API Java (cursos, matrículas, progresso) quando `NEXT_PUBLIC_USE_JAVA_API=true` |
+| Auditoria / Config / Comunicação / Integrações | Mock — não persistidos; auditoria com IP seed fixo e export sem handler |
+| Certificados / Avaliações | Mock — não persistidos |
 | Upload de arquivos | Simulado (metadados apenas) |
 | E-mail / push / SMS | Simulados na UI |
 | Integrações SSO/RH/BI | Status mock; toggles alteram apenas o estado local |
 
-\* *O estado React persiste durante a sessão do navegador; ao fechar a aba ou limpar storage, os dados voltam ao seed.*
+\* *O estado React de módulos mock persiste na sessão do navegador; ao fechar a aba ou limpar storage, os dados voltam ao seed.*
 
-## Caminho para produção
+## Caminho para produção (Fase 2+)
 
-1. **API** — Next.js Route Handlers ou serviço dedicado com banco relacional (PostgreSQL).
-2. **Autenticação** — SSO corporativo (SAML/OIDC) e gestão de sessão server-side.
-3. **RBAC** — Permissões avaliadas no servidor, não apenas no cliente.
-4. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
-5. **Storage** — S3 ou equivalente para conteúdos e certificados PDF.
-6. **Filas** — Jobs agendados (lembretes, sincronização, relatórios) via worker/cron.
+1. **Persistir** auditoria, configurações, comunicação, integrações, certificados e avaliações na API Java.
+2. **RBAC** — Permissões avaliadas no servidor (já em andamento no backend).
+3. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
+4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF.
+5. **Filas** — Jobs agendados (lembretes, sincronização, relatórios) via worker/cron.
+
+## Testes
+
+Suíte mínima (auth, BFF, enroll/progress, PreAuthorize):
+
+| Comando | O quê |
+|---|---|
+| `npm test` | Unit (node) + Vitest BFF (`lms-bff-path`) |
+| `npm run test:backend` | JUnit (`mvn test`) — auth, JWT, JIT, enroll, progress, PreAuthorize |
+| `npm run test:e2e` | Playwright smoke (`/login` + `demo-status`; sobe `webServer` local) |
+
+E2E é opt-in local (não obrigatório em CI sem browsers). Relatórios Playwright ficam em pastas ignoradas pelo git.
 
 ## Scripts npm
 
@@ -314,6 +354,9 @@ Este projeto é uma **prova de conceito front-end**. Não há backend real, banc
 | `npm run build` | Build de produção |
 | `npm start` | Servidor de produção |
 | `npm run lint` | ESLint |
+| `npm test` | Unit + Vitest BFF |
+| `npm run test:backend` | JUnit backend |
+| `npm run test:e2e` | Playwright smoke auth |
 
 ## Repositório
 
@@ -321,4 +364,4 @@ Código-fonte: [github.com/GrigoriDevv/navoxi-lms](https://github.com/GrigoriDev
 
 ---
 
-**Plataforma para Sistema Inteligente · Navoxi** · MVP demonstrativo · Junho/2026
+**Plataforma para Sistema Inteligente · Navoxi** · Fase 1 + demo UI · 2026

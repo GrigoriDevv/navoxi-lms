@@ -19,7 +19,24 @@ import type {
 import { hasPermission } from "../rbac";
 import { computeProgress, syncInscricaoProgress } from "../course-progress";
 import { isJavaApiEnabled } from "../api-config";
-import { lmsApi } from "../api-client";
+import {
+  useCompleteLesson,
+  useCourses,
+  useCreateCourse,
+  useCreateEnrollmentRequest,
+  useDecideEnrollmentRequest,
+  useDeleteAllCourseLessons,
+  useDeleteLesson,
+  useEnroll,
+  useEnrollmentRequests,
+  useLessons,
+  useModules,
+  useMyEnrollments,
+  useMyProgress,
+  usePublishLesson,
+  useUpdateCourse,
+  useUpdateLesson,
+} from "../lms";
 import type { AppState, AuthState } from "./types";
 import { STORAGE_LESSON_PROGRESS, now } from "./shared";
 
@@ -41,7 +58,31 @@ export function useLearningStore(deps: {
     refreshNotifications,
   } = deps;
 
-  const [courses, setCourses] = useState<Course[]>(seed.courses);
+  const javaApi = isJavaApiEnabled();
+  const userId = currentUser?.id;
+  const userEmail = currentUser?.email;
+
+  const coursesQuery = useCourses({ enabled: javaApi });
+  const modulesQuery = useModules({ enabled: javaApi });
+  const lessonsQuery = useLessons({ enabled: javaApi });
+  const enrollmentsQuery = useMyEnrollments(userId, userEmail, {
+    enabled: javaApi,
+  });
+  const progressQuery = useMyProgress(userId, userEmail, { enabled: javaApi });
+  const enrollmentRequestsQuery = useEnrollmentRequests({ enabled: javaApi });
+
+  const createCourseMutation = useCreateCourse();
+  const updateCourseMutation = useUpdateCourse();
+  const enrollMutation = useEnroll(userId);
+  const createEnrollmentRequestMutation = useCreateEnrollmentRequest(userId);
+  const decideEnrollmentRequestMutation = useDecideEnrollmentRequest(userId);
+  const completeLessonMutation = useCompleteLesson(userId);
+  const publishLessonMutation = usePublishLesson();
+  const updateLessonMutation = useUpdateLesson();
+  const deleteLessonMutation = useDeleteLesson();
+  const deleteAllCourseLessonsMutation = useDeleteAllCourseLessons();
+
+  const [mockCourses, setMockCourses] = useState<Course[]>(seed.courses);
   const [turmas, setTurmas] = useState<Turma[]>(seed.turmas);
   const [trilhas, setTrilhas] = useState<Trilha[]>(seed.trilhas);
   const [salas, setSalas] = useState<Sala[]>(seed.salas);
@@ -51,20 +92,22 @@ export function useLearningStore(deps: {
   const [interesses, setInteresses] = useState<InteresseCurso[]>(
     seed.interesses
   );
-  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoMatricula[]>(
-    seed.solicitacoes
-  );
-  const [inscricoes, setInscricoes] = useState<InscricaoCurso[]>(
+  const [mockSolicitacoes, setMockSolicitacoes] = useState<
+    SolicitacaoMatricula[]
+  >(seed.solicitacoes);
+  const [mockInscricoes, setMockInscricoes] = useState<InscricaoCurso[]>(
     seed.inscricoes
   );
-  const [courseModules, setCourseModules] = useState<CourseModule[]>(
+  const [mockCourseModules, setMockCourseModules] = useState<CourseModule[]>(
     seed.courseModules
   );
-  const [courseLessons, setCourseLessons] = useState<CourseLesson[]>(
+  const [mockCourseLessons, setMockCourseLessons] = useState<CourseLesson[]>(
     seed.courseLessons
   );
-  const [lessonProgress, setLessonProgress] = useState<LessonProgress[]>(() => {
-    if (typeof window === "undefined" || isJavaApiEnabled()) {
+  const [mockLessonProgress, setMockLessonProgress] = useState<
+    LessonProgress[]
+  >(() => {
+    if (typeof window === "undefined" || javaApi) {
       return seed.lessonProgress;
     }
     try {
@@ -82,89 +125,36 @@ export function useLearningStore(deps: {
     }
   });
 
+  const courses = javaApi
+    ? (coursesQuery.data ?? seed.courses)
+    : mockCourses;
+  const courseModules = javaApi
+    ? (modulesQuery.data ?? seed.courseModules)
+    : mockCourseModules;
+  const courseLessons = javaApi
+    ? (lessonsQuery.data ?? seed.courseLessons)
+    : mockCourseLessons;
+  const inscricoes = javaApi
+    ? (enrollmentsQuery.data ?? [])
+    : mockInscricoes;
+  const lessonProgress = javaApi
+    ? (progressQuery.data ?? [])
+    : mockLessonProgress;
+  const solicitacoes = javaApi
+    ? (enrollmentRequestsQuery.data ?? [])
+    : mockSolicitacoes;
+
   useEffect(() => {
-    if (isJavaApiEnabled()) return;
+    if (javaApi) return;
     try {
       localStorage.setItem(
         STORAGE_LESSON_PROGRESS,
-        JSON.stringify(lessonProgress)
+        JSON.stringify(mockLessonProgress)
       );
     } catch {
       /* ignore */
     }
-  }, [lessonProgress]);
-
-  useEffect(() => {
-    if (!isJavaApiEnabled()) return;
-    let cancelled = false;
-    void Promise.all([
-      lmsApi.listCourses(),
-      lmsApi.listModules(),
-      lmsApi.listLessons(),
-    ])
-      .then(([apiCourses, apiModules, apiLessons]) => {
-        if (cancelled) return;
-        setCourses(apiCourses);
-        setCourseModules(apiModules);
-        setCourseLessons(apiLessons);
-      })
-      .catch((err) => {
-        console.error("[lms-api] falha ao carregar catálogo", err);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isJavaApiEnabled() || !currentUser?.email) return;
-    let cancelled = false;
-    void Promise.all([
-      lmsApi.listMyEnrollments(currentUser.email),
-      lmsApi.listMyProgress(currentUser.email),
-      lmsApi.listEnrollmentRequests(),
-    ])
-      .then(([apiEnrollments, apiProgress, apiRequests]) => {
-        if (cancelled) return;
-        setInscricoes((prev) => {
-          const others = prev.filter((i) => i.userId !== currentUser.id);
-          return [...apiEnrollments, ...others];
-        });
-        setLessonProgress((prev) => {
-          const others = prev.filter((p) => p.userId !== currentUser.id);
-          return [...apiProgress, ...others];
-        });
-        setSolicitacoes(apiRequests);
-      })
-      .catch((err) => {
-        console.error(
-          "[lms-api] falha ao carregar matrículas/progresso/solicitações",
-          err
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser?.email, currentUser?.id]);
-
-  const refreshMyLearning = useCallback(async () => {
-    if (!currentUser?.email || !isJavaApiEnabled()) return;
-    const [apiEnrollments, apiProgress, apiRequests] = await Promise.all([
-      lmsApi.listMyEnrollments(currentUser.email),
-      lmsApi.listMyProgress(currentUser.email),
-      lmsApi.listEnrollmentRequests(),
-    ]);
-    setInscricoes((prev) => {
-      const others = prev.filter((i) => i.userId !== currentUser.id);
-      return [...apiEnrollments, ...others];
-    });
-    setLessonProgress((prev) => {
-      const others = prev.filter((p) => p.userId !== currentUser.id);
-      return [...apiProgress, ...others];
-    });
-    setSolicitacoes(apiRequests);
-    await refreshNotifications();
-  }, [currentUser, refreshNotifications]);
+  }, [javaApi, mockLessonProgress]);
 
   const finalizeEnrollment = useCallback(
     (params: {
@@ -177,7 +167,7 @@ export function useLearningStore(deps: {
       unitId: UnitId;
     }) => {
       const id = "ins" + Math.random().toString(36).slice(2, 7);
-      setInscricoes((prev) => {
+      setMockInscricoes((prev) => {
         if (
           prev.some(
             (i) =>
@@ -205,7 +195,7 @@ export function useLearningStore(deps: {
           ...prev,
         ];
       });
-      setCourses((prev) =>
+      setMockCourses((prev) =>
         prev.map((c) =>
           c.id === params.courseId ? { ...c, enrolled: c.enrolled + 1 } : c
         )
@@ -229,11 +219,10 @@ export function useLearningStore(deps: {
           : c.unitId;
       const payload = { ...c, unitId };
 
-      if (isJavaApiEnabled()) {
-        void lmsApi
-          .createCourse(payload)
+      if (javaApi) {
+        void createCourseMutation
+          .mutateAsync(payload)
           .then((created) => {
-            setCourses((prev) => [created, ...prev]);
             log({
               user: currentUser?.email ?? "system",
               action: `Criou curso '${created.title}'`,
@@ -246,7 +235,7 @@ export function useLearningStore(deps: {
       }
 
       const id = "c" + Math.random().toString(36).slice(2, 7);
-      setCourses((prev) => [
+      setMockCourses((prev) => [
         { ...payload, id, enrolled: 0, completion: 0 },
         ...prev,
       ]);
@@ -257,19 +246,18 @@ export function useLearningStore(deps: {
         severity: "info",
       });
     },
-    [currentUser, log]
+    [createCourseMutation, currentUser, javaApi, log]
   );
 
   const updateCourse: AppState["updateCourse"] = useCallback(
     (id, data) => {
-      if (isJavaApiEnabled()) {
+      if (javaApi) {
         const current = courses.find((c) => c.id === id);
         if (!current) return;
         const merged = { ...current, ...data };
-        void lmsApi
-          .updateCourse(id, merged)
-          .then((updated) => {
-            setCourses((prev) => prev.map((c) => (c.id === id ? updated : c)));
+        void updateCourseMutation
+          .mutateAsync({ id, body: merged })
+          .then(() => {
             log({
               user: currentUser?.email ?? "system",
               action: `Atualizou curso '${id}'`,
@@ -281,7 +269,7 @@ export function useLearningStore(deps: {
         return;
       }
 
-      setCourses((prev) =>
+      setMockCourses((prev) =>
         prev.map((c) => (c.id === id ? { ...c, ...data } : c))
       );
       log({
@@ -291,7 +279,7 @@ export function useLearningStore(deps: {
         severity: "info",
       });
     },
-    [courses, currentUser, log]
+    [courses, currentUser, javaApi, log, updateCourseMutation]
   );
 
   const addTurma: AppState["addTurma"] = useCallback(
@@ -367,14 +355,11 @@ export function useLearningStore(deps: {
 
   const updateSolicitacao: AppState["updateSolicitacao"] = useCallback(
     async (id, status) => {
-      if (isJavaApiEnabled()) {
+      if (javaApi) {
         if (status !== "aprovada" && status !== "rejeitada") return;
         try {
-          const updated = await lmsApi.decideEnrollmentRequest(id, status);
-          setSolicitacoes((prev) =>
-            prev.map((s) => (s.id === id ? updated : s))
-          );
-          await refreshMyLearning();
+          await decideEnrollmentRequestMutation.mutateAsync({ id, status });
+          await refreshNotifications();
           log({
             user: currentUser?.email ?? "system",
             action: `Solicitação '${id}' → ${status}`,
@@ -387,7 +372,7 @@ export function useLearningStore(deps: {
         return;
       }
 
-      const sol = solicitacoes.find((s) => s.id === id);
+      const sol = mockSolicitacoes.find((s) => s.id === id);
       if (sol && status === "aprovada" && sol.status === "pendente") {
         const turma = sol.turmaId
           ? turmas.find((t) => t.id === sol.turmaId)
@@ -409,7 +394,7 @@ export function useLearningStore(deps: {
           href: "/aprendizagem/catalogo?tab=inscricoes",
         });
       }
-      setSolicitacoes((prev) =>
+      setMockSolicitacoes((prev) =>
         prev.map((s) =>
           s.id === id
             ? { ...s, status, reviewer: currentUser?.name ?? s.reviewer }
@@ -425,11 +410,13 @@ export function useLearningStore(deps: {
     },
     [
       currentUser,
+      decideEnrollmentRequestMutation,
       dispatchNotification,
       finalizeEnrollment,
+      javaApi,
       log,
-      refreshMyLearning,
-      solicitacoes,
+      mockSolicitacoes,
+      refreshNotifications,
       turmas,
     ]
   );
@@ -460,15 +447,14 @@ export function useLearningStore(deps: {
       );
       if (pending) return "duplicate";
 
-      if (isJavaApiEnabled()) {
+      if (javaApi) {
         try {
           if (approvalRequired) {
-            const created = await lmsApi.createEnrollmentRequest(
-              course.id,
+            await createEnrollmentRequestMutation.mutateAsync({
+              courseId: course.id,
               turmaId,
-              turma?.name
-            );
-            setSolicitacoes((prev) => [created, ...prev]);
+              turmaName: turma?.name,
+            });
             await refreshNotifications();
             log({
               user: currentUser.email,
@@ -478,11 +464,11 @@ export function useLearningStore(deps: {
             });
             return "pending";
           }
-          const enrolled = await lmsApi.enroll(course.id, turmaId, turma?.name);
-          setInscricoes((prev) => [
-            enrolled,
-            ...prev.filter((i) => i.id !== enrolled.id),
-          ]);
+          await enrollMutation.mutateAsync({
+            courseId: course.id,
+            turmaId,
+            turmaName: turma?.name,
+          });
           await refreshNotifications();
           log({
             user: currentUser.email,
@@ -499,7 +485,7 @@ export function useLearningStore(deps: {
 
       if (approvalRequired) {
         const id = "sol" + Math.random().toString(36).slice(2, 7);
-        setSolicitacoes((prev) => [
+        setMockSolicitacoes((prev) => [
           {
             id,
             userId: currentUser.id,
@@ -556,10 +542,13 @@ export function useLearningStore(deps: {
     [
       approvalRequired,
       courses,
+      createEnrollmentRequestMutation,
       currentUser,
       dispatchNotification,
+      enrollMutation,
       finalizeEnrollment,
       inscricoes,
+      javaApi,
       log,
       refreshNotifications,
       solicitacoes,
@@ -572,16 +561,18 @@ export function useLearningStore(deps: {
       const ins = inscricoes.find((i) => i.id === id);
       if (!ins || ins.status !== "ativa") return;
 
-      setInscricoes((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, status: "cancelada" } : i))
-      );
-      setCourses((prev) =>
-        prev.map((c) =>
-          c.id === ins.courseId
-            ? { ...c, enrolled: Math.max(0, c.enrolled - 1) }
-            : c
-        )
-      );
+      if (!javaApi) {
+        setMockInscricoes((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, status: "cancelada" } : i))
+        );
+        setMockCourses((prev) =>
+          prev.map((c) =>
+            c.id === ins.courseId
+              ? { ...c, enrolled: Math.max(0, c.enrolled - 1) }
+              : c
+          )
+        );
+      }
       if (ins.turmaId) {
         setTurmas((prev) =>
           prev.map((t) =>
@@ -598,7 +589,7 @@ export function useLearningStore(deps: {
         severity: "info",
       });
     },
-    [currentUser, inscricoes, log]
+    [currentUser, inscricoes, javaApi, log]
   );
 
   const completeLesson: AppState["completeLesson"] = useCallback(
@@ -614,16 +605,18 @@ export function useLearningStore(deps: {
 
       const applyLocal = (entry: LessonProgress) => {
         const nextProgress = [...lessonProgress, entry];
-        setLessonProgress(nextProgress);
         const { percent } = computeProgress(
           currentUser.id,
           lesson.courseId,
           courseLessons,
           nextProgress
         );
-        setInscricoes((prev) =>
-          syncInscricaoProgress(prev, currentUser.id, lesson.courseId, percent)
-        );
+        if (!javaApi) {
+          setMockLessonProgress(nextProgress);
+          setMockInscricoes((prev) =>
+            syncInscricaoProgress(prev, currentUser.id, lesson.courseId, percent)
+          );
+        }
         if (percent >= 100) {
           dispatchNotification({
             userId: currentUser.id,
@@ -641,16 +634,11 @@ export function useLearningStore(deps: {
         });
       };
 
-      if (isJavaApiEnabled()) {
-        void lmsApi
-          .completeLesson(lessonId, currentUser.email)
-          .then(async (entry) => {
+      if (javaApi) {
+        void completeLessonMutation
+          .mutateAsync({ lessonId, email: currentUser.email })
+          .then((entry) => {
             applyLocal(entry);
-            try {
-              await refreshMyLearning();
-            } catch (err) {
-              console.error("[lms-api] refresh after completeLesson", err);
-            }
           })
           .catch((err) => console.error("[lms-api] completeLesson", err));
         return;
@@ -659,13 +647,14 @@ export function useLearningStore(deps: {
       applyLocal({ userId: currentUser.id, lessonId, completedAt: now() });
     },
     [
+      completeLessonMutation,
       courseLessons,
       courses,
       currentUser,
       dispatchNotification,
+      javaApi,
       lessonProgress,
       log,
-      refreshMyLearning,
     ]
   );
 
@@ -697,37 +686,30 @@ export function useLearningStore(deps: {
     [dispatchNotification, inscricoes]
   );
 
-  const refreshLearningCatalog = useCallback(async () => {
-    const [apiModules, apiLessons] = await Promise.all([
-      lmsApi.listModules(),
-      lmsApi.listLessons(),
-    ]);
-    setCourseModules(apiModules);
-    setCourseLessons(apiLessons);
-  }, []);
-
   const importPlaylistLessons: AppState["importPlaylistLessons"] = useCallback(
     (courseId, moduleTitle, items, existingModuleId) => {
       if (items.length === 0) return;
 
       const course = courses.find((c) => c.id === courseId);
 
-      if (isJavaApiEnabled()) {
+      if (javaApi) {
         void (async () => {
           try {
             let moduleId = existingModuleId;
             for (const item of items) {
-              const created = await lmsApi.publishLesson(courseId, {
-                moduleId,
-                moduleTitle: moduleId ? undefined : moduleTitle,
-                title: item.title,
-                youtubeVideoId: item.videoId,
-                videoUrl: item.videoUrl,
-                durationSec: item.durationSec,
+              const created = await publishLessonMutation.mutateAsync({
+                courseId,
+                body: {
+                  moduleId,
+                  moduleTitle: moduleId ? undefined : moduleTitle,
+                  title: item.title,
+                  youtubeVideoId: item.videoId,
+                  videoUrl: item.videoUrl,
+                  durationSec: item.durationSec,
+                },
               });
               moduleId = created.moduleId;
             }
-            await refreshLearningCatalog();
             notifyNewLessons(
               courseId,
               course?.title ?? "seu curso",
@@ -750,7 +732,7 @@ export function useLearningStore(deps: {
 
       if (!moduleId) {
         moduleId = "m" + Math.random().toString(36).slice(2, 7);
-        const existingModules = courseModules.filter(
+        const existingModules = mockCourseModules.filter(
           (m) => m.courseId === courseId
         );
         const moduleOrder =
@@ -764,10 +746,10 @@ export function useLearningStore(deps: {
           title: moduleTitle,
           order: moduleOrder,
         };
-        setCourseModules((prev) => [...prev, newModule]);
+        setMockCourseModules((prev) => [...prev, newModule]);
       }
 
-      const existingLessons = courseLessons.filter(
+      const existingLessons = mockCourseLessons.filter(
         (l) => l.courseId === courseId
       );
       const orderBase =
@@ -786,7 +768,7 @@ export function useLearningStore(deps: {
         durationSec: item.durationSec,
       }));
 
-      setCourseLessons((prev) => [...prev, ...newLessons]);
+      setMockCourseLessons((prev) => [...prev, ...newLessons]);
       notifyNewLessons(courseId, course?.title ?? "seu curso", items.length);
 
       log({
@@ -797,13 +779,14 @@ export function useLearningStore(deps: {
       });
     },
     [
-      courseLessons,
-      courseModules,
       courses,
       currentUser,
+      javaApi,
       log,
+      mockCourseLessons,
+      mockCourseModules,
       notifyNewLessons,
-      refreshLearningCatalog,
+      publishLessonMutation,
     ]
   );
 
@@ -813,18 +796,20 @@ export function useLearningStore(deps: {
       if (!course) return;
       if (!params.youtubeVideoId && !params.videoUrl) return;
 
-      if (isJavaApiEnabled()) {
-        void lmsApi
-          .publishLesson(params.courseId, {
-            moduleId: params.moduleId,
-            moduleTitle: params.moduleTitle,
-            title: params.title,
-            youtubeVideoId: params.youtubeVideoId,
-            videoUrl: params.videoUrl,
-            durationSec: params.durationSec,
+      if (javaApi) {
+        void publishLessonMutation
+          .mutateAsync({
+            courseId: params.courseId,
+            body: {
+              moduleId: params.moduleId,
+              moduleTitle: params.moduleTitle,
+              title: params.title,
+              youtubeVideoId: params.youtubeVideoId,
+              videoUrl: params.videoUrl,
+              durationSec: params.durationSec,
+            },
           })
-          .then(async (lesson) => {
-            await refreshLearningCatalog();
+          .then((lesson) => {
             notifyNewLessons(params.courseId, course.title, 1, lesson.id);
             log({
               user: currentUser?.email ?? "system",
@@ -839,7 +824,7 @@ export function useLearningStore(deps: {
 
       let moduleId = params.moduleId;
       if (!moduleId) {
-        const existingModules = courseModules.filter(
+        const existingModules = mockCourseModules.filter(
           (m) => m.courseId === params.courseId
         );
         const moduleOrder =
@@ -853,10 +838,10 @@ export function useLearningStore(deps: {
           title: params.moduleTitle?.trim() || "Módulo",
           order: moduleOrder,
         };
-        setCourseModules((prev) => [...prev, newModule]);
+        setMockCourseModules((prev) => [...prev, newModule]);
       }
 
-      const existingLessons = courseLessons.filter(
+      const existingLessons = mockCourseLessons.filter(
         (l) => l.courseId === params.courseId
       );
       const order =
@@ -875,7 +860,7 @@ export function useLearningStore(deps: {
         durationSec: params.durationSec,
       };
 
-      setCourseLessons((prev) => [...prev, lesson]);
+      setMockCourseLessons((prev) => [...prev, lesson]);
       notifyNewLessons(params.courseId, course.title, 1, lesson.id);
 
       log({
@@ -886,13 +871,14 @@ export function useLearningStore(deps: {
       });
     },
     [
-      courseLessons,
-      courseModules,
       courses,
       currentUser,
+      javaApi,
       log,
+      mockCourseLessons,
+      mockCourseModules,
       notifyNewLessons,
-      refreshLearningCatalog,
+      publishLessonMutation,
     ]
   );
 
@@ -901,13 +887,10 @@ export function useLearningStore(deps: {
       const lesson = courseLessons.find((l) => l.id === lessonId);
       if (!lesson) return;
 
-      if (isJavaApiEnabled()) {
-        void lmsApi
-          .updateLesson(lessonId, data)
-          .then((updated) => {
-            setCourseLessons((prev) =>
-              prev.map((l) => (l.id === lessonId ? updated : l))
-            );
+      if (javaApi) {
+        void updateLessonMutation
+          .mutateAsync({ lessonId, body: data })
+          .then(() => {
             log({
               user: currentUser?.email ?? "system",
               action: `Editou aula '${lesson.title}'`,
@@ -919,7 +902,7 @@ export function useLearningStore(deps: {
         return;
       }
 
-      setCourseLessons((prev) =>
+      setMockCourseLessons((prev) =>
         prev.map((l) => (l.id === lessonId ? { ...l, ...data } : l))
       );
 
@@ -930,7 +913,7 @@ export function useLearningStore(deps: {
         severity: "info",
       });
     },
-    [courseLessons, currentUser, log]
+    [courseLessons, currentUser, javaApi, log, updateLessonMutation]
   );
 
   const deleteCourseLesson: AppState["deleteCourseLesson"] = useCallback(
@@ -938,14 +921,10 @@ export function useLearningStore(deps: {
       const lesson = courseLessons.find((l) => l.id === lessonId);
       if (!lesson) return;
 
-      if (isJavaApiEnabled()) {
-        void lmsApi
-          .deleteLesson(lessonId)
+      if (javaApi) {
+        void deleteLessonMutation
+          .mutateAsync(lessonId)
           .then(() => {
-            setCourseLessons((prev) => prev.filter((l) => l.id !== lessonId));
-            setLessonProgress((prev) =>
-              prev.filter((p) => p.lessonId !== lessonId)
-            );
             log({
               user: currentUser?.email ?? "system",
               action: `Removeu aula '${lesson.title}' do curso`,
@@ -957,8 +936,10 @@ export function useLearningStore(deps: {
         return;
       }
 
-      setCourseLessons((prev) => prev.filter((l) => l.id !== lessonId));
-      setLessonProgress((prev) => prev.filter((p) => p.lessonId !== lessonId));
+      setMockCourseLessons((prev) => prev.filter((l) => l.id !== lessonId));
+      setMockLessonProgress((prev) =>
+        prev.filter((p) => p.lessonId !== lessonId)
+      );
 
       log({
         user: currentUser?.email ?? "system",
@@ -967,7 +948,7 @@ export function useLearningStore(deps: {
         severity: "alerta",
       });
     },
-    [courseLessons, currentUser, log]
+    [courseLessons, currentUser, deleteLessonMutation, javaApi, log]
   );
 
   const deleteAllCourseLessons: AppState["deleteAllCourseLessons"] =
@@ -976,19 +957,12 @@ export function useLearningStore(deps: {
         const toRemove = courseLessons.filter((l) => l.courseId === courseId);
         if (toRemove.length === 0) return;
 
-        const removedIds = new Set(toRemove.map((l) => l.id));
         const course = courses.find((c) => c.id === courseId);
 
-        if (isJavaApiEnabled()) {
-          void lmsApi
-            .deleteAllCourseLessons(courseId)
+        if (javaApi) {
+          void deleteAllCourseLessonsMutation
+            .mutateAsync(courseId)
             .then(() => {
-              setCourseLessons((prev) =>
-                prev.filter((l) => l.courseId !== courseId)
-              );
-              setLessonProgress((prev) =>
-                prev.filter((p) => !removedIds.has(p.lessonId))
-              );
               log({
                 user: currentUser?.email ?? "system",
                 action: `Removeu ${toRemove.length} aula(s) do curso '${course?.title ?? courseId}'`,
@@ -1002,10 +976,11 @@ export function useLearningStore(deps: {
           return;
         }
 
-        setCourseLessons((prev) =>
+        const removedIds = new Set(toRemove.map((l) => l.id));
+        setMockCourseLessons((prev) =>
           prev.filter((l) => l.courseId !== courseId)
         );
-        setLessonProgress((prev) =>
+        setMockLessonProgress((prev) =>
           prev.filter((p) => !removedIds.has(p.lessonId))
         );
 
@@ -1016,7 +991,14 @@ export function useLearningStore(deps: {
           severity: "alerta",
         });
       },
-      [courseLessons, courses, currentUser, log]
+      [
+        courseLessons,
+        courses,
+        currentUser,
+        deleteAllCourseLessonsMutation,
+        javaApi,
+        log,
+      ]
     );
 
   const addInteresse: AppState["addInteresse"] = useCallback((i) => {

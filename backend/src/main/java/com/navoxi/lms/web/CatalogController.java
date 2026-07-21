@@ -13,18 +13,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class CatalogController {
 
   private final CatalogService catalog;
+  private final CurrentUserResolver currentUser;
 
-  public CatalogController(CatalogService catalog) {
+  public CatalogController(CatalogService catalog, CurrentUserResolver currentUser) {
     this.catalog = catalog;
+    this.currentUser = currentUser;
   }
 
   @GetMapping("/modules")
   public List<ModuleDto> allModules() {
-    return catalog.allModules();
+    return catalog.allModules(currentUser.require());
   }
 
   @GetMapping("/lessons")
   public List<LessonDto> allLessons() {
-    return catalog.allLessons();
+    return catalog.allLessons(currentUser.require());
   }
 }

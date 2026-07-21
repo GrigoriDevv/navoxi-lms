@@ -11,6 +11,7 @@ import com.navoxi.lms.repository.CourseRepository;
 import com.navoxi.lms.repository.EnrollmentRepository;
 import com.navoxi.lms.repository.EnrollmentRequestRepository;
 import com.navoxi.lms.repository.UserAccountRepository;
+import com.navoxi.lms.security.UnitScope;
 import com.navoxi.lms.web.ApiExceptionHandler.BadRequestException;
 import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
@@ -69,6 +70,7 @@ public class EnrollmentRequestService {
         courses
             .findById(body.courseId())
             .orElseThrow(() -> new NotFoundException("Curso não encontrado"));
+    UnitScope.assertCanAccessCourse(actor, course);
 
     if (enrollments.existsByUserIdAndCourseIdAndStatus(
         actor.getId(), course.getId(), EnrollmentStatus.ativa)) {

@@ -35,7 +35,7 @@ public class LessonController {
   @PreAuthorize(
       "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public LessonDto update(@PathVariable String id, @RequestBody LessonUpdateRequest request) {
-    return lessons.update(id, request);
+    return lessons.update(currentUser.require(), id, request);
   }
 
   @DeleteMapping("/{id}")
@@ -43,7 +43,7 @@ public class LessonController {
   @PreAuthorize(
       "hasAnyRole('instrutor', 'gestor_conteudo', 'admin_premium', 'admin_unidade')")
   public void delete(@PathVariable String id) {
-    lessons.delete(id);
+    lessons.delete(currentUser.require(), id);
   }
 
   @PostMapping("/{id}/complete")

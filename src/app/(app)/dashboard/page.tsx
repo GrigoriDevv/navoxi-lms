@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
 import { useAuthScope } from "@/lib/use-auth-scope";
 import { roleLabels } from "@/lib/rbac";
+import { shouldHidePath } from "@/lib/mock-module-gates";
 import {
   computeMetrics,
   defaultDashboardFilters,
@@ -284,7 +285,10 @@ export default function DashboardPage() {
             </WidgetShell>
           </div>
 
-          {role === "admin_premium" && effectiveStatus === "ready" && hasData && (
+          {role === "admin_premium" &&
+            effectiveStatus === "ready" &&
+            hasData &&
+            !shouldHidePath("/auditoria") && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-slate-800">Atividade recente</h3>

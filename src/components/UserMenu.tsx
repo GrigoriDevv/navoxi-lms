@@ -9,6 +9,7 @@ import {
   isConfirmedRole,
   hasPermission,
 } from "@/lib/rbac";
+import { shouldHidePath } from "@/lib/mock-module-gates";
 import { useApp } from "@/lib/store";
 import { Icon } from "@/components/Icon";
 import { Avatar, Badge } from "@/components/ui";
@@ -28,7 +29,8 @@ export function UserMenu() {
   const menuItems = [
     { label: "Meu perfil", href: "/perfil", icon: "user" },
     { label: "Preferências", href: "/preferencias", icon: "cog" },
-    ...(hasPermission(currentUser.role, "manage_global_settings")
+    ...(hasPermission(currentUser.role, "manage_global_settings") &&
+    !shouldHidePath("/configuracoes")
       ? [{ label: "Configurações da plataforma", href: "/configuracoes", icon: "cog" }]
       : []),
     ...(hasPermission(currentUser.role, "manage_identity")

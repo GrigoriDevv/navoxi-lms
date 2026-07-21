@@ -312,7 +312,7 @@ Toda mutação relevante (criar curso, inscrever aluno, alterar configuração) 
 
 ## Limitações do MVP / o que não vender como pronto
 
-A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuários. O restante abaixo é **demo UI** (seed / estado local) e fica **oculto em produção** sem `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`.
+A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuários. O restante abaixo é **demo UI** (seed / estado local) e fica **oculto em produção** sem `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`. Slices mock-only em [`src/lib/store.tsx`](src/lib/store.tsx) estão marcados com `// MOCK: not wired to backend`; inventário completo para agentes em [`AGENTS.md`](AGENTS.md#data-wiring).
 
 | Aspecto | Estado atual |
 |---|---|

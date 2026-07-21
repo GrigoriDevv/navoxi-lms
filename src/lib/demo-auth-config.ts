@@ -1,13 +1,17 @@
-/** Mock login com senha compartilhada — off em prod salvo ALLOW_DEMO_LOGIN=true */
+/**
+ * Mock login com senha compartilhada.
+ * Em NODE_ENV=production fica sempre off (flags ignoradas).
+ * Em local/dev: on por padrão; desliga com ALLOW_DEMO_LOGIN=false.
+ */
 export function resolveDemoLoginAllowed(
   nodeEnv: string | undefined,
   allowDemoLogin: string | undefined,
   authDemoEnabled: string | undefined
 ): boolean {
-  const flag = allowDemoLogin ?? authDemoEnabled;
   if (nodeEnv === "production") {
-    return flag === "true";
+    return false;
   }
+  const flag = allowDemoLogin ?? authDemoEnabled;
   return flag !== "false";
 }
 

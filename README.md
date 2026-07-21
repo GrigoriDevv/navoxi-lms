@@ -29,15 +29,14 @@ NEXT_PUBLIC_USE_JAVA_API=true
 LMS_API_URL=http://localhost:8080
 LMS_API_TOKEN=local-dev-token
 AUTH_SECRET=dev-secret-change-me
-LMS_SEED_PASSWORD=demo1234
 ALLOW_DEMO_LOGIN=true
 ```
 
 O browser chama só `/api/lms/*` e `/api/auth/*` (BFF). O token Java nunca vai para o cliente.
 
-Login por senha: `POST /api/auth/login` → backend Java (`BCrypt`). Fallback mock local só se `ALLOW_DEMO_LOGIN=true` e o backend estiver indisponível.
+Login por senha: `POST /api/auth/login` → backend Java (`BCrypt`). Fallback mock local só fora de produção, com `ALLOW_DEMO_LOGIN` ≠ `false` e backend indisponível.
 
-Detalhes e contas seed: [`docs/local-dev-auth.md`](docs/local-dev-auth.md) · [`backend/README.md`](backend/README.md).
+Credenciais seed e senha local: só em [`docs/local-dev-auth.md`](docs/local-dev-auth.md) (não publicar em deploy aberto). Backend: [`backend/README.md`](backend/README.md).
 
 ## Início rápido
 
@@ -55,25 +54,30 @@ npm run build
 npm start
 ```
 
-## Autenticação local
+## Autenticação
 
-Contas seed, senha demo e variáveis de ambiente para desenvolvimento estão em [`docs/local-dev-auth.md`](docs/local-dev-auth.md).
+Desenvolvimento local (contas seed, senha demo, envs): [`docs/local-dev-auth.md`](docs/local-dev-auth.md).
 
-Em **produção pública**, login mock com senha compartilhada é bloqueado. Login permitido: SSO Microsoft + senha real (BCrypt/Java).
+Em **produção** (`NODE_ENV=production`):
+
+- Login mock / senha compartilhada fica **hard-disabled** — `ALLOW_DEMO_LOGIN` / `AUTH_DEMO_ENABLED` são ignorados
+- Contas seed de demo não autenticam por senha (Next + `LMS_BLOCK_DEMO_SEED_LOGINS` no backend)
+- Caminhos permitidos: Microsoft Entra (SSO) e break-glass BCrypt para contas reais (`local`/`both`) já provisionadas
 
 ### Checklist produção pública
 
-- `ALLOW_DEMO_LOGIN=false` ou omitido (default em produção)
-- `AUTH_DEMO_ENABLED` — deprecated; não setar
+- `NODE_ENV=production` (demo login impossível mesmo com flags)
+- `ALLOW_DEMO_LOGIN` / `AUTH_DEMO_ENABLED` — não setar (ignorados em prod)
 - `LMS_SEED_ENABLED=false`
 - `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod` do backend)
 - `LMS_JIT_PROVISIONING=true` (default no profile `prod`)
 - `LMS_ALLOWED_EMAIL_DOMAINS` + `AUTH_ALLOWED_EMAIL_DOMAIN` (mesmo domínio)
-- `LMS_BOOTSTRAP_ADMIN_EMAILS` (primeiro admin real)
+- `LMS_BOOTSTRAP_ADMIN_EMAILS` (primeiro admin real — via secret/env, não no README)
 - `LMS_JWT_SECRET` (≥32 chars; obrigatório em prod)
-- `LMS_SEED_PASSWORD` forte ou seed desligado
+- Seed desligado; se precisar senha inicial, use secret forte fora do repositório
 - Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
 - **Não** setar `NEXT_PUBLIC_SHOW_MOCK_MODULES` em produção pública (default: módulos mock ocultos)
+- **Não** documentar e-mails/senhas admin no README público se o deploy estiver aberto
 
 ### Fase 1 pronta (vendável)
 
@@ -240,7 +244,7 @@ Em `/configuracoes` é possível alterar (persistido no estado da aplicação):
 ```
 src/
 ├── app/
-│   ├── login/                      # Autenticação (demo por e-mail)
+│   ├── login/                      # Autenticação (Entra + senha)
 │   ├── page.tsx                    # Redirecionamento para login ou dashboard
 │   └── (app)/                      # Shell autenticado (sidebar + header)
 │       ├── dashboard/

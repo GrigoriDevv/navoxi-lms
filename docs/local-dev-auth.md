@@ -1,6 +1,6 @@
 # Autenticação local (desenvolvimento)
 
-> **Não use estas credenciais em produção.** Em deploy público, `ALLOW_DEMO_LOGIN` deve estar off e login mock com senha compartilhada é bloqueado.
+> **Não use estas credenciais em produção.** Com `NODE_ENV=production`, o login mock com senha compartilhada fica **hard-disabled** (flags `ALLOW_DEMO_LOGIN` / `AUTH_DEMO_ENABLED` são ignoradas). Contas seed também são bloqueadas no backend (`LMS_BLOCK_DEMO_SEED_LOGINS`).
 
 ## Variáveis (front — `.env.local`)
 
@@ -16,7 +16,7 @@ ALLOW_DEMO_LOGIN=true
 # NEXT_PUBLIC_SHOW_MOCK_MODULES=true
 ```
 
-`AUTH_DEMO_ENABLED` continua funcionando como alias legado de `ALLOW_DEMO_LOGIN`.
+`AUTH_DEMO_ENABLED` continua como alias legado de `ALLOW_DEMO_LOGIN` **somente fora de produção**.
 
 Em produção, módulos mock (auditoria, config, comunicação, integrações, certificados, avaliações) ficam ocultos salvo `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`. Ver `src/lib/mock-module-gates.ts`.
 
@@ -68,7 +68,7 @@ Senha inicial: valor de `LMS_SEED_PASSWORD` / `demo1234`.
 |---|---|
 | Microsoft Entra SSO | `AZURE_AD_*` configurado — caminho principal; JIT cria user no Postgres se habilitado |
 | `POST /api/auth/login` → Java BCrypt | Break-glass para contas `local`/`both` já no DB |
-| Fallback mock (`demo1234` / `DEMO_LOGIN_PASSWORD`) | `ALLOW_DEMO_LOGIN=true` e backend indisponível |
+| Fallback mock (`DEMO_LOGIN_PASSWORD` / default local) | Não-prod + `ALLOW_DEMO_LOGIN` ≠ `false` + backend indisponível |
 
 A rota `POST /api/auth/demo-login` foi removida; use apenas `/api/auth/login`.
 
@@ -78,16 +78,17 @@ Role/unit após SSO vêm **sempre do Postgres** (`UserAccount`). Novos usuários
 
 | Variável | Valor |
 |---|---|
-| `ALLOW_DEMO_LOGIN` | omitido ou `false` |
-| `AUTH_DEMO_ENABLED` | deprecated — não setar |
+| `NODE_ENV` | `production` → demo login **sempre off** |
+| `ALLOW_DEMO_LOGIN` | ignorado em prod — não setar |
+| `AUTH_DEMO_ENABLED` | deprecated / ignorado em prod — não setar |
 | `LMS_SEED_ENABLED` | `false` |
 | `LMS_BLOCK_DEMO_SEED_LOGINS` | `true` (default profile `prod`) |
 | `LMS_JIT_PROVISIONING` | `true` (default profile `prod`) |
-| `LMS_ALLOWED_EMAIL_DOMAINS` | domínio corporativo (ex. `navoxi.com`) |
-| `LMS_BOOTSTRAP_ADMIN_EMAILS` | e-mail(s) do primeiro admin real |
+| `LMS_ALLOWED_EMAIL_DOMAINS` | domínio corporativo |
+| `LMS_BOOTSTRAP_ADMIN_EMAILS` | e-mail(s) do primeiro admin real (secret/env) |
 | `AZURE_AD_TENANT_ID` | tenant específico (não `common`) |
 | `AUTH_ALLOWED_EMAIL_DOMAIN` | mesmo domínio (obrigatório em prod com SSO) |
 | `LMS_JWT_SECRET` | secret HS256 ≥32 chars (obrigatório em prod) |
 | `LMS_API_TOKEN` | só para Next → `POST /api/v1/auth/**` |
 
-Login: **SSO Microsoft (principal)** + **senha BCrypt break-glass** para contas `local`/`both` já provisionadas. Não usar seed em prod pública.
+Login: **SSO Microsoft (principal)** + **senha BCrypt break-glass** para contas reais `local`/`both`. Contas seed de demo não autenticam por senha.

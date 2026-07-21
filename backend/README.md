@@ -32,7 +32,7 @@ Rotas de dados exigem `Authorization: Bearer <accessToken JWT>` emitido no login
 
 **JWT:** `LMS_JWT_SECRET` (prod obrigatório, ≥32 chars). TTL default 7d (`LMS_JWT_TTL_SECONDS`).
 
-**Bloqueio de contas demo em produção:** `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod`) impede login das contas seed, mesmo que existam no banco. No front, `ALLOW_DEMO_LOGIN=false` desliga fallback mock com senha compartilhada.
+**Bloqueio de contas demo em produção:** `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default no profile `prod`) impede login das contas seed, mesmo que existam no banco. No front, com `NODE_ENV=production` o fallback mock com senha compartilhada fica hard-disabled (`ALLOW_DEMO_LOGIN` / `AUTH_DEMO_ENABLED` ignorados).
 
 Microsoft SSO: `POST /api/v1/auth/sso/microsoft` com `{ "email", "name", "microsoftOid" }`. Com `LMS_JIT_PROVISIONING=true` (default em `prod`), cria `UserAccount` no primeiro login (default `aluno`; bootstrap admin via `LMS_BOOTSTRAP_ADMIN_EMAILS` ou banco vazio). Domínio: `LMS_ALLOWED_EMAIL_DOMAINS`.
 

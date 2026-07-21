@@ -34,18 +34,21 @@ public class AuthService {
   private final DemoSeedGuard demoSeedGuard;
   private final JitAuthProperties jitAuth;
   private final JwtService jwtService;
+  private final AccessLogService accessLogs;
 
   public AuthService(
       UserAccountRepository users,
       PasswordEncoder passwordEncoder,
       DemoSeedGuard demoSeedGuard,
       JitAuthProperties jitAuth,
-      JwtService jwtService) {
+      JwtService jwtService,
+      AccessLogService accessLogs) {
     this.users = users;
     this.passwordEncoder = passwordEncoder;
     this.demoSeedGuard = demoSeedGuard;
     this.jitAuth = jitAuth;
     this.jwtService = jwtService;
+    this.accessLogs = accessLogs;
   }
 
   @Transactional
@@ -69,6 +72,7 @@ public class AuthService {
     }
 
     touchLastAccess(user);
+    accessLogs.record(user.getId(), AccessLogService.ACTION_AUTH_LOGIN, "/api/v1/auth/login");
     return toSession(user, "password");
   }
 
@@ -109,6 +113,8 @@ public class AuthService {
     }
 
     touchLastAccess(user);
+    accessLogs.record(
+        user.getId(), AccessLogService.ACTION_AUTH_SSO, "/api/v1/auth/sso/microsoft");
     return toSession(user, "microsoft");
   }
 

@@ -37,6 +37,10 @@ lms:
     default-unit-id: ${LMS_JIT_DEFAULT_UNIT:matriz}
     allowed-email-domains: ${LMS_ALLOWED_EMAIL_DOMAINS:}
     bootstrap-admin-emails: ${LMS_BOOTSTRAP_ADMIN_EMAILS:}
+    login-rate-limit:
+      enabled: ${LMS_LOGIN_RATE_LIMIT_ENABLED:true}
+      max-attempts: ${LMS_LOGIN_RATE_LIMIT_MAX:10}
+      window-seconds: ${LMS_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
   seed:
     enabled: ${LMS_SEED_ENABLED:false}
     password: ${LMS_SEED_PASSWORD:demo1234}
@@ -74,6 +78,12 @@ spring:
 lms:
   seed:
     enabled: true
+  auth:
+    login-rate-limit:
+      # Local/dev: off por default (testes + DX). Ative com LMS_LOGIN_RATE_LIMIT_ENABLED=true.
+      enabled: ${LMS_LOGIN_RATE_LIMIT_ENABLED:false}
+      max-attempts: ${LMS_LOGIN_RATE_LIMIT_MAX:60}
+      window-seconds: ${LMS_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
 
@@ -104,10 +114,16 @@ lms:
     block-seed-logins: ${LMS_BLOCK_DEMO_SEED_LOGINS:true}
   auth:
     jit-provisioning-enabled: ${LMS_JIT_PROVISIONING:true}
+    login-rate-limit:
+      enabled: ${LMS_LOGIN_RATE_LIMIT_ENABLED:true}
+      max-attempts: ${LMS_LOGIN_RATE_LIMIT_MAX:10}
+      window-seconds: ${LMS_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
   seed:
-    enabled: ${LMS_SEED_ENABLED:false}
+    # Deploy: seed off. DeploySecurityValidator falha se true.
+    enabled: false
   cors:
-    allowed-origins: ${CORS_ORIGINS:}
+    # Obrigatório em prod — sem default vazio (fail-fast se CORS_ORIGINS ausente/vazio).
+    allowed-origins: ${CORS_ORIGINS}
 
 springdoc:
   api-docs:

@@ -80,7 +80,7 @@ Role/unit após SSO vêm **sempre do Postgres** (`UserAccount`). Novos usuários
 |---|---|
 | `ALLOW_DEMO_LOGIN` | omitido ou `false` |
 | `AUTH_DEMO_ENABLED` | deprecated — não setar |
-| `LMS_SEED_ENABLED` | `false` |
+| `LMS_SEED_ENABLED` | `false` (prod Java força off) |
 | `LMS_BLOCK_DEMO_SEED_LOGINS` | `true` (default profile `prod`) |
 | `LMS_JIT_PROVISIONING` | `true` (default profile `prod`) |
 | `LMS_ALLOWED_EMAIL_DOMAINS` | domínio corporativo (ex. `navoxi.com`) |
@@ -88,6 +88,9 @@ Role/unit após SSO vêm **sempre do Postgres** (`UserAccount`). Novos usuários
 | `AZURE_AD_TENANT_ID` | tenant específico (não `common`) |
 | `AUTH_ALLOWED_EMAIL_DOMAIN` | mesmo domínio (obrigatório em prod com SSO) |
 | `LMS_JWT_SECRET` | secret HS256 ≥32 chars (obrigatório em prod) |
-| `LMS_API_TOKEN` | só para Next → `POST /api/v1/auth/**` |
+| `LMS_API_TOKEN` | secret forte ≥24 chars (**não** `local-dev-token`) |
+| `CORS_ORIGINS` | URL do front (obrigatório em prod) |
 
 Login: **SSO Microsoft (principal)** + **senha BCrypt break-glass** para contas `local`/`both` já provisionadas. Não usar seed em prod pública.
+
+Rate limit de login (profile `prod`): 10 tentativas / 60s por IP e por e-mail. Local: off por default (`LMS_LOGIN_RATE_LIMIT_ENABLED=true` para testar).

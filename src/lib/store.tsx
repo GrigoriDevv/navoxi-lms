@@ -40,21 +40,33 @@ const Ctx = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(seed.users);
+  /** MOCK slices below: seed-only, session memory — see AGENTS.md "Data wiring" */
+  // MOCK: not wired to backend
   const [posts, setPosts] = useState<Post[]>(seed.posts);
   const [messages, setMessages] = useState<Message[]>(seed.messages);
+  // MOCK: not wired to backend
   const [questions, setQuestions] = useState<Question[]>(seed.questions);
+  // MOCK: not wired to backend
   const [evaluations, setEvaluations] = useState<Evaluation[]>(seed.evaluations);
+  // MOCK: not wired to backend
   const [contents, setContents] = useState<ContentAsset[]>(seed.contents);
+  // MOCK: not wired to backend
   const [destaques, setDestaques] = useState<Destaque[]>(seed.destaques);
+  // MOCK: not wired to backend
   const [alertRules, setAlertRules] = useState<AlertRule[]>(seed.alertRules);
+  // MOCK: not wired to backend
   const [internalMails, setInternalMails] = useState<InternalMail[]>(
     seed.internalMails
   );
+  // MOCK: not wired to backend
   const [automations, setAutomations] = useState<Automation[]>(seed.automations);
+  // MOCK: not wired to backend
   const [integrations, setIntegrations] = useState<Integration[]>(
     seed.integrations
   );
+  // MOCK: not wired to backend
   const [permissions, setPermissions] = useState<Permission[]>(seed.permissions);
+  // MOCK: not wired to backend
   const [scheduledJobs, setScheduledJobs] = useState<ScheduledJob[]>(
     seed.scheduledJobs
   );

@@ -30,6 +30,12 @@ public class ApiExceptionHandler {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
   }
 
+  @ExceptionHandler(TooManyRequestsException.class)
+  public ResponseEntity<Map<String, String>> tooManyRequests(TooManyRequestsException ex) {
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .body(Map.of("error", ex.getMessage()));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException ex) {
     String msg =
@@ -60,6 +66,12 @@ public class ApiExceptionHandler {
 
   public static class ForbiddenException extends RuntimeException {
     public ForbiddenException(String message) {
+      super(message);
+    }
+  }
+
+  public static class TooManyRequestsException extends RuntimeException {
+    public TooManyRequestsException(String message) {
       super(message);
     }
   }

@@ -59,23 +59,46 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
 | GET | `/api/v1/users` |
 | PATCH | `/api/v1/users/{id}` |
 | GET | `/api/v1/users/me` |
+| GET | `/api/v1/users/me/export` |
+| DELETE | `/api/v1/users/me` |
 | GET | `/api/v1/users/me/enrollments` |
 | GET | `/api/v1/users/me/progress` |
+
+### LGPD (MVP)
+
+- Tabela `access_log` (Flyway `V4`): quem, ação, recurso, IP, user-agent, quando. Escrita em login, SSO, `GET /users/me`, export e delete.
+- `GET /api/v1/users/me/export` — portabilidade JSON (perfil, matrículas, progresso, solicitações, notificações, access_log do titular).
+- `DELETE /api/v1/users/me` — direito ao esquecimento via scrub irreversível de PII + `status=inativo` (evita cascade em matrículas/progresso). JWT deixa de autenticar.
 
 ## Produção (Railway)
 
 1. Criar serviço a partir de `backend/`
 2. Adicionar Postgres e definir:
-   - `SPRING_PROFILES_ACTIVE=prod`
+   - `SPRING_PROFILES_ACTIVE=prod` (já no Dockerfile)
    - `DATABASE_URL` (JDBC: `jdbc:postgresql://host:port/db`)
    - `DATABASE_USERNAME` / `DATABASE_PASSWORD`
-   - `CORS_ORIGINS` com a URL do front
-3. Healthcheck: `/api/v1/health`
-4. Variáveis recomendadas:
-   - `LMS_SEED_ENABLED=false`
-   - `LMS_BLOCK_DEMO_SEED_LOGINS=true` (default com `SPRING_PROFILES_ACTIVE=prod`)
-   - `LMS_API_TOKEN` com valor forte (só auth)
+   - `CORS_ORIGINS` com a URL do front (**obrigatório** — app não sobe sem)
+   - `LMS_API_TOKEN` forte (≥24 chars; **não** `local-dev-token`)
    - `LMS_JWT_SECRET` ≥32 chars (obrigatório em prod)
+3. Healthcheck: `/api/v1/health`
+4. Defaults de hardening no profile `prod`:
+   - Seed **off** (hardcoded; `LMS_SEED_ENABLED` ignorado)
+   - `LMS_BLOCK_DEMO_SEED_LOGINS=true`
+   - Rate limit login: 10 req / 60s por IP e por e-mail (`LMS_LOGIN_RATE_LIMIT_*`)
+5. Fail-fast no boot se token fraco, CORS vazio ou seed ligado fora do profile `local`.
+
+### Checklist env (API Railway)
+
+| Variável | Prod |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `prod` |
+| `LMS_API_TOKEN` | secret forte (≥24) |
+| `LMS_JWT_SECRET` | ≥32 chars |
+| `CORS_ORIGINS` | URL(s) do front, CSV |
+| `LMS_SEED_ENABLED` | omitir / false (prod força off) |
+| `LMS_LOGIN_RATE_LIMIT_ENABLED` | `true` (default prod) |
+| `LMS_LOGIN_RATE_LIMIT_MAX` | `10` (default) |
+| `LMS_LOGIN_RATE_LIMIT_WINDOW_SECONDS` | `60` (default) |
 
 ## Front
 
@@ -88,6 +111,8 @@ LMS_API_TOKEN=local-dev-token
 LMS_JWT_SECRET=local-dev-jwt-secret-at-least-32-chars
 AUTH_SECRET=dev-secret-change-me
 ```
+
+Em **produção** do Next, `LMS_API_TOKEN` fraco/ausente lança erro (mesmo valor forte do Java).
 
 - `POST /api/v1/auth/**` (Next→Java): `Authorization: Bearer <LMS_API_TOKEN>`
 - Demais `/api/v1/**`: `Authorization: Bearer <accessToken JWT>` do login (via BFF)

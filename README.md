@@ -74,6 +74,8 @@ Em **produção** (`NODE_ENV=production`):
 - `LMS_ALLOWED_EMAIL_DOMAINS` + `AUTH_ALLOWED_EMAIL_DOMAIN` (mesmo domínio)
 - `LMS_BOOTSTRAP_ADMIN_EMAILS` (primeiro admin real — via secret/env, não no README)
 - `LMS_JWT_SECRET` (≥32 chars; obrigatório em prod)
+- `LMS_API_TOKEN` forte (≥24 chars; **não** `local-dev-token` — fail-fast)
+- `CORS_ORIGINS` com URL do front (obrigatório no profile `prod`)
 - Seed desligado; se precisar senha inicial, use secret forte fora do repositório
 - Microsoft Entra com tenant específico (`AZURE_AD_TENANT_ID`, não `common`)
 - **Não** setar `NEXT_PUBLIC_SHOW_MOCK_MODULES` em produção pública (default: módulos mock ocultos)

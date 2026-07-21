@@ -21,6 +21,8 @@ public class CorsConfig {
             .map(String::trim)
             .filter(s -> !s.isEmpty())
             .toList();
+    // Nunca allow-all: lista vazia = nenhum Origin permitido (DeploySecurityValidator exige
+    // CORS_ORIGINS fora do profile local).
     config.setAllowedOrigins(origins);
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("Authorization", "Content-Type"));

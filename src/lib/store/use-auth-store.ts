@@ -5,6 +5,10 @@ import * as seed from "../mock-data";
 import type { User, UserPreferences } from "../types";
 import type { AppState, AuthState } from "./types";
 import {
+  AuthLoginError,
+  LOGIN_RATE_LIMIT_MESSAGE,
+} from "../auth-login-error";
+import {
   LEGACY_STORAGE_PREFS,
   LEGACY_STORAGE_USER,
   STORAGE_PREFS,
@@ -113,6 +117,12 @@ export function useAuthStore(_users: User[]) {
         const data = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
+        if (res.status === 429) {
+          throw new AuthLoginError(
+            data?.error || LOGIN_RATE_LIMIT_MESSAGE,
+            429
+          );
+        }
         throw new Error(data?.error || "Falha ao autenticar");
       }
       const data = (await res.json()) as {

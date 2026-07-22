@@ -10,7 +10,8 @@ import {
 import { isDemoLoginAllowed } from "@/lib/demo-auth-config";
 import { isDemoAccountLoginBlocked } from "@/lib/demo-account-guard";
 import { handleDemoLogin } from "@/lib/demo-login-handler";
-import { loginWithBackend } from "@/lib/lms-auth-api";
+import { AuthUpstreamError, loginWithBackend } from "@/lib/lms-auth-api";
+import { LOGIN_RATE_LIMIT_MESSAGE } from "@/lib/auth-login-error";
 
 const GENERIC_AUTH_ERROR = "E-mail ou senha inválidos";
 
@@ -65,7 +66,14 @@ export async function POST(request: NextRequest) {
       avatarColor: sessionPayload.avatarColor,
       provider: sessionPayload.provider,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof AuthUpstreamError && err.status === 429) {
+      return NextResponse.json(
+        { error: err.message || LOGIN_RATE_LIMIT_MESSAGE },
+        { status: 429 }
+      );
+    }
+
     if (!isDemoLoginAllowed()) {
       return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }

@@ -1,6 +1,16 @@
 import type { Role, UnitId } from "./types";
 import { lmsApiToken, lmsApiUpstreamUrl } from "./api-config";
 
+export class AuthUpstreamError extends Error {
+  constructor(
+    message: string,
+    public status: number
+  ) {
+    super(message);
+    this.name = "AuthUpstreamError";
+  }
+}
+
 export interface BackendAuthSession {
   id: string;
   email: string;
@@ -36,7 +46,7 @@ export async function loginWithBackend(
       data && "error" in data && data.error
         ? data.error
         : "E-mail ou senha inválidos";
-    throw new Error(message);
+    throw new AuthUpstreamError(message, res.status);
   }
 
   if (!data || !("id" in data) || !data.accessToken) {
@@ -71,7 +81,7 @@ export async function resolveMicrosoftWithBackend(
       data && "error" in data && data.error
         ? data.error
         : "Conta não autorizada. Solicite acesso ao administrador.";
-    throw new Error(message);
+    throw new AuthUpstreamError(message, res.status);
   }
 
   if (!data || !("id" in data) || !data.accessToken) {

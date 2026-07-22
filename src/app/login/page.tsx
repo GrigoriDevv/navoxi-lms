@@ -9,6 +9,11 @@ import { Icon } from "@/components/Icon";
 import { Badge } from "@/components/ui";
 import { MicrosoftSignInButton } from "@/components/auth/MicrosoftSignInButton";
 import { DEMO_SEED_EMAILS } from "@/lib/demo-seed-emails";
+import {
+  AuthLoginError,
+  LOGIN_RATE_LIMIT_BACKOFF_SECONDS,
+  LOGIN_RATE_LIMIT_MESSAGE,
+} from "@/lib/auth-login-error";
 
 export default function LoginPage() {
   return (
@@ -33,6 +38,7 @@ function LoginForm() {
   const [mfa, setMfa] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [retryAfter, setRetryAfter] = useState(0);
   const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
   const [demoAuthEnabled, setDemoAuthEnabled] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -50,24 +56,44 @@ function LoginForm() {
       .catch(() => setDemoAuthEnabled(false));
   }, []);
 
+  useEffect(() => {
+    if (retryAfter <= 0) return;
+    const id = window.setInterval(() => {
+      setRetryAfter((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [retryAfter]);
+
   const selectedUser = users.find((u) => u.email === email);
   const passwordFormVisible = !microsoftEnabled || showPasswordForm;
+  const loginBlocked = submitting || retryAfter > 0;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (retryAfter > 0) return;
     setFormError(null);
     setSubmitting(true);
     try {
       await login(email, { provider: "password", password });
       router.push("/dashboard");
     } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : "Falha ao autenticar"
-      );
+      if (err instanceof AuthLoginError && err.status === 429) {
+        setFormError(err.message || LOGIN_RATE_LIMIT_MESSAGE);
+        setRetryAfter(LOGIN_RATE_LIMIT_BACKOFF_SECONDS);
+      } else {
+        setFormError(
+          err instanceof Error ? err.message : "Falha ao autenticar"
+        );
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
+  const bannerText =
+    retryAfter > 0 && formError
+      ? `${formError} Tente novamente em ${retryAfter}s.`
+      : formError || authError;
 
   return (
     <div className="min-h-screen flex">
@@ -116,9 +142,9 @@ function LoginForm() {
               : "O perfil e a unidade são definidos pelo cadastro do usuário."}
           </p>
 
-          {(authError || formError) && (
+          {bannerText && (
             <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-              {formError || authError}
+              {bannerText}
             </div>
           )}
 
@@ -209,11 +235,15 @@ function LoginForm() {
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={loginBlocked}
                 className="mt-6 w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-60 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm"
               >
                 <Icon name="logout" className="w-4 h-4" />
-                {submitting ? "Entrando…" : "Entrar"}
+                {submitting
+                  ? "Entrando…"
+                  : retryAfter > 0
+                    ? `Aguarde ${retryAfter}s`
+                    : "Entrar"}
               </button>
 
               {demoAuthEnabled && (
@@ -228,11 +258,12 @@ function LoginForm() {
                           key={demoEmail}
                           type="button"
                           onClick={() => setEmail(demoEmail)}
+                          disabled={retryAfter > 0}
                           className={`text-left px-3 py-2.5 rounded-lg border text-xs transition ${
                             email === demoEmail
                               ? "border-brand bg-blue-50/60"
                               : "border-slate-200 hover:border-brand hover:bg-blue-50/50"
-                          }`}
+                          } disabled:opacity-50`}
                         >
                           <span className="font-medium text-slate-700 block">
                             {roleLabels[u.role]}

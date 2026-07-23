@@ -71,46 +71,8 @@ public class DataSeeder {
               UnitId.matriz,
               "Navoxi · Tecnologia",
               "#2563eb",
-              AuthProvider.both);
-      UserAccount diego =
-          user(
-              users,
-              passwordEncoder,
-              seedPassword,
-              "u4",
-              "Diego Alves",
-              "diego.alves@navoxi.com",
-              Role.aluno,
-              UnitId.matriz,
-              "Navoxi · Operações",
-              "#0ea5e9",
-              AuthProvider.both);
-      UserAccount carla =
-          user(
-              users,
-              passwordEncoder,
-              seedPassword,
-              "u3",
-              "Carla Mendes",
-              "carla.mendes@navoxi.com",
-              Role.gestor_conteudo,
-              UnitId.matriz,
-              "Navoxi · RH",
-              "#3b82f6",
-              AuthProvider.both);
-      UserAccount henrique =
-          user(
-              users,
-              passwordEncoder,
-              seedPassword,
-              "u8",
-              "Henrique Castro",
-              "henrique.castro@navoxi.com",
-              Role.instrutor,
-              UnitId.matriz,
-              "Navoxi · Engenharia",
-              "#3b82f6",
-              AuthProvider.both);
+              AuthProvider.both,
+              UserStatus.ativo);
       UserAccount bruno =
           user(
               users,
@@ -123,7 +85,89 @@ public class DataSeeder {
               UnitId.matriz,
               "Navoxi · Gestão Regional",
               "#1d4ed8",
-              AuthProvider.both);
+              AuthProvider.both,
+              UserStatus.ativo);
+      UserAccount carla =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u3",
+              "Carla Mendes",
+              "carla.mendes@navoxi.com",
+              Role.gestor_conteudo,
+              UnitId.matriz,
+              "Navoxi · RH",
+              "#3b82f6",
+              AuthProvider.both,
+              UserStatus.ativo);
+      UserAccount diego =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u4",
+              "Diego Alves",
+              "diego.alves@navoxi.com",
+              Role.aluno,
+              UnitId.matriz,
+              "Navoxi · Operações",
+              "#0ea5e9",
+              AuthProvider.both,
+              UserStatus.ativo);
+      user(
+          users,
+          passwordEncoder,
+          seedPassword,
+          "u5",
+          "Eduarda Lima",
+          "eduarda.lima@navoxi.com",
+          Role.aluno,
+          UnitId.matriz,
+          "Navoxi · Comercial",
+          "#6366f1",
+          AuthProvider.both,
+          UserStatus.inativo);
+      user(
+          users,
+          passwordEncoder,
+          seedPassword,
+          "u6",
+          "Felipe Rocha",
+          "felipe.rocha@navoxi.com",
+          Role.admin_unidade,
+          UnitId.nordeste,
+          "Navoxi · Segurança",
+          "#0891b2",
+          AuthProvider.both,
+          UserStatus.ativo);
+      user(
+          users,
+          passwordEncoder,
+          seedPassword,
+          "u7",
+          "Gabriela Nunes",
+          "gabriela.nunes@navoxi.com",
+          Role.aluno,
+          UnitId.matriz,
+          "Navoxi · Tecnologia",
+          "#1d4ed8",
+          AuthProvider.both,
+          UserStatus.bloqueado);
+      UserAccount henrique =
+          user(
+              users,
+              passwordEncoder,
+              seedPassword,
+              "u8",
+              "Henrique Castro",
+              "henrique.castro@navoxi.com",
+              Role.instrutor,
+              UnitId.matriz,
+              "Navoxi · Engenharia",
+              "#3b82f6",
+              AuthProvider.both,
+              UserStatus.ativo);
 
       Course c1 = course(courses, "c1", "Segurança da Informação e Dados", "Segurança", "Carla Mendes", UnitId.matriz, CourseModality.hibrido, "Operações", 40, CourseStatus.publicado, 312, 78, "#1d4ed8");
       Course c2 = course(courses, "c2", "Compliance e Código de Ética", "Compliance", "Henrique Castro", UnitId.matriz, CourseModality.online, "Todos colaboradores", 8, CourseStatus.publicado, 1240, 92, "#2563eb");
@@ -220,7 +264,8 @@ public class DataSeeder {
       UnitId unitId,
       String department,
       String color,
-      AuthProvider authProvider) {
+      AuthProvider authProvider,
+      UserStatus status) {
     UserAccount u = new UserAccount();
     u.setId(id);
     u.setName(name);
@@ -228,7 +273,7 @@ public class DataSeeder {
     u.setRole(role);
     u.setUnitId(unitId);
     u.setDepartment(department);
-    u.setStatus(UserStatus.ativo);
+    u.setStatus(status);
     u.setLastAccess("2026-06-12 09:00");
     u.setAvatarColor(color);
     u.setAuthProvider(authProvider);

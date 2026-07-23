@@ -1,11 +1,13 @@
-/** E-mails das contas seed documentadas no README (somente demo/local). */
+/** E-mails das contas seed (DataSeeder / mock-data) — somente demo/local. */
 export const DEMO_SEED_EMAILS = [
   "ana.souza@navoxi.com",
   "bruno.ferreira@navoxi.com",
   "carla.mendes@navoxi.com",
-  "henrique.castro@navoxi.com",
   "diego.alves@navoxi.com",
+  "eduarda.lima@navoxi.com",
   "felipe.rocha@navoxi.com",
+  "gabriela.nunes@navoxi.com",
+  "henrique.castro@navoxi.com",
 ] as const;
 
 const DEMO_SEED_EMAIL_SET = new Set<string>(

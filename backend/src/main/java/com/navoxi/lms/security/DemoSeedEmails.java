@@ -3,7 +3,7 @@ package com.navoxi.lms.security;
 import java.util.Locale;
 import java.util.Set;
 
-/** E-mails das contas seed documentadas no README (somente demo/local). */
+/** E-mails das contas seed (DataSeeder / mock-data) — somente demo/local. */
 public final class DemoSeedEmails {
 
   private static final Set<String> SEED_EMAILS =
@@ -11,9 +11,11 @@ public final class DemoSeedEmails {
           "ana.souza@navoxi.com",
           "bruno.ferreira@navoxi.com",
           "carla.mendes@navoxi.com",
-          "henrique.castro@navoxi.com",
           "diego.alves@navoxi.com",
-          "felipe.rocha@navoxi.com");
+          "eduarda.lima@navoxi.com",
+          "felipe.rocha@navoxi.com",
+          "gabriela.nunes@navoxi.com",
+          "henrique.castro@navoxi.com");
 
   private DemoSeedEmails() {}
 

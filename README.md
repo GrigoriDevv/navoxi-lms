@@ -189,7 +189,7 @@ AZURE_AD_CLIENT_ID=seu_client_id
 AZURE_AD_CLIENT_SECRET=seu_client_secret
 AZURE_AD_TENANT_ID=common
 AUTH_SECRET=string_aleatoria_longa
-NEXT_PUBLIC_APP_URL=https://neoenergia-lms-production.up.railway.app
+NEXT_PUBLIC_APP_URL=https://navoxi-lms-production.up.railway.app
 ```
 
 `AZURE_AD_TENANT_ID=common` aceita contas Microsoft corporativas e pessoais; use o ID do tenant da organização para restringir ao domínio da empresa.

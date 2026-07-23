@@ -51,16 +51,20 @@ LMS_JIT_DEFAULT_UNIT=matriz
 
 ## Contas seed (somente local)
 
-| E-mail | Perfil | Unidade |
-|---|---|---|
-| `ana.souza@navoxi.com` | Administrador Premium | Navoxi · Matriz |
-| `bruno.ferreira@navoxi.com` | Administrador de Unidade | Navoxi · Matriz |
-| `carla.mendes@navoxi.com` | Gestor de Conteúdo | Navoxi · Matriz |
-| `henrique.castro@navoxi.com` | Instrutor | Navoxi · Matriz |
-| `diego.alves@navoxi.com` | Aluno | Navoxi · Matriz |
-| `felipe.rocha@navoxi.com` | Administrador de Unidade | Navoxi · Nordeste |
+Mesmas 8 contas de [`src/lib/mock-data.ts`](../src/lib/mock-data.ts) e do `DataSeeder` Java (ids `u1`–`u8`). Com `NEXT_PUBLIC_USE_JAVA_API=true`, login e admin usam o Postgres — se o banco já tinha seed antigo (só 5 users), **limpe o volume/DB** e reinicie com `lms.seed.enabled=true` para criar Felipe (`u6`) e as fixtures de status.
 
-Senha inicial: valor de `LMS_SEED_PASSWORD` / `demo1234`.
+| E-mail | Perfil | Unidade | Status |
+|---|---|---|---|
+| `ana.souza@navoxi.com` | Administrador Premium | Navoxi · Matriz | ativo |
+| `bruno.ferreira@navoxi.com` | Administrador de Unidade | Navoxi · Matriz | ativo |
+| `carla.mendes@navoxi.com` | Gestor de Conteúdo | Navoxi · Matriz | ativo |
+| `diego.alves@navoxi.com` | Aluno | Navoxi · Matriz | ativo |
+| `eduarda.lima@navoxi.com` | Aluno | Navoxi · Matriz | inativo |
+| `felipe.rocha@navoxi.com` | Administrador de Unidade | Navoxi · Nordeste | ativo |
+| `gabriela.nunes@navoxi.com` | Aluno | Navoxi · Matriz | bloqueado |
+| `henrique.castro@navoxi.com` | Instrutor | Navoxi · Matriz | ativo |
+
+Senha inicial (só local): `LMS_SEED_PASSWORD` / default `demo1234`. Em **produção** o seed está off e contas seed **não** autenticam por senha (`LMS_BLOCK_DEMO_SEED_LOGINS`).
 
 ## Fluxos de login
 

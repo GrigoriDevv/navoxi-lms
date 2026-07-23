@@ -85,7 +85,7 @@ Em **produção** (`NODE_ENV=production`):
 
 ### Headers (CSP)
 
-O Next envia Content-Security-Policy via [`next.config.ts`](next.config.ts), com allowlist para YouTube (player embutido) e Microsoft Entra. Em `development` o header é **Report-Only** (não quebra HMR); em produção é **enforce**. Follow-up: trocar `'unsafe-inline'` em `script-src` por nonces.
+O Next envia Content-Security-Policy via [`next.config.ts`](next.config.ts), com allowlist para YouTube (player embutido) e Microsoft Entra. Em `development` o header é **Report-Only** (não quebra HMR); em produção é **enforce**. `script-src` inclui `'unsafe-inline'` e `'unsafe-eval'` (IFrame API do YouTube). Follow-up: nonces / reduzir `unsafe-*`.
 
 ### Fase 1 pronta (vendável)
 

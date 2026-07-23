@@ -9,7 +9,7 @@ Este repositório entrega a **Fase 1** (auth, cursos, matrículas, progresso, ad
 | Camada | Tecnologia |
 |---|---|
 | Front | [Next.js 16](https://nextjs.org/) (App Router) + React 19 + TypeScript |
-| Estilo | Tailwind CSS v4 |
+| Estilo | Tailwind CSS v4 · kit local [`src/components/ui.tsx`](src/components/ui.tsx) (parecer shadcn: [`docs/fe-7-ui-kit-migration.md`](docs/fe-7-ui-kit-migration.md)) |
 | Estado UI | React Context (`src/lib/store.tsx` + `src/lib/store/*` por domínio) |
 | Backend (Fase 1) | Java 21 + Spring Boot em [`backend/`](backend/) |
 | Persistência API | H2 (local) / PostgreSQL + Flyway (prod) |

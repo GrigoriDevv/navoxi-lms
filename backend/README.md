@@ -69,6 +69,7 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
 - Tabela `access_log` (Flyway `V4`): quem, ação, recurso, IP, user-agent, quando. Escrita em login, SSO, `GET /users/me`, export e delete.
 - `GET /api/v1/users/me/export` — portabilidade JSON (perfil, matrículas, progresso, solicitações, notificações, access_log do titular).
 - `DELETE /api/v1/users/me` — direito ao esquecimento via scrub irreversível de PII + `status=inativo` (evita cascade em matrículas/progresso). JWT deixa de autenticar.
+- Criptografia em repouso do Postgres em produção: ver [Produção (Railway) — Encryption at rest](#encryption-at-rest-postgres). Não confundir com criptografia em coluna (`pgcrypto`), avaliada só se entrar CPF/dado sensível no modelo.
 
 ## Produção (Railway)
 
@@ -86,6 +87,14 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
    - `LMS_BLOCK_DEMO_SEED_LOGINS=true`
    - Rate limit login: 10 req / 60s por IP e por e-mail (`LMS_LOGIN_RATE_LIMIT_*`)
 5. Fail-fast no boot se token fraco, CORS vazio ou seed ligado fora do profile `local`.
+
+### Encryption at rest (Postgres)
+
+O Postgres no Railway usa volume persistente. **Não há toggle** de disk encryption no dashboard nem configuração no Spring: o provedor cifra os dados **em repouso na camada de storage** (AES-256; checkbox de compliance “encrypted at rest”). Não é TDE nem criptografia por coluna na aplicação.
+
+Fontes: [Trust Center](https://trust.railway.com/), [Station — databases encrypted at rest](https://station.railway.com/questions/are-databases-encrypted-at-rest-0e719d6c), [blog compliance (AES-256)](https://blog.railway.com/p/secure-cloud-hosting-for-compliance).
+
+Em trânsito (assunto separado): preferir **Private Network** entre API e Postgres; o TCP proxy público não deve ser o caminho padrão de produção.
 
 ### Checklist env (API Railway)
 

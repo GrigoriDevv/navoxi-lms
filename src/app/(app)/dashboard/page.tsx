@@ -1,17 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useApp } from "@/lib/store";
-import { useAuthScope } from "@/lib/use-auth-scope";
 import { roleLabels } from "@/lib/rbac";
 import { shouldHidePath } from "@/lib/mock-module-gates";
-import {
-  computeMetrics,
-  defaultDashboardFilters,
-  formatDateTime,
-  getFilterOptions,
-  type DashboardFilters,
-} from "@/lib/dashboard-metrics";
 import { PageHeader, StatCard, Badge, ProgressBar } from "@/components/ui";
 import { BarChart, Donut, LineTrend } from "@/components/charts";
 import { Icon } from "@/components/Icon";
@@ -22,61 +12,36 @@ import { QuickShortcuts } from "@/components/home/QuickShortcuts";
 import { QuickActions } from "@/components/home/QuickActions";
 import { DestaquesBanner } from "@/components/home/DestaquesBanner";
 import Link from "next/link";
-
-type Tab = "dashboard" | "equipe";
-type WidgetStatus = "ready" | "loading" | "error" | "empty";
+import { useDashboardPage } from "./use-dashboard-page";
 
 export default function DashboardPage() {
-  const { auditLogs, currentUser, settings } = useApp();
-  const { courses, turmas, users, role, unitId, unitLabel, isGlobal, solicitacoes, can } = useAuthScope();
-
-  const [tab, setTab] = useState<Tab>("dashboard");
-  const [filters, setFilters] = useState<DashboardFilters>(() =>
-    defaultDashboardFilters(isGlobal ? undefined : unitId)
-  );
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>(() => formatDateTime(new Date()));
-  const [dataCollectedUntil, setDataCollectedUntil] = useState<string>(() => formatDateTime(new Date()));
-  const [widgetStatus, setWidgetStatus] = useState<WidgetStatus>("ready");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [simulateError, setSimulateError] = useState(false);
-
-  const scopedCourses = courses;
-  const filterOptions = useMemo(() => getFilterOptions(scopedCourses), [scopedCourses]);
-
-  const metrics = useMemo(
-    () => computeMetrics(scopedCourses, users, filters),
-    [scopedCourses, users, filters]
-  );
-
-  const hasData = metrics.filteredCourseCount > 0 || metrics.totalAccesses > 0;
-  const effectiveStatus: WidgetStatus =
-    widgetStatus === "ready" && !hasData ? "empty" : widgetStatus;
-
-  const refresh = useCallback(async () => {
-    setIsRefreshing(true);
-    setWidgetStatus("loading");
-    await new Promise((r) => setTimeout(r, 900));
-
-    if (simulateError) {
-      setWidgetStatus("error");
-      setIsRefreshing(false);
-      return;
-    }
-
-    const now = new Date();
-    setLastUpdatedAt(formatDateTime(now));
-    setDataCollectedUntil(formatDateTime(new Date(now.getTime() - 15 * 60 * 1000)));
-    setWidgetStatus("ready");
-    setIsRefreshing(false);
-  }, [simulateError]);
-
-  const handleUnitFilter = (f: DashboardFilters) => {
-    if (!isGlobal && unitId) {
-      setFilters({ ...f, unitId });
-    } else {
-      setFilters(f);
-    }
-  };
+  const {
+    auditLogs,
+    currentUser,
+    settings,
+    turmas,
+    users,
+    role,
+    unitId,
+    unitLabel,
+    isGlobal,
+    tab,
+    setTab,
+    filters,
+    filterOptions,
+    metrics,
+    hasData,
+    effectiveStatus,
+    lastUpdatedAt,
+    dataCollectedUntil,
+    isRefreshing,
+    simulateError,
+    setSimulateError,
+    refresh,
+    handleUnitFilter,
+    adminKpis,
+    showAdminKpis,
+  } = useDashboardPage();
 
   return (
     <div>
@@ -187,12 +152,12 @@ export default function DashboardPage() {
             />
           </div>
 
-          {(can("manage_users_all") || can("manage_users_unit")) && (
+          {showAdminKpis && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard label="Usuários no escopo" value={users.length.toString()} icon={<Icon name="users" className="w-5 h-5" />} />
-              <StatCard label="Turmas abertas" value={turmas.filter((t) => t.status !== "concluida").length.toString()} color="#2563eb" icon={<Icon name="group" className="w-5 h-5" />} />
-              <StatCard label="Solicitações pendentes" value={solicitacoes.filter((s) => s.status === "pendente").length.toString()} color="#d97706" icon={<Icon name="mail" className="w-5 h-5" />} />
-              <StatCard label="Cursos publicados" value={courses.filter((c) => c.status === "publicado").length.toString()} color="#2563eb" icon={<Icon name="book" className="w-5 h-5" />} />
+              <StatCard label="Turmas abertas" value={adminKpis.openTurmas.toString()} color="#2563eb" icon={<Icon name="group" className="w-5 h-5" />} />
+              <StatCard label="Solicitações pendentes" value={adminKpis.pendingSolicitacoes.toString()} color="#d97706" icon={<Icon name="mail" className="w-5 h-5" />} />
+              <StatCard label="Cursos publicados" value={adminKpis.publishedCourses.toString()} color="#2563eb" icon={<Icon name="book" className="w-5 h-5" />} />
             </div>
           )}
 

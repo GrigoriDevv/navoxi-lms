@@ -320,7 +320,7 @@ Toda mutação relevante (criar curso, inscrever aluno, alterar configuração) 
 
 ## Limitações do MVP / o que não vender como pronto
 
-A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuários. O restante abaixo é **demo UI** (seed / estado local) e fica **oculto em produção** sem `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`. Slices mock-only em [`src/lib/store.tsx`](src/lib/store.tsx) estão marcados com `// MOCK: not wired to backend`; inventário completo para agentes em [`AGENTS.md`](AGENTS.md#data-wiring). Playbook de migração mock → Java (FE-5): [`docs/fe-5-mock-to-java-migration.md`](docs/fe-5-mock-to-java-migration.md).
+A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuários. O restante abaixo é **demo UI** (seed / estado local) e fica **oculto em produção** sem `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`. Slices mock-only vivem nos domain hooks FE-4 (`use-communication-store` / `use-repository-store` / `use-admin-store`), marcados com `// MOCK: not wired to backend`; inventário em [`AGENTS.md`](AGENTS.md#data-wiring). Playbook de migração mock → Java (FE-5): [`docs/fe-5-mock-to-java-migration.md`](docs/fe-5-mock-to-java-migration.md).
 
 | Aspecto | Estado atual |
 |---|---|
@@ -334,9 +334,22 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuá
 
 \* *O estado React de módulos mock persiste na sessão do navegador; ao fechar a aba ou limpar storage, os dados voltam ao seed.*
 
+### Fase 2 (não incluso na Fase 1 comercial)
+
+Em propostas e contratos, **não vender como prontos / persistidos**:
+
+| Módulo | Estado |
+|---|---|
+| Comunicação (posts, destaques, alertas, mail interno) | Mock / seed React |
+| Integrações e automações | Mock / seed React |
+| Auditoria (UI `/auditoria`) | Mock seed — `access_log` Postgres existe para LGPD (login/export/delete), mas a tela admin ainda não consome |
+| Configurações / permissões / jobs agendados | Mock / seed React |
+
+Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-java-migration.md) (waves posts/destaques → permissions/jobs; depois contents/alerts/mail/integrations).
+
 ## Caminho para produção (Fase 2+)
 
-1. **Persistir** auditoria, configurações, comunicação, integrações, certificados e avaliações na API Java.
+1. **Persistir** auditoria UI, configurações, comunicação, integrações, certificados e avaliações na API Java (seguir FE-5).
 2. **RBAC** — Permissões avaliadas no servidor (já em andamento no backend).
 3. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
 4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF.

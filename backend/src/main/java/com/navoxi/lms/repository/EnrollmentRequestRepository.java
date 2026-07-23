@@ -13,6 +13,8 @@ public interface EnrollmentRequestRepository extends JpaRepository<EnrollmentReq
 
   List<EnrollmentRequest> findByUnitIdOrderByRequestedAtDesc(UnitId unitId);
 
+  List<EnrollmentRequest> findByCourseId(String courseId);
+
   boolean existsByUserIdAndCourseIdAndStatus(
       String userId, String courseId, EnrollmentRequestStatus status);
 }

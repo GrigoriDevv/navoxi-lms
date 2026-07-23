@@ -35,6 +35,7 @@ public class AuthService {
   private final JitAuthProperties jitAuth;
   private final JwtService jwtService;
   private final AccessLogService accessLogs;
+  private final DenormalizedLabelSync labelSync;
 
   public AuthService(
       UserAccountRepository users,
@@ -42,13 +43,15 @@ public class AuthService {
       DemoSeedGuard demoSeedGuard,
       JitAuthProperties jitAuth,
       JwtService jwtService,
-      AccessLogService accessLogs) {
+      AccessLogService accessLogs,
+      DenormalizedLabelSync labelSync) {
     this.users = users;
     this.passwordEncoder = passwordEncoder;
     this.demoSeedGuard = demoSeedGuard;
     this.jitAuth = jitAuth;
     this.jwtService = jwtService;
     this.accessLogs = accessLogs;
+    this.labelSync = labelSync;
   }
 
   @Transactional
@@ -105,7 +108,9 @@ public class AuthService {
       assertMicrosoftAllowed(user);
 
       if (name != null && !name.isBlank() && !name.equals(user.getName())) {
-        user.setName(name.trim());
+        String newName = name.trim();
+        user.setName(newName);
+        labelSync.syncUserName(user.getId(), newName);
       }
       if (oid != null) {
         user.setMicrosoftOid(oid);

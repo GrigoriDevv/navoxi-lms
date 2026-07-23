@@ -83,6 +83,10 @@ Em **produção** (`NODE_ENV=production`):
 - **Não** setar `NEXT_PUBLIC_SHOW_MOCK_MODULES` em produção pública (default: módulos mock ocultos)
 - **Não** documentar e-mails/senhas admin no README público se o deploy estiver aberto
 
+### Headers (CSP)
+
+O Next envia Content-Security-Policy via [`next.config.ts`](next.config.ts), com allowlist para YouTube (player embutido) e Microsoft Entra. Em `development` o header é **Report-Only** (não quebra HMR); em produção é **enforce**. Follow-up: trocar `'unsafe-inline'` em `script-src` por nonces.
+
 ### Fase 1 pronta (vendável)
 
 Com `NEXT_PUBLIC_USE_JAVA_API=true` + backend Java:

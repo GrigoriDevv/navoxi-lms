@@ -12,9 +12,11 @@ const DEMO_SEED = new Set([
   "ana.souza@navoxi.com",
   "bruno.ferreira@navoxi.com",
   "carla.mendes@navoxi.com",
-  "henrique.castro@navoxi.com",
   "diego.alves@navoxi.com",
+  "eduarda.lima@navoxi.com",
   "felipe.rocha@navoxi.com",
+  "gabriela.nunes@navoxi.com",
+  "henrique.castro@navoxi.com",
 ]);
 
 function isDemoSeedEmail(email) {

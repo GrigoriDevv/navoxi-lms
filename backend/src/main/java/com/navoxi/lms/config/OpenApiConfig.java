@@ -13,7 +13,7 @@ public class OpenApiConfig {
     return new OpenAPI()
         .info(
             new Info()
-                .title("Neoenergia LMS API")
+                .title("Navoxi LMS API")
                 .description("Backend Java (Spring Boot) — cursos, módulos e aulas")
                 .version("0.1.0"));
   }

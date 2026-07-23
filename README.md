@@ -22,6 +22,8 @@ cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
+Templates sem secrets: [`.env.example`](.env.example) (Next → copiar para `.env.local`) e [`backend/.env.example`](backend/.env.example) (Spring).
+
 No front (`.env.local`):
 
 ```env

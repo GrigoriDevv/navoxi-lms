@@ -70,6 +70,8 @@ public class LessonService {
       throw new BadRequestException("Informe youtubeVideoId ou videoUrl");
     }
 
+    String videoUrl = normalizeVideoUrl(req.videoUrl());
+
     Course course = courseService.requireAccessible(actor, courseId);
     CourseModule module = resolveModule(course, req.moduleId(), req.moduleTitle());
 
@@ -86,7 +88,7 @@ public class LessonService {
     lesson.setSortOrder(nextOrder);
     lesson.setTitle(req.title().trim());
     lesson.setYoutubeVideoId(blankToNull(req.youtubeVideoId()));
-    lesson.setVideoUrl(blankToNull(req.videoUrl()));
+    lesson.setVideoUrl(videoUrl);
     lesson.setDurationSec(req.durationSec());
     CourseLesson saved = lessons.save(lesson);
 
@@ -134,7 +136,7 @@ public class LessonService {
       }
     }
     if (req.videoUrl() != null) {
-      lesson.setVideoUrl(blankToNull(req.videoUrl()));
+      lesson.setVideoUrl(normalizeVideoUrl(req.videoUrl()));
       if (lesson.getVideoUrl() != null) {
         lesson.setYoutubeVideoId(null);
       }
@@ -189,5 +191,24 @@ public class LessonService {
       return null;
     }
     return value.trim();
+  }
+
+  /**
+   * Rejects data:/blob: payloads (DoS). Only http(s) URLs are stored in {@code video_url}.
+   */
+  static String normalizeVideoUrl(String value) {
+    String trimmed = blankToNull(value);
+    if (trimmed == null) {
+      return null;
+    }
+    String lower = trimmed.toLowerCase();
+    if (lower.startsWith("data:") || lower.startsWith("blob:")) {
+      throw new BadRequestException(
+          "videoUrl não pode ser data URL ou blob. Faça upload via /api/v1/media/videos.");
+    }
+    if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+      throw new BadRequestException("videoUrl deve ser uma URL http(s)");
+    }
+    return trimmed;
   }
 }

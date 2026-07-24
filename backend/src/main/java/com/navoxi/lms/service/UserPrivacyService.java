@@ -1,8 +1,6 @@
 package com.navoxi.lms.service;
 
 import com.navoxi.lms.domain.entity.AccessLog;
-import com.navoxi.lms.domain.entity.Enrollment;
-import com.navoxi.lms.domain.entity.EnrollmentRequest;
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.AuthProvider;
 import com.navoxi.lms.domain.enums.UserStatus;
@@ -37,6 +35,7 @@ public class UserPrivacyService {
   private final NotificationRepository notifications;
   private final AccessLogRepository accessLogs;
   private final AccessLogService accessLogService;
+  private final DenormalizedLabelSync labelSync;
 
   public UserPrivacyService(
       UserAccountRepository users,
@@ -45,7 +44,8 @@ public class UserPrivacyService {
       LessonProgressRepository progress,
       NotificationRepository notifications,
       AccessLogRepository accessLogs,
-      AccessLogService accessLogService) {
+      AccessLogService accessLogService,
+      DenormalizedLabelSync labelSync) {
     this.users = users;
     this.enrollments = enrollments;
     this.enrollmentRequests = enrollmentRequests;
@@ -53,6 +53,7 @@ public class UserPrivacyService {
     this.notifications = notifications;
     this.accessLogs = accessLogs;
     this.accessLogService = accessLogService;
+    this.labelSync = labelSync;
   }
 
   @Transactional(readOnly = true)
@@ -90,12 +91,7 @@ public class UserPrivacyService {
     String userId = user.getId();
     accessLogService.record(userId, AccessLogService.ACTION_USERS_DELETE, "/api/v1/users/me");
 
-    for (Enrollment e : enrollments.findByUserId(userId)) {
-      e.setUserName(ANON_NAME);
-    }
-    for (EnrollmentRequest r : enrollmentRequests.findByUserIdOrderByRequestedAtDesc(userId)) {
-      r.setUserName(ANON_NAME);
-    }
+    labelSync.syncUserName(userId, ANON_NAME);
     notifications.deleteByUserId(userId);
 
     user.setName(ANON_NAME);

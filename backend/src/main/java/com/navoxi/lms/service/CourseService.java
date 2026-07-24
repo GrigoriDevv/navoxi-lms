@@ -8,6 +8,7 @@ import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.CourseDto;
 import com.navoxi.lms.web.dto.CourseRequest;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseService {
 
   private final CourseRepository courses;
+  private final DenormalizedLabelSync labelSync;
 
-  public CourseService(CourseRepository courses) {
+  public CourseService(CourseRepository courses, DenormalizedLabelSync labelSync) {
     this.courses = courses;
+    this.labelSync = labelSync;
   }
 
   @Transactional(readOnly = true)
@@ -47,8 +50,13 @@ public class CourseService {
   public CourseDto update(UserAccount actor, String id, CourseRequest req) {
     Course c = requireAccessible(actor, id);
     UnitScope.assertCanAccessUnit(actor, req.unitId());
+    String previousTitle = c.getTitle();
     apply(c, req);
-    return CourseMapper.toDto(courses.save(c));
+    Course saved = courses.save(c);
+    if (!Objects.equals(previousTitle, saved.getTitle())) {
+      labelSync.syncCourseTitle(saved.getId(), saved.getTitle());
+    }
+    return CourseMapper.toDto(saved);
   }
 
   Course require(String id) {

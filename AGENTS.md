@@ -14,9 +14,10 @@ Inventário para não tratar mock como backend real. Detalhes de produto e rotas
 | Aprendizagem core (cursos, módulos, aulas, matrículas, progresso, solicitações) | Postgres via BFF `/api/lms/*` | idem; React Query em `src/lib/lms/` |
 | Questões e avaliações | Postgres via BFF (`questions`, `evaluations`) | idem; `use-questions` / `use-evaluations` + `use-repository-store` |
 | Posts e destaques | Postgres via BFF (`posts`, `destaques`) | idem; `use-posts` / `use-destaques` + `use-communication-store` |
+| Permissions e scheduled jobs | Postgres via BFF (`permissions`, `scheduled-jobs`) | idem; `use-permissions` / `use-scheduled-jobs` + `use-admin-store` |
 | Notificações | Postgres | idem (`use-notifications-store`) |
 | Admin usuários (`GET/PATCH /api/v1/users`) | Postgres | idem; página `/administracao` |
-| **FE-1 restantes** (`contents`, `alertRules`, `internalMails`, `automations`, `integrations`, `permissions`, `scheduledJobs`) | **Mock** — `seed.*` + estado React | Domain hooks FE-4: `use-communication-store` (alertRules/internalMails/automations), `use-repository-store` (só `contents`), `use-admin-store`; `// MOCK` nos slices; `/comunicacao` permanece gated (ainda tem mocks mistos). Migração Java: [FE-5](docs/fe-5-mock-to-java-migration.md) |
+| **FE-1 restantes** (`contents`, `alertRules`, `internalMails`, `automations`, `integrations`) | **Mock** — `seed.*` + estado React | Domain hooks FE-4: `use-communication-store` (alertRules/internalMails/automations), `use-repository-store` (só `contents`), `use-admin-store` (integrations + settings/audit/users locais); `// MOCK` nos slices; `/comunicacao`, `/configuracoes` e `/integracoes` permanecem gated (ainda têm mocks mistos). Migração Java: [FE-5](docs/fe-5-mock-to-java-migration.md) |
 | Aprendizagem demo (turmas, trilhas, salas, certificados, interesses) | **Mock** | `use-learning-store.ts` quando Java API off ou campos sem endpoint |
 | Outros mock admin (`users` lista local, `messages`, `auditLogs`, `settings`) | **Mock** | `use-admin-store` / communication; admin Java de usuários usa API direta |
 | Preferências UI | localStorage | `use-auth-store` |
@@ -29,6 +30,7 @@ flowchart TB
     EnrollReq[enrollment-requests]
     QuestionsEval[questions evaluations]
     PostsDestaques[posts destaques]
+    PermsJobs[permissions scheduled-jobs]
     Notif[notifications]
     UsersAdmin[GET PATCH users]
     AccessLog[access_log LGPD]
@@ -36,7 +38,7 @@ flowchart TB
   subgraph mock [seed plus React domain hooks]
     CommMock[use-communication-store alertRules mail automations]
     RepoContents[use-repository-store contents]
-    AdminMock[use-admin-store mock slices]
+    AdminMock[use-admin-store integrations settings audit]
     LearnMock[turmas trilhas salas certificados]
   end
   UI[Pages] --> java

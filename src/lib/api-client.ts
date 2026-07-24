@@ -7,8 +7,10 @@ import type {
   InscricaoCurso,
   LessonProgress,
   Notification,
+  Permission,
   Post,
   Question,
+  ScheduledJob,
   SolicitacaoMatricula,
   User,
 } from "./types";
@@ -163,6 +165,24 @@ type ApiDestaque = {
   expiresAt?: string | null;
 };
 
+type ApiPermission = {
+  id: string;
+  name: string;
+  description: string;
+  roles: Permission["roles"];
+};
+
+type ApiScheduledJob = {
+  id: string;
+  name: string;
+  schedule: string;
+  module: string;
+  action: string;
+  enabled: boolean;
+  lastRun?: string | null;
+  nextRun?: string | null;
+};
+
 function mapCourse(c: ApiCourse): Course {
   return { ...c };
 }
@@ -248,6 +268,28 @@ function mapDestaque(d: ApiDestaque): Destaque {
     pinned: d.pinned,
     publishedAt: d.publishedAt,
     expiresAt: d.expiresAt ?? undefined,
+  };
+}
+
+function mapPermission(p: ApiPermission): Permission {
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    roles: p.roles ?? [],
+  };
+}
+
+function mapScheduledJob(j: ApiScheduledJob): ScheduledJob {
+  return {
+    id: j.id,
+    name: j.name,
+    schedule: j.schedule,
+    module: j.module,
+    action: j.action,
+    enabled: j.enabled,
+    lastRun: j.lastRun ?? undefined,
+    nextRun: j.nextRun ?? undefined,
   };
 }
 
@@ -601,6 +643,47 @@ export const lmsApi = {
       }),
     });
     return mapDestaque(data);
+  },
+
+  listPermissions: async () => {
+    const data = await request<ApiPermission[]>("/api/v1/permissions");
+    return data.map(mapPermission);
+  },
+
+  updatePermission: async (id: string, body: Partial<Omit<Permission, "id">>) => {
+    const data = await request<ApiPermission>(`/api/v1/permissions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: body.name,
+        description: body.description,
+        roles: body.roles,
+      }),
+    });
+    return mapPermission(data);
+  },
+
+  listScheduledJobs: async () => {
+    const data = await request<ApiScheduledJob[]>("/api/v1/scheduled-jobs");
+    return data.map(mapScheduledJob);
+  },
+
+  updateScheduledJob: async (
+    id: string,
+    body: Partial<Omit<ScheduledJob, "id">>
+  ) => {
+    const data = await request<ApiScheduledJob>(`/api/v1/scheduled-jobs/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: body.name,
+        schedule: body.schedule,
+        module: body.module,
+        action: body.action,
+        enabled: body.enabled,
+        lastRun: body.lastRun,
+        nextRun: body.nextRun,
+      }),
+    });
+    return mapScheduledJob(data);
   },
 };
 

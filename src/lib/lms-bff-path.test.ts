@@ -15,6 +15,7 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["posts", "p1"])).toBe(true);
     expect(isAllowedLmsPath(["destaques"])).toBe(true);
     expect(isAllowedLmsPath(["destaques", "d1"])).toBe(true);
+    expect(isAllowedLmsPath(["media", "videos"])).toBe(true);
   });
 
   it("rejects empty, unknown, and traversal", () => {

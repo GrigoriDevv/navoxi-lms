@@ -358,7 +358,7 @@ Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-
 1. **Persistir** auditoria UI, configurações, comunicação restante, integrações e certificados na API Java (seguir FE-5; Wave A questões/avaliações e Wave B posts/destaques já feitos).
 2. **RBAC** — Permissões avaliadas no servidor (já em andamento no backend).
 3. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
-4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF.
+4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF. MP4 de aulas: upload via `POST /api/v1/media/videos` (`LMS_S3_*`); `videoUrl` no Postgres só http(s) — **data URL rejeitado**.
 5. **Filas** — Jobs agendados (lembretes, sincronização, relatórios) via worker/cron.
 
 ## Testes

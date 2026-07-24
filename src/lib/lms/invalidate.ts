@@ -37,3 +37,11 @@ export function invalidateQuestions(queryClient: QueryClient) {
 export function invalidateEvaluations(queryClient: QueryClient) {
   return queryClient.invalidateQueries({ queryKey: lmsKeys.evaluations() });
 }
+
+export function invalidatePosts(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: lmsKeys.posts() });
+}
+
+export function invalidateDestaques(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: lmsKeys.destaques() });
+}

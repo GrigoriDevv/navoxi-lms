@@ -10,4 +10,6 @@ export const lmsKeys = {
     [...lmsKeys.all, "enrollment-requests"] as const,
   questions: () => [...lmsKeys.all, "questions"] as const,
   evaluations: () => [...lmsKeys.all, "evaluations"] as const,
+  posts: () => [...lmsKeys.all, "posts"] as const,
+  destaques: () => [...lmsKeys.all, "destaques"] as const,
 };

@@ -13,23 +13,33 @@ export function getLessonMedia(lesson: CourseLesson): LessonMedia | null {
   return null;
 }
 
+/** Persistable direct video URL (http/https only — never data:/blob:). */
 export function isDirectVideoUrl(input: string): boolean {
   const trimmed = input.trim();
   if (!trimmed) return false;
-  if (trimmed.startsWith("blob:") || trimmed.startsWith("data:video/")) return true;
   try {
     const url = new URL(trimmed);
-    return VIDEO_EXT.test(url.pathname);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    return VIDEO_EXT.test(url.pathname) || /video/i.test(url.pathname);
   } catch {
-    return VIDEO_EXT.test(trimmed);
+    return false;
   }
 }
 
 export function resolveLessonVideoInput(
   input: string,
-  uploadedFileUrl?: string | null
+  uploadedHttpUrl?: string | null
 ): { youtubeVideoId?: string; videoUrl?: string } | null {
-  if (uploadedFileUrl) return { videoUrl: uploadedFileUrl };
+  if (uploadedHttpUrl) {
+    if (
+      uploadedHttpUrl.startsWith("http://") ||
+      uploadedHttpUrl.startsWith("https://") ||
+      uploadedHttpUrl.startsWith("blob:")
+    ) {
+      return { videoUrl: uploadedHttpUrl };
+    }
+    return null;
+  }
 
   const trimmed = input.trim();
   if (!trimmed) return null;
@@ -52,10 +62,11 @@ export function getLessonVideoInputValue(lesson: CourseLesson): string {
   const media = getLessonMedia(lesson);
   if (!media) return "";
   if (media.kind === "youtube") return media.youtubeVideoId;
-  if (media.videoUrl.startsWith("data:video/")) return "";
   return media.videoUrl;
 }
 
 export function lessonUsesUploadedFile(lesson: CourseLesson): boolean {
-  return Boolean(lesson.videoUrl?.startsWith("data:video/"));
+  const url = lesson.videoUrl;
+  if (!url) return false;
+  return url.includes("/lessons/") || /\.(mp4|webm|mov)(\?|$)/i.test(url);
 }

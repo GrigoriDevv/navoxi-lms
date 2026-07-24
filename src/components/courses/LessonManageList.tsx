@@ -11,9 +11,18 @@ import {
   lessonUsesUploadedFile,
   resolveLessonVideoInput,
 } from "@/lib/lesson-media";
+import { lmsApi } from "@/lib/api-client";
+import { isJavaApiEnabled } from "@/lib/api-config";
 import { Modal, Button, Field, inputClass } from "@/components/ui";
 
 type VideoSourceMode = "youtube" | "mp4";
+
+async function uploadOrPreviewUrl(courseId: string, file: File): Promise<string> {
+  if (isJavaApiEnabled()) {
+    return lmsApi.uploadLessonVideo(courseId, file);
+  }
+  return URL.createObjectURL(file);
+}
 
 interface LessonRow extends CourseLesson {
   courseTitle?: string;
@@ -48,8 +57,10 @@ export function LessonManageList({
   const [lessonTitle, setLessonTitle] = useState("");
   const [videoSourceMode, setVideoSourceMode] = useState<VideoSourceMode>("youtube");
   const [videoInput, setVideoInput] = useState("");
-  const [replaceFileUrl, setReplaceFileUrl] = useState<string | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacePreviewUrl, setReplacePreviewUrl] = useState<string | null>(null);
   const [replaceFileName, setReplaceFileName] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const modulesForLesson = useMemo(() => {
@@ -65,7 +76,9 @@ export function LessonManageList({
     setLessonTitle(lesson.title);
     setVideoSourceMode(media?.kind === "video" ? "mp4" : "youtube");
     setVideoInput(getLessonVideoInputValue(lesson));
-    setReplaceFileUrl(null);
+    if (replacePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(replacePreviewUrl);
+    setReplaceFile(null);
+    setReplacePreviewUrl(null);
     setReplaceFileName(null);
     setError(null);
   };
@@ -73,7 +86,9 @@ export function LessonManageList({
   const closeEdit = () => {
     setEditingLesson(null);
     setError(null);
-    setReplaceFileUrl(null);
+    if (replacePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(replacePreviewUrl);
+    setReplaceFile(null);
+    setReplacePreviewUrl(null);
     setReplaceFileName(null);
   };
 
@@ -83,64 +98,78 @@ export function LessonManageList({
       setError("Selecione um arquivo de vídeo.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setReplaceFileUrl(typeof reader.result === "string" ? reader.result : null);
-      setReplaceFileName(file.name);
-      setError(null);
-    };
-    reader.onerror = () => setError("Não foi possível ler o arquivo.");
-    reader.readAsDataURL(file);
+    if (replacePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(replacePreviewUrl);
+    setReplaceFile(file);
+    setReplacePreviewUrl(URL.createObjectURL(file));
+    setReplaceFileName(file.name);
+    setError(null);
   };
 
-  const saveEdit = (e: React.FormEvent) => {
+  const saveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingLesson) return;
+    if (!editingLesson || saving) return;
 
     if (!lessonTitle.trim()) {
       setError("Informe o título da aula.");
       return;
     }
 
-    const resolved =
-      videoSourceMode === "youtube"
-        ? resolveLessonVideoInput(videoInput)
-        : resolveLessonVideoInput(videoInput, replaceFileUrl);
-
-    const base = {
-      title: lessonTitle.trim(),
-      moduleId: editingLesson.moduleId,
-    };
-
-    if (videoInput.trim() || replaceFileUrl) {
-      if (!resolved) {
-        setError(
-          videoSourceMode === "youtube"
-            ? "URL ou ID do YouTube inválido."
-            : "Informe uma URL de vídeo válida ou envie um novo arquivo."
-        );
-        return;
+    setSaving(true);
+    setError(null);
+    try {
+      let uploadedHttpUrl: string | null = null;
+      if (videoSourceMode === "mp4" && replaceFile) {
+        uploadedHttpUrl = await uploadOrPreviewUrl(editingLesson.courseId, replaceFile);
       }
 
-      if (resolved.youtubeVideoId) {
-        updateCourseLesson(editingLesson.id, {
-          ...base,
-          youtubeVideoId: resolved.youtubeVideoId,
-          videoUrl: undefined,
-        });
-      } else if (resolved.videoUrl) {
-        updateCourseLesson(editingLesson.id, {
-          ...base,
-          videoUrl: resolved.videoUrl,
-          youtubeVideoId: undefined,
-        });
+      const resolved =
+        videoSourceMode === "youtube"
+          ? resolveLessonVideoInput(videoInput)
+          : resolveLessonVideoInput(videoInput, uploadedHttpUrl);
+
+      const base = {
+        title: lessonTitle.trim(),
+        moduleId: editingLesson.moduleId,
+      };
+
+      if (videoInput.trim() || replaceFile) {
+        if (!resolved) {
+          setError(
+            videoSourceMode === "youtube"
+              ? "URL ou ID do YouTube inválido."
+              : "Informe uma URL http(s) de vídeo válida ou envie um novo arquivo."
+          );
+          return;
+        }
+
+        if (resolved.youtubeVideoId) {
+          updateCourseLesson(editingLesson.id, {
+            ...base,
+            youtubeVideoId: resolved.youtubeVideoId,
+            videoUrl: undefined,
+          });
+        } else if (resolved.videoUrl) {
+          updateCourseLesson(editingLesson.id, {
+            ...base,
+            videoUrl: resolved.videoUrl,
+            youtubeVideoId: undefined,
+          });
+        }
+      } else {
+        updateCourseLesson(editingLesson.id, base);
       }
-    } else {
-      updateCourseLesson(editingLesson.id, base);
+
+      closeEdit();
+      onChanged?.();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Falha no upload. Verifique se o storage S3 está configurado (LMS_S3_ENABLED)."
+      );
+    } finally {
+      setSaving(false);
     }
-
-    closeEdit();
-    onChanged?.();
   };
 
   const handleDelete = (lesson: LessonRow) => {
@@ -303,7 +332,7 @@ export function LessonManageList({
               </Field>
             ) : (
               <>
-                {lessonUsesUploadedFile(editingLesson) && !replaceFileUrl && (
+                {lessonUsesUploadedFile(editingLesson) && !replaceFile && (
                   <p className="text-xs text-slate-500">
                     Esta aula usa um arquivo enviado anteriormente. Envie um novo arquivo ou informe uma URL para substituir.
                   </p>
@@ -325,7 +354,7 @@ export function LessonManageList({
                     value={videoInput}
                     onChange={(e) => setVideoInput(e.target.value)}
                     placeholder="https://exemplo.com/aula.mp4"
-                    disabled={!!replaceFileUrl}
+                    disabled={!!replaceFile}
                   />
                 </Field>
               </>
@@ -343,7 +372,7 @@ export function LessonManageList({
                 <Button type="button" variant="outline" onClick={closeEdit}>
                   Cancelar
                 </Button>
-                <Button type="submit">Salvar aula</Button>
+                <Button type="submit">{saving ? "Salvando…" : "Salvar aula"}</Button>
               </div>
             </div>
           </form>

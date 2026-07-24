@@ -6,6 +6,8 @@ import { getCourseLessons } from "@/lib/course-progress";
 import { getInstructorCourses } from "@/lib/instructor-courses";
 import { resolveLessonVideoInput } from "@/lib/lesson-media";
 import type { Course } from "@/lib/types";
+import { lmsApi } from "@/lib/api-client";
+import { isJavaApiEnabled } from "@/lib/api-config";
 import { Button, Field, inputClass } from "@/components/ui";
 
 export interface ImportDraft {
@@ -18,7 +20,8 @@ export interface ImportDraft {
 interface Mp4Draft {
   id: string;
   title: string;
-  videoUrl: string;
+  file: File;
+  previewUrl: string;
   fileName: string;
 }
 
@@ -32,7 +35,14 @@ interface LessonPublishFormProps {
   onPublished?: () => void;
 }
 
-const MAX_UPLOAD_MB = 200;
+const MAX_UPLOAD_MB = 100;
+
+async function uploadOrPreviewUrl(courseId: string, file: File): Promise<string> {
+  if (isJavaApiEnabled()) {
+    return lmsApi.uploadLessonVideo(courseId, file);
+  }
+  return URL.createObjectURL(file);
+}
 
 export function LessonPublishForm({
   courses,
@@ -114,6 +124,10 @@ export function LessonPublishForm({
   };
 
   const clearUploadedFile = () => {
+    if (uploadedFileUrl?.startsWith("blob:")) URL.revokeObjectURL(uploadedFileUrl);
+    for (const d of mp4Drafts) {
+      if (d.previewUrl.startsWith("blob:")) URL.revokeObjectURL(d.previewUrl);
+    }
     setUploadedFile(null);
     setUploadedFileUrl(null);
     setMp4Drafts([]);
@@ -122,17 +136,6 @@ export function LessonPublishForm({
 
   const titleFromFileName = (name: string) =>
     name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || "Nova aula";
-
-  const readVideoFile = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") resolve(reader.result);
-        else reject(new Error("Falha ao ler arquivo"));
-      };
-      reader.onerror = () => reject(new Error("Não foi possível ler o arquivo de vídeo."));
-      reader.readAsDataURL(file);
-    });
 
   const handleFileChange = async (files: FileList | null) => {
     clearUploadedFile();
@@ -156,25 +159,26 @@ export function LessonPublishForm({
     try {
       if (selected.length === 1) {
         const file = selected[0];
-        const dataUrl = await readVideoFile(file);
+        const previewUrl = URL.createObjectURL(file);
         setUploadedFile(file);
-        setUploadedFileUrl(dataUrl);
+        setUploadedFileUrl(previewUrl);
         if (!lessonTitle.trim()) {
           setLessonTitle(titleFromFileName(file.name));
         }
       } else {
-        const drafts = await Promise.all(
-          selected.map(async (file) => ({
+        setMp4Drafts(
+          selected.map((file) => ({
             id: `${file.name}-${file.size}-${file.lastModified}`,
             title: titleFromFileName(file.name),
-            videoUrl: await readVideoFile(file),
+            file,
+            previewUrl: URL.createObjectURL(file),
             fileName: file.name,
           }))
         );
-        setMp4Drafts(drafts);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar vídeos.");
+      clearUploadedFile();
     } finally {
       setUploadingFile(false);
     }
@@ -247,7 +251,7 @@ export function LessonPublishForm({
     });
   };
 
-  const publishMp4Batch = () => {
+  const publishMp4Batch = async () => {
     if (!courseId || mp4Drafts.length === 0) return;
     if (moduleMode === "existing" && !moduleId && courseModulesForCourse.length > 0) {
       setError("Selecione um módulo.");
@@ -258,27 +262,45 @@ export function LessonPublishForm({
       return;
     }
 
-    const count = mp4Drafts.length;
-    importPlaylistLessons(
-      courseId,
-      moduleTitle.trim() || "Módulo de vídeos",
-      mp4Drafts.map((draft) => ({
-        title: draft.title.trim() || titleFromFileName(draft.fileName),
-        videoUrl: draft.videoUrl,
-      })),
-      moduleMode === "existing" && moduleId ? moduleId : undefined
-    );
+    setUploadingFile(true);
+    setError(null);
+    try {
+      const uploaded = [];
+      for (const draft of mp4Drafts) {
+        const videoUrl = await uploadOrPreviewUrl(courseId, draft.file);
+        uploaded.push({
+          title: draft.title.trim() || titleFromFileName(draft.fileName),
+          videoUrl,
+        });
+      }
 
-    setMp4Drafts([]);
-    setFeedback(
-      lockedCourse
-        ? `${count} vídeo(s) adicionados ao curso "${lockedCourse.title}".`
-        : `${count} vídeo(s) adicionados ao curso.`
-    );
-    onPublished?.();
+      const count = uploaded.length;
+      importPlaylistLessons(
+        courseId,
+        moduleTitle.trim() || "Módulo de vídeos",
+        uploaded,
+        moduleMode === "existing" && moduleId ? moduleId : undefined
+      );
+
+      clearUploadedFile();
+      setFeedback(
+        lockedCourse
+          ? `${count} vídeo(s) adicionados ao curso "${lockedCourse.title}".`
+          : `${count} vídeo(s) adicionados ao curso.`
+      );
+      onPublished?.();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Falha no upload. Verifique se o storage S3 está configurado (LMS_S3_ENABLED)."
+      );
+    } finally {
+      setUploadingFile(false);
+    }
   };
 
-  const publishSingle = (e: React.FormEvent) => {
+  const publishSingle = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setError(null);
@@ -289,16 +311,33 @@ export function LessonPublishForm({
       return;
     }
 
+    let uploadedHttpUrl: string | null = null;
+    if (videoSourceMode === "mp4" && uploadedFile) {
+      setUploadingFile(true);
+      try {
+        uploadedHttpUrl = await uploadOrPreviewUrl(courseId, uploadedFile);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Falha no upload. Verifique se o storage S3 está configurado (LMS_S3_ENABLED)."
+        );
+        setUploadingFile(false);
+        return;
+      }
+      setUploadingFile(false);
+    }
+
     const resolved =
       videoSourceMode === "youtube"
         ? resolveLessonVideoInput(videoInput)
-        : resolveLessonVideoInput(videoInput, uploadedFileUrl);
+        : resolveLessonVideoInput(videoInput, uploadedHttpUrl);
 
     if (!resolved) {
       setError(
         videoSourceMode === "youtube"
           ? "URL ou ID de vídeo do YouTube inválido."
-          : "Envie um arquivo de vídeo ou informe uma URL direta (.mp4, .webm, .mov)."
+          : "Envie um arquivo de vídeo ou informe uma URL http(s) direta (.mp4, .webm, .mov)."
       );
       return;
     }

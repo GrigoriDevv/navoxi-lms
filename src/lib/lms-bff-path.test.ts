@@ -7,6 +7,7 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["courses", "c1", "lessons"])).toBe(true);
     expect(isAllowedLmsPath(["enrollments"])).toBe(true);
     expect(isAllowedLmsPath(["enrollment-requests", "id", "decision"])).toBe(true);
+    expect(isAllowedLmsPath(["media", "videos"])).toBe(true);
   });
 
   it("rejects empty, unknown, and traversal", () => {

@@ -51,11 +51,11 @@ public class CourseService {
     return CourseMapper.toDto(courses.save(c));
   }
 
-  Course require(String id) {
+  public Course require(String id) {
     return courses.findById(id).orElseThrow(() -> new NotFoundException("Curso não encontrado"));
   }
 
-  Course requireAccessible(UserAccount actor, String id) {
+  public Course requireAccessible(UserAccount actor, String id) {
     Course c = require(id);
     UnitScope.assertCanAccessCourse(actor, c);
     return c;

@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -47,7 +48,7 @@ public class EnrollmentRequest {
   private UnitId unitId;
 
   @Column(name = "requested_at", nullable = false)
-  private String requestedAt;
+  private Instant requestedAt;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 32)
@@ -130,11 +131,11 @@ public class EnrollmentRequest {
     this.unitId = unitId;
   }
 
-  public String getRequestedAt() {
+  public Instant getRequestedAt() {
     return requestedAt;
   }
 
-  public void setRequestedAt(String requestedAt) {
+  public void setRequestedAt(Instant requestedAt) {
     this.requestedAt = requestedAt;
   }
 

@@ -12,16 +12,13 @@ import com.navoxi.lms.repository.LessonProgressRepository;
 import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.LessonProgressDto;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProgressService {
-
-  private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   private final CourseLessonRepository lessons;
   private final LessonProgressRepository progress;
@@ -76,7 +73,7 @@ public class ProgressService {
     LessonProgress p = new LessonProgress();
     p.setUser(user);
     p.setLesson(lesson);
-    p.setCompletedAt(LocalDateTime.now().format(FMT));
+    p.setCompletedAt(Instant.now());
     LessonProgressDto saved = CourseMapper.toDto(progress.save(p));
 
     long total = lessons.countByCourseId(courseId);

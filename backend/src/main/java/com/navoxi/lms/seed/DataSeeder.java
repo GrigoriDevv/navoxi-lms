@@ -25,6 +25,7 @@ import com.navoxi.lms.repository.EnrollmentRequestRepository;
 import com.navoxi.lms.repository.LessonProgressRepository;
 import com.navoxi.lms.repository.NotificationRepository;
 import com.navoxi.lms.repository.UserAccountRepository;
+import com.navoxi.lms.service.DateFormats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -359,7 +360,7 @@ public class DataSeeder {
     e.setTurmaId(turmaId);
     e.setTurmaName(turmaName);
     e.setUnitId(user.getUnitId());
-    e.setEnrolledAt("2026-05-15 10:00");
+    e.setEnrolledAt(DateFormats.parse("2026-05-15 10:00"));
     e.setProgress(progress);
     e.setStatus(status);
     repo.save(e);
@@ -370,7 +371,7 @@ public class DataSeeder {
     LessonProgress p = new LessonProgress();
     p.setUser(user);
     p.setLesson(lesson);
-    p.setCompletedAt(at);
+    p.setCompletedAt(DateFormats.parse(at));
     repo.save(p);
   }
 
@@ -392,7 +393,7 @@ public class DataSeeder {
     r.setTurmaId(turmaId);
     r.setTurmaName(turmaName);
     r.setUnitId(user.getUnitId());
-    r.setRequestedAt("2026-06-10 14:30");
+    r.setRequestedAt(DateFormats.parse("2026-06-10 14:30"));
     r.setStatus(status);
     r.setReviewer(reviewer);
     repo.save(r);

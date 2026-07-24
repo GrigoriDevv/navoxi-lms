@@ -17,6 +17,7 @@ import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.EnrollmentRequestCreate;
 import com.navoxi.lms.web.dto.EnrollmentRequestDto;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
@@ -28,7 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EnrollmentRequestService {
 
-  private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+  private static final DateTimeFormatter REVIEWED_AT_FMT =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   private final EnrollmentRequestRepository requests;
   private final CourseRepository courses;
@@ -89,7 +91,7 @@ public class EnrollmentRequestService {
     req.setTurmaId(blankToNull(body.turmaId()));
     req.setTurmaName(blankToNull(body.turmaName()));
     req.setUnitId(actor.getUnitId());
-    req.setRequestedAt(LocalDateTime.now().format(FMT));
+    req.setRequestedAt(Instant.now());
     req.setStatus(EnrollmentRequestStatus.pendente);
     EnrollmentRequest saved = requests.save(req);
 
@@ -127,7 +129,7 @@ public class EnrollmentRequestService {
 
     req.setStatus(status);
     req.setReviewer(actor.getName());
-    req.setReviewedAt(LocalDateTime.now().format(FMT));
+    req.setReviewedAt(LocalDateTime.now().format(REVIEWED_AT_FMT));
     requests.save(req);
 
     if (status == EnrollmentRequestStatus.aprovada) {

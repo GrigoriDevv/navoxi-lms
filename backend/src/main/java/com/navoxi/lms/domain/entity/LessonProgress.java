@@ -9,6 +9,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -30,7 +31,7 @@ public class LessonProgress {
   private CourseLesson lesson;
 
   @Column(name = "completed_at", nullable = false)
-  private String completedAt;
+  private Instant completedAt;
 
   @PrePersist
   void onCreate() {
@@ -63,11 +64,11 @@ public class LessonProgress {
     this.lesson = lesson;
   }
 
-  public String getCompletedAt() {
+  public Instant getCompletedAt() {
     return completedAt;
   }
 
-  public void setCompletedAt(String completedAt) {
+  public void setCompletedAt(Instant completedAt) {
     this.completedAt = completedAt;
   }
 }

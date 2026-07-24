@@ -43,6 +43,8 @@ test("source exports gate helpers", () => {
   assert.match(source, /export function areMockModulesVisible/);
   assert.match(source, /NEXT_PUBLIC_SHOW_MOCK_MODULES/);
   assert.doesNotMatch(source, /\/aprendizagem\/avaliacoes/);
+  // Wave B: /comunicacao stays gated (alertRules/mail/automations still mock)
+  assert.match(source, /\/comunicacao/);
 });
 
 test("dev: mocks visible by default", () => {

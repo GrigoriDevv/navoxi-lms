@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { isJavaApiEnabled } from "../api-config";
 import * as seed from "../mock-data";
+import {
+  useCreateDestaque,
+  useCreatePost,
+  useDestaques,
+  usePosts,
+  useUpdateDestaque,
+  useUpdatePost,
+} from "../lms";
 import type {
   AlertRule,
   Automation,
@@ -22,12 +31,19 @@ export function useCommunicationStore(deps: {
 }) {
   const { currentUser, log } = deps;
 
-  /** MOCK slices below: seed-only, session memory — see AGENTS.md "Data wiring" */
-  // MOCK: not wired to backend
-  const [posts, setPosts] = useState<Post[]>(seed.posts);
+  const javaApi = isJavaApiEnabled();
+
+  const postsQuery = usePosts({ enabled: javaApi });
+  const destaquesQuery = useDestaques({ enabled: javaApi });
+  const createPostMutation = useCreatePost();
+  const updatePostMutation = useUpdatePost();
+  const createDestaqueMutation = useCreateDestaque();
+  const updateDestaqueMutation = useUpdateDestaque();
+
+  const [mockPosts, setMockPosts] = useState<Post[]>(seed.posts);
   const [messages, setMessages] = useState<Message[]>(seed.messages);
-  // MOCK: not wired to backend
-  const [destaques, setDestaques] = useState<Destaque[]>(seed.destaques);
+  const [mockDestaques, setMockDestaques] = useState<Destaque[]>(seed.destaques);
+  /** MOCK slices below: seed-only, session memory — see AGENTS.md "Data wiring" */
   // MOCK: not wired to backend
   const [alertRules, setAlertRules] = useState<AlertRule[]>(seed.alertRules);
   // MOCK: not wired to backend
@@ -37,18 +53,39 @@ export function useCommunicationStore(deps: {
   // MOCK: not wired to backend
   const [automations, setAutomations] = useState<Automation[]>(seed.automations);
 
+  const posts = javaApi ? (postsQuery.data ?? seed.posts) : mockPosts;
+  const destaques = javaApi
+    ? (destaquesQuery.data ?? seed.destaques)
+    : mockDestaques;
+
   const addPost: AppState["addPost"] = useCallback(
     (p) => {
-      const id = "post" + Math.random().toString(36).slice(2, 7);
       const unitId =
         currentUser && !hasPermission(currentUser.role, "view_all_units")
           ? currentUser.unitId
           : p.unitId;
-      setPosts((prev) => [
+      const payload = { ...p, unitId };
+
+      if (javaApi) {
+        void createPostMutation
+          .mutateAsync(payload)
+          .then((created) => {
+            log({
+              user: currentUser?.email ?? "system",
+              action: `Publicou post '${created.title}'`,
+              module: "Comunicação",
+              severity: "info",
+            });
+          })
+          .catch((err) => console.error("[lms-api] createPost", err));
+        return;
+      }
+
+      const id = "post" + Math.random().toString(36).slice(2, 7);
+      setMockPosts((prev) => [
         {
-          ...p,
+          ...payload,
           id,
-          unitId,
           author: currentUser?.name ?? "Usuário",
           status: "publicado",
           publishedAt: now(),
@@ -62,12 +99,40 @@ export function useCommunicationStore(deps: {
         severity: "info",
       });
     },
-    [currentUser, log]
+    [createPostMutation, currentUser, javaApi, log]
   );
 
   const updatePost: AppState["updatePost"] = useCallback(
     (id, data) => {
-      setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
+      if (javaApi) {
+        const current = posts.find((p) => p.id === id);
+        if (!current) return;
+        const merged = { ...current, ...data };
+        void updatePostMutation
+          .mutateAsync({
+            id,
+            body: {
+              title: merged.title,
+              body: merged.body,
+              author: merged.author,
+              unitId: merged.unitId,
+              status: merged.status,
+              publishedAt: merged.publishedAt,
+            },
+          })
+          .then(() => {
+            log({
+              user: currentUser?.email ?? "system",
+              action: `Atualizou post '${id}'`,
+              module: "Comunicação",
+              severity: "info",
+            });
+          })
+          .catch((err) => console.error("[lms-api] updatePost", err));
+        return;
+      }
+
+      setMockPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
       log({
         user: currentUser?.email ?? "system",
         action: `Atualizou post '${id}'`,
@@ -75,18 +140,35 @@ export function useCommunicationStore(deps: {
         severity: "info",
       });
     },
-    [currentUser, log]
+    [currentUser, javaApi, log, posts, updatePostMutation]
   );
 
   const addDestaque: AppState["addDestaque"] = useCallback(
     (d) => {
-      const id = "d" + Math.random().toString(36).slice(2, 7);
       const unitId =
         currentUser && !hasPermission(currentUser.role, "view_all_units")
           ? currentUser.unitId
           : d.unitId;
-      setDestaques((prev) => [
-        { ...d, id, unitId, publishedAt: now() },
+      const payload = { ...d, unitId };
+
+      if (javaApi) {
+        void createDestaqueMutation
+          .mutateAsync(payload)
+          .then((created) => {
+            log({
+              user: currentUser?.email ?? "system",
+              action: `Publicou destaque '${created.title}'`,
+              module: "Comunicação",
+              severity: "info",
+            });
+          })
+          .catch((err) => console.error("[lms-api] createDestaque", err));
+        return;
+      }
+
+      const id = "d" + Math.random().toString(36).slice(2, 7);
+      setMockDestaques((prev) => [
+        { ...payload, id, publishedAt: now() },
         ...prev,
       ]);
       log({
@@ -96,14 +178,46 @@ export function useCommunicationStore(deps: {
         severity: "info",
       });
     },
-    [currentUser, log]
+    [createDestaqueMutation, currentUser, javaApi, log]
   );
 
-  const updateDestaque: AppState["updateDestaque"] = useCallback((id, data) => {
-    setDestaques((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, ...data } : d))
-    );
-  }, []);
+  const updateDestaque: AppState["updateDestaque"] = useCallback(
+    (id, data) => {
+      if (javaApi) {
+        const current = destaques.find((d) => d.id === id);
+        if (!current) return;
+        const merged = { ...current, ...data };
+        void updateDestaqueMutation
+          .mutateAsync({
+            id,
+            body: {
+              title: merged.title,
+              body: merged.body,
+              unitId: merged.unitId,
+              visible: merged.visible,
+              pinned: merged.pinned,
+              publishedAt: merged.publishedAt,
+              expiresAt: merged.expiresAt,
+            },
+          })
+          .then(() => {
+            log({
+              user: currentUser?.email ?? "system",
+              action: `Atualizou destaque '${id}'`,
+              module: "Comunicação",
+              severity: "info",
+            });
+          })
+          .catch((err) => console.error("[lms-api] updateDestaque", err));
+        return;
+      }
+
+      setMockDestaques((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, ...data } : d))
+      );
+    },
+    [currentUser, destaques, javaApi, log, updateDestaqueMutation]
+  );
 
   const addAlertRule: AppState["addAlertRule"] = useCallback(
     (r) => {

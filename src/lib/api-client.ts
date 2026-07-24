@@ -2,10 +2,12 @@ import type {
   Course,
   CourseLesson,
   CourseModule,
+  Destaque,
   Evaluation,
   InscricaoCurso,
   LessonProgress,
   Notification,
+  Post,
   Question,
   SolicitacaoMatricula,
   User,
@@ -140,6 +142,27 @@ type ApiEvaluation = {
   appliedAt?: string | null;
 };
 
+type ApiPost = {
+  id: string;
+  title: string;
+  body: string;
+  author: string;
+  unitId: Post["unitId"];
+  status: Post["status"];
+  publishedAt: string;
+};
+
+type ApiDestaque = {
+  id: string;
+  title: string;
+  body: string;
+  unitId: Destaque["unitId"];
+  visible: boolean;
+  pinned: boolean;
+  publishedAt: string;
+  expiresAt?: string | null;
+};
+
 function mapCourse(c: ApiCourse): Course {
   return { ...c };
 }
@@ -200,6 +223,31 @@ function mapEvaluation(e: ApiEvaluation): Evaluation {
     status: e.status,
     dueDate: e.dueDate,
     appliedAt: e.appliedAt ?? undefined,
+  };
+}
+
+function mapPost(p: ApiPost): Post {
+  return {
+    id: p.id,
+    title: p.title,
+    body: p.body,
+    author: p.author,
+    unitId: p.unitId,
+    status: p.status,
+    publishedAt: p.publishedAt,
+  };
+}
+
+function mapDestaque(d: ApiDestaque): Destaque {
+  return {
+    id: d.id,
+    title: d.title,
+    body: d.body,
+    unitId: d.unitId,
+    visible: d.visible,
+    pinned: d.pinned,
+    publishedAt: d.publishedAt,
+    expiresAt: d.expiresAt ?? undefined,
   };
 }
 
@@ -479,6 +527,80 @@ export const lmsApi = {
       method: "POST",
     });
     return mapEvaluation(data);
+  },
+
+  listPosts: async () => {
+    const data = await request<ApiPost[]>("/api/v1/posts");
+    return data.map(mapPost);
+  },
+
+  createPost: async (
+    body: Omit<Post, "id"> | Omit<Post, "id" | "author" | "status" | "publishedAt">
+  ) => {
+    const data = await request<ApiPost>("/api/v1/posts", {
+      method: "POST",
+      body: JSON.stringify({
+        title: body.title,
+        body: body.body,
+        unitId: body.unitId,
+        ...("author" in body ? { author: body.author } : {}),
+        ...("status" in body ? { status: body.status } : {}),
+        ...("publishedAt" in body ? { publishedAt: body.publishedAt } : {}),
+      }),
+    });
+    return mapPost(data);
+  },
+
+  updatePost: async (id: string, body: Partial<Omit<Post, "id">>) => {
+    const data = await request<ApiPost>(`/api/v1/posts/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        title: body.title,
+        body: body.body,
+        author: body.author,
+        unitId: body.unitId,
+        status: body.status,
+        publishedAt: body.publishedAt,
+      }),
+    });
+    return mapPost(data);
+  },
+
+  listDestaques: async () => {
+    const data = await request<ApiDestaque[]>("/api/v1/destaques");
+    return data.map(mapDestaque);
+  },
+
+  createDestaque: async (body: Omit<Destaque, "id" | "publishedAt"> & { publishedAt?: string }) => {
+    const data = await request<ApiDestaque>("/api/v1/destaques", {
+      method: "POST",
+      body: JSON.stringify({
+        title: body.title,
+        body: body.body,
+        unitId: body.unitId,
+        visible: body.visible,
+        pinned: body.pinned,
+        publishedAt: body.publishedAt,
+        expiresAt: body.expiresAt,
+      }),
+    });
+    return mapDestaque(data);
+  },
+
+  updateDestaque: async (id: string, body: Partial<Omit<Destaque, "id">>) => {
+    const data = await request<ApiDestaque>(`/api/v1/destaques/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        title: body.title,
+        body: body.body,
+        unitId: body.unitId,
+        visible: body.visible,
+        pinned: body.pinned,
+        publishedAt: body.publishedAt,
+        expiresAt: body.expiresAt,
+      }),
+    });
+    return mapDestaque(data);
   },
 };
 

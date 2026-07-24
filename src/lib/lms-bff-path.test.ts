@@ -11,6 +11,10 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["questions", "q1"])).toBe(true);
     expect(isAllowedLmsPath(["evaluations"])).toBe(true);
     expect(isAllowedLmsPath(["evaluations", "av1", "apply"])).toBe(true);
+    expect(isAllowedLmsPath(["posts"])).toBe(true);
+    expect(isAllowedLmsPath(["posts", "p1"])).toBe(true);
+    expect(isAllowedLmsPath(["destaques"])).toBe(true);
+    expect(isAllowedLmsPath(["destaques", "d1"])).toBe(true);
   });
 
   it("rejects empty, unknown, and traversal", () => {

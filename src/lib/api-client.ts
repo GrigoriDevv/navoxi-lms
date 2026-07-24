@@ -235,6 +235,26 @@ export const lmsApi = {
     return mapLesson(data);
   },
 
+  uploadLessonVideo: async (courseId: string, file: File) => {
+    const form = new FormData();
+    form.append("courseId", courseId);
+    form.append("file", file);
+    const res = await fetch(toBffPath("/api/v1/media/videos"), {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
+    const text = await res.text();
+    const data = text ? (JSON.parse(text) as { url?: string; error?: string }) : null;
+    if (!res.ok) {
+      throw new ApiError(data?.error || `API ${res.status}`, res.status);
+    }
+    if (!data?.url) {
+      throw new ApiError("Upload sem URL de retorno", 502);
+    }
+    return data.url;
+  },
+
   updateLesson: async (
     lessonId: string,
     body: Partial<Pick<CourseLesson, "title" | "moduleId" | "youtubeVideoId" | "videoUrl" | "order">>

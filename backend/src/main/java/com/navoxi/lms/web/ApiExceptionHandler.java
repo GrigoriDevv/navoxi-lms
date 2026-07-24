@@ -36,6 +36,12 @@ public class ApiExceptionHandler {
         .body(Map.of("error", ex.getMessage()));
   }
 
+  @ExceptionHandler(ServiceUnavailableException.class)
+  public ResponseEntity<Map<String, String>> unavailable(ServiceUnavailableException ex) {
+    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+        .body(Map.of("error", ex.getMessage()));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException ex) {
     String msg =
@@ -72,6 +78,12 @@ public class ApiExceptionHandler {
 
   public static class TooManyRequestsException extends RuntimeException {
     public TooManyRequestsException(String message) {
+      super(message);
+    }
+  }
+
+  public static class ServiceUnavailableException extends RuntimeException {
+    public ServiceUnavailableException(String message) {
       super(message);
     }
   }

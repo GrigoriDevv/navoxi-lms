@@ -368,10 +368,25 @@ Suíte mínima (auth, BFF, enroll/progress, PreAuthorize):
 | Comando | O quê |
 |---|---|
 | `npm test` | Unit (node) + Vitest BFF (`lms-bff-path`) |
+| `npm run lint` | ESLint |
 | `npm run test:backend` | JUnit (`mvn test`) — auth, JWT, JIT, enroll, progress, PreAuthorize |
 | `npm run test:e2e` | Playwright smoke (`/login` + `demo-status`; sobe `webServer` local) |
 
-E2E é opt-in local (não obrigatório em CI sem browsers). Relatórios Playwright ficam em pastas ignoradas pelo git.
+### CI (GitHub Actions)
+
+Todo PR dispara [`.github/workflows/ci.yml`](.github/workflows/ci.yml) com jobs paralelos:
+
+| Job | Required para merge | Comando |
+|---|---|---|
+| `lint` | sim | `npm run lint` |
+| `unit` | sim | `npm run test:unit` |
+| `bff` | sim | `npm run test:bff` |
+| `backend` | sim | `mvn test` (Java 21) |
+| `e2e` | não | Playwright — só quando o PR toca auth/navegação |
+
+Configure em **Settings → Branches → Require status checks**: `lint`, `unit`, `bff`, `backend`.
+
+Relatórios Playwright locais ficam em pastas ignoradas pelo git.
 
 ## Scripts npm
 

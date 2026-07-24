@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  unit:
+    name: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run test:unit
+
+  bff:
+    name: bff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run test:bff
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Run backend tests
+        working-directory: backend
+        run: mvn test -q
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    # Slow path-filtered job. Not a required status check (DoD = lint+unit+bff+backend).
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth_nav:
+              - 'e2e/**'
+              - 'playwright.config.ts'
+              - 'src/app/**/login/**'
+              - 'src/app/api/auth/**'
+              - 'src/components/**/nav*/**'
+              - 'src/lib/auth*.ts'
+              - 'src/lib/rbac*'
+              - 'src/middleware.ts'
+              - 'package.json'
+              - 'package-lock.json'
+      - name: Skip notice
+        if: steps.filter.outputs.auth_nav != 'true'
+        run: echo "No auth/navigation paths changed — skipping e2e"
+      - name: Setup Node
+        if: steps.filter.outputs.auth_nav == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install dependencies
+        if: steps.filter.outputs.auth_nav == 'true'
+        run: npm ci
+      - name: Install Playwright Chromium
+        if: steps.filter.outputs.auth_nav == 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Run e2e
+        if: steps.filter.outputs.auth_nav == 'true'
+        run: npm run test:e2e
+        env:
+          CI: true
+          ALLOW_DEMO_LOGIN: "true"

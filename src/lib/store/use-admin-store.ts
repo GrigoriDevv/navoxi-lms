@@ -1,6 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { isJavaApiEnabled } from "../api-config";
+import {
+  usePermissions,
+  useScheduledJobs,
+  useUpdatePermission,
+  useUpdateScheduledJob,
+} from "../lms";
 import * as seed from "../mock-data";
 import type {
   AuditLog,
@@ -19,19 +26,33 @@ import { avatarColors, now } from "./shared";
 type LogFn = AppState["log"];
 
 export function useAdminStore(currentUser: AuthState | null) {
+  const javaApi = isJavaApiEnabled();
+
+  const permissionsQuery = usePermissions({ enabled: javaApi });
+  const scheduledJobsQuery = useScheduledJobs({ enabled: javaApi });
+  const updatePermissionMutation = useUpdatePermission();
+  const updateScheduledJobMutation = useUpdateScheduledJob();
+
   const [users, setUsers] = useState<User[]>(seed.users);
   // MOCK: not wired to backend
   const [integrations, setIntegrations] = useState<Integration[]>(
     seed.integrations
   );
-  // MOCK: not wired to backend
-  const [permissions, setPermissions] = useState<Permission[]>(seed.permissions);
-  // MOCK: not wired to backend
-  const [scheduledJobs, setScheduledJobs] = useState<ScheduledJob[]>(
+  const [mockPermissions, setMockPermissions] = useState<Permission[]>(
+    seed.permissions
+  );
+  const [mockScheduledJobs, setMockScheduledJobs] = useState<ScheduledJob[]>(
     seed.scheduledJobs
   );
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(seed.auditLogs);
   const [settings, setSettings] = useState<Settings>(seed.settings);
+
+  const permissions = javaApi
+    ? (permissionsQuery.data ?? seed.permissions)
+    : mockPermissions;
+  const scheduledJobs = javaApi
+    ? (scheduledJobsQuery.data ?? seed.scheduledJobs)
+    : mockScheduledJobs;
 
   const log: LogFn = useCallback((entry) => {
     setAuditLogs((prev) => [
@@ -105,14 +126,30 @@ export function useAdminStore(currentUser: AuthState | null) {
 
   const togglePermissionRole: AppState["togglePermissionRole"] = useCallback(
     (permId, role: Role) => {
-      setPermissions((prev) =>
-        prev.map((p) => {
-          if (p.id !== permId) return p;
-          const roles = p.roles.includes(role)
-            ? p.roles.filter((r) => r !== role)
-            : [...p.roles, role];
-          return { ...p, roles };
-        })
+      const current = permissions.find((p) => p.id === permId);
+      if (!current) return;
+
+      const roles = current.roles.includes(role)
+        ? current.roles.filter((r) => r !== role)
+        : [...current.roles, role];
+
+      if (javaApi) {
+        void updatePermissionMutation
+          .mutateAsync({ id: permId, body: { roles } })
+          .then(() => {
+            log({
+              user: currentUser?.email ?? "system",
+              action: `Alterou permissão '${permId}' · ${role}`,
+              module: "Identidade",
+              severity: "alerta",
+            });
+          })
+          .catch((err) => console.error("[lms-api] updatePermission", err));
+        return;
+      }
+
+      setMockPermissions((prev) =>
+        prev.map((p) => (p.id !== permId ? p : { ...p, roles }))
       );
       log({
         user: currentUser?.email ?? "system",
@@ -121,13 +158,33 @@ export function useAdminStore(currentUser: AuthState | null) {
         severity: "alerta",
       });
     },
-    [currentUser, log]
+    [currentUser, javaApi, log, permissions, updatePermissionMutation]
   );
 
   const toggleScheduledJob: AppState["toggleScheduledJob"] = useCallback(
     (id) => {
-      setScheduledJobs((prev) =>
-        prev.map((j) => (j.id === id ? { ...j, enabled: !j.enabled } : j))
+      const current = scheduledJobs.find((j) => j.id === id);
+      if (!current) return;
+
+      const enabled = !current.enabled;
+
+      if (javaApi) {
+        void updateScheduledJobMutation
+          .mutateAsync({ id, body: { enabled } })
+          .then(() => {
+            log({
+              user: currentUser?.email ?? "system",
+              action: `Alternou job agendado '${id}'`,
+              module: "Configurações",
+              severity: "info",
+            });
+          })
+          .catch((err) => console.error("[lms-api] updateScheduledJob", err));
+        return;
+      }
+
+      setMockScheduledJobs((prev) =>
+        prev.map((j) => (j.id === id ? { ...j, enabled } : j))
       );
       log({
         user: currentUser?.email ?? "system",
@@ -136,7 +193,7 @@ export function useAdminStore(currentUser: AuthState | null) {
         severity: "info",
       });
     },
-    [currentUser, log]
+    [currentUser, javaApi, log, scheduledJobs, updateScheduledJobMutation]
   );
 
   const updateSettings: AppState["updateSettings"] = useCallback(

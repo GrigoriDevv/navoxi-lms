@@ -45,3 +45,11 @@ export function invalidatePosts(queryClient: QueryClient) {
 export function invalidateDestaques(queryClient: QueryClient) {
   return queryClient.invalidateQueries({ queryKey: lmsKeys.destaques() });
 }
+
+export function invalidatePermissions(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: lmsKeys.permissions() });
+}
+
+export function invalidateScheduledJobs(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: lmsKeys.scheduledJobs() });
+}

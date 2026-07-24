@@ -7,6 +7,14 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["courses", "c1", "lessons"])).toBe(true);
     expect(isAllowedLmsPath(["enrollments"])).toBe(true);
     expect(isAllowedLmsPath(["enrollment-requests", "id", "decision"])).toBe(true);
+    expect(isAllowedLmsPath(["questions"])).toBe(true);
+    expect(isAllowedLmsPath(["questions", "q1"])).toBe(true);
+    expect(isAllowedLmsPath(["evaluations"])).toBe(true);
+    expect(isAllowedLmsPath(["evaluations", "av1", "apply"])).toBe(true);
+    expect(isAllowedLmsPath(["posts"])).toBe(true);
+    expect(isAllowedLmsPath(["posts", "p1"])).toBe(true);
+    expect(isAllowedLmsPath(["destaques"])).toBe(true);
+    expect(isAllowedLmsPath(["destaques", "d1"])).toBe(true);
     expect(isAllowedLmsPath(["media", "videos"])).toBe(true);
   });
 

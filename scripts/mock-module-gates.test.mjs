@@ -19,7 +19,6 @@ const MOCK_ONLY_PATHS = [
   "/comunicacao",
   "/integracoes",
   "/aprendizagem/certificados",
-  "/aprendizagem/avaliacoes",
 ];
 
 function isMockOnlyPath(pathname) {
@@ -43,6 +42,9 @@ function resolveShouldHidePath(pathname, mockVisible, javaApiEnabled) {
 test("source exports gate helpers", () => {
   assert.match(source, /export function areMockModulesVisible/);
   assert.match(source, /NEXT_PUBLIC_SHOW_MOCK_MODULES/);
+  assert.doesNotMatch(source, /\/aprendizagem\/avaliacoes/);
+  // Wave B: /comunicacao stays gated (alertRules/mail/automations still mock)
+  assert.match(source, /\/comunicacao/);
 });
 
 test("dev: mocks visible by default", () => {
@@ -57,7 +59,8 @@ test("prod: mocks hidden unless flag", () => {
 
 test("prod hide mock paths and admin without Java", () => {
   assert.equal(resolveShouldHidePath("/auditoria", false, true), true);
-  assert.equal(resolveShouldHidePath("/aprendizagem/avaliacoes", false, true), true);
+  assert.equal(resolveShouldHidePath("/aprendizagem/certificados", false, true), true);
+  assert.equal(resolveShouldHidePath("/aprendizagem/avaliacoes", false, true), false);
   assert.equal(resolveShouldHidePath("/dashboard", false, true), false);
   assert.equal(resolveShouldHidePath("/administracao", false, false), true);
   assert.equal(resolveShouldHidePath("/administracao", false, true), false);

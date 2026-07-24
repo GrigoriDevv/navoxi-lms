@@ -10,7 +10,6 @@ export const MOCK_ONLY_PATHS = [
   "/comunicacao",
   "/integracoes",
   "/aprendizagem/certificados",
-  "/aprendizagem/avaliacoes",
 ] as const;
 
 const ADMIN_PATH = "/administracao";

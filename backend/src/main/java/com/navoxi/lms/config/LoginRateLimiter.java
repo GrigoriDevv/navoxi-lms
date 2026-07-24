@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Locale;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,7 @@ public class LoginRateLimiter {
   private final long windowMs;
   private final Cache<String, Deque<Long>> attemptsByKey;
 
+  @Autowired
   public LoginRateLimiter(
       @Value("${lms.auth.login-rate-limit.enabled:true}") boolean enabled,
       @Value("${lms.auth.login-rate-limit.max-attempts:10}") int maxAttempts,

@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -47,7 +48,7 @@ public class Enrollment {
   private UnitId unitId;
 
   @Column(name = "enrolled_at", nullable = false)
-  private String enrolledAt;
+  private Instant enrolledAt;
 
   @Column(nullable = false)
   private Integer progress = 0;
@@ -127,11 +128,11 @@ public class Enrollment {
     this.unitId = unitId;
   }
 
-  public String getEnrolledAt() {
+  public Instant getEnrolledAt() {
     return enrolledAt;
   }
 
-  public void setEnrolledAt(String enrolledAt) {
+  public void setEnrolledAt(Instant enrolledAt) {
     this.enrolledAt = enrolledAt;
   }
 

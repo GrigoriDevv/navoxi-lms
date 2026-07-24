@@ -7,16 +7,13 @@ import com.navoxi.lms.domain.enums.EnrollmentStatus;
 import com.navoxi.lms.repository.CourseRepository;
 import com.navoxi.lms.repository.EnrollmentRepository;
 import com.navoxi.lms.web.dto.EnrollmentDto;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EnrollmentService {
-
-  private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   private final EnrollmentRepository enrollments;
   private final CourseRepository courses;
@@ -46,7 +43,7 @@ public class EnrollmentService {
               e.setTurmaId(blankToNull(turmaId));
               e.setTurmaName(blankToNull(turmaName));
               e.setUnitId(user.getUnitId());
-              e.setEnrolledAt(LocalDateTime.now().format(FMT));
+              e.setEnrolledAt(Instant.now());
               e.setProgress(0);
               e.setStatus(EnrollmentStatus.ativa);
               Enrollment saved = enrollments.save(e);

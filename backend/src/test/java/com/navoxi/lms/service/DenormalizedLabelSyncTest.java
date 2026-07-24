@@ -82,7 +82,7 @@ class DenormalizedLabelSyncTest {
     e.setUserName(aluno.getName());
     e.setCourseTitle("Título Antigo");
     e.setUnitId(UnitId.matriz);
-    e.setEnrolledAt("2026-06-01 10:00");
+    e.setEnrolledAt(DateFormats.parse("2026-06-01 10:00"));
     e.setProgress(0);
     e.setStatus(EnrollmentStatus.ativa);
     enrollments.save(e);
@@ -94,7 +94,7 @@ class DenormalizedLabelSyncTest {
     r.setUserName(aluno.getName());
     r.setCourseTitle("Título Antigo");
     r.setUnitId(UnitId.matriz);
-    r.setRequestedAt("2026-06-02 10:00");
+    r.setRequestedAt(DateFormats.parse("2026-06-02 10:00"));
     r.setStatus(EnrollmentRequestStatus.pendente);
     enrollmentRequests.save(r);
   }

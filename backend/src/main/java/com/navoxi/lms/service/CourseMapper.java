@@ -54,7 +54,8 @@ public final class CourseMapper {
   }
 
   public static LessonProgressDto toDto(LessonProgress p) {
-    return new LessonProgressDto(p.getUser().getId(), p.getLesson().getId(), p.getCompletedAt());
+    return new LessonProgressDto(
+        p.getUser().getId(), p.getLesson().getId(), DateFormats.format(p.getCompletedAt()));
   }
 
   public static EnrollmentDto toDto(Enrollment e) {
@@ -67,7 +68,7 @@ public final class CourseMapper {
         e.getTurmaId(),
         e.getTurmaName(),
         e.getUnitId(),
-        e.getEnrolledAt(),
+        DateFormats.format(e.getEnrolledAt()),
         e.getProgress(),
         e.getStatus());
   }
@@ -95,7 +96,7 @@ public final class CourseMapper {
         r.getTurmaId(),
         r.getTurmaName(),
         r.getUnitId(),
-        r.getRequestedAt(),
+        DateFormats.format(r.getRequestedAt()),
         r.getStatus(),
         r.getReviewer());
   }

@@ -2,9 +2,11 @@ import type {
   Course,
   CourseLesson,
   CourseModule,
+  Evaluation,
   InscricaoCurso,
   LessonProgress,
   Notification,
+  Question,
   SolicitacaoMatricula,
   User,
 } from "./types";
@@ -116,6 +118,28 @@ type ApiProgress = {
   completedAt: string;
 };
 
+type ApiQuestion = {
+  id: string;
+  text: string;
+  type: Question["type"];
+  category: string;
+  unitId: Question["unitId"];
+  usageCount: number;
+};
+
+type ApiEvaluation = {
+  id: string;
+  name: string;
+  courseId: string;
+  turmaId?: string | null;
+  unitId: Evaluation["unitId"];
+  questionIds: string[];
+  questionCount: number;
+  status: Evaluation["status"];
+  dueDate: string;
+  appliedAt?: string | null;
+};
+
 function mapCourse(c: ApiCourse): Course {
   return { ...c };
 }
@@ -150,6 +174,32 @@ function mapEnrollment(e: ApiEnrollment): InscricaoCurso {
     enrolledAt: e.enrolledAt,
     progress: e.progress,
     status: e.status,
+  };
+}
+
+function mapQuestion(q: ApiQuestion): Question {
+  return {
+    id: q.id,
+    text: q.text,
+    type: q.type,
+    category: q.category,
+    unitId: q.unitId,
+    usageCount: q.usageCount,
+  };
+}
+
+function mapEvaluation(e: ApiEvaluation): Evaluation {
+  return {
+    id: e.id,
+    name: e.name,
+    courseId: e.courseId,
+    turmaId: e.turmaId ?? undefined,
+    unitId: e.unitId,
+    questionIds: e.questionIds ?? [],
+    questionCount: e.questionCount,
+    status: e.status,
+    dueDate: e.dueDate,
+    appliedAt: e.appliedAt ?? undefined,
   };
 }
 
@@ -348,6 +398,87 @@ export const lmsApi = {
       body: JSON.stringify(body),
     });
     return mapUser(data);
+  },
+
+  listQuestions: async () => {
+    const data = await request<ApiQuestion[]>("/api/v1/questions");
+    return data.map(mapQuestion);
+  },
+
+  createQuestion: async (body: Omit<Question, "id" | "usageCount">) => {
+    const data = await request<ApiQuestion>("/api/v1/questions", {
+      method: "POST",
+      body: JSON.stringify({
+        text: body.text,
+        type: body.type,
+        category: body.category,
+        unitId: body.unitId,
+      }),
+    });
+    return mapQuestion(data);
+  },
+
+  updateQuestion: async (id: string, body: Omit<Question, "id" | "usageCount">) => {
+    const data = await request<ApiQuestion>(`/api/v1/questions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        text: body.text,
+        type: body.type,
+        category: body.category,
+        unitId: body.unitId,
+      }),
+    });
+    return mapQuestion(data);
+  },
+
+  deleteQuestion: (id: string) =>
+    request<void>(`/api/v1/questions/${id}`, { method: "DELETE" }),
+
+  listEvaluations: async () => {
+    const data = await request<ApiEvaluation[]>("/api/v1/evaluations");
+    return data.map(mapEvaluation);
+  },
+
+  createEvaluation: async (body: Omit<Evaluation, "id" | "questionCount" | "appliedAt">) => {
+    const data = await request<ApiEvaluation>("/api/v1/evaluations", {
+      method: "POST",
+      body: JSON.stringify({
+        name: body.name,
+        courseId: body.courseId,
+        turmaId: body.turmaId,
+        unitId: body.unitId,
+        questionIds: body.questionIds,
+        status: body.status,
+        dueDate: body.dueDate,
+      }),
+    });
+    return mapEvaluation(data);
+  },
+
+  updateEvaluation: async (
+    id: string,
+    body: Omit<Evaluation, "id" | "questionCount" | "appliedAt">
+  ) => {
+    const data = await request<ApiEvaluation>(`/api/v1/evaluations/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: body.name,
+        courseId: body.courseId,
+        turmaId: body.turmaId,
+        unitId: body.unitId,
+        questionIds: body.questionIds,
+        status: body.status,
+        dueDate: body.dueDate,
+      }),
+    });
+    return mapEvaluation(data);
+  },
+
+  applyEvaluation: async (id: string) => {
+    const data = await request<ApiEvaluation>(`/api/v1/evaluations/${id}/apply`, {
+      method: "POST",
+    });
+    return mapEvaluation(data);
   },
 };
 

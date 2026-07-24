@@ -146,7 +146,7 @@ O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são fil
 | `/aprendizagem/certificados` | **Demo UI / Fase 2** | Emissão e gestão de certificados (mock) |
 | `/aprendizagem/interesses` | Preview | Registro de interesse em cursos futuros |
 | `/aprendizagem/solicitacoes` | Fase 1 | Aprovação/rejeição de solicitações de matrícula |
-| `/aprendizagem/avaliacoes` | **Demo UI / Fase 2** | Avaliações (mock) |
+| `/aprendizagem/avaliacoes` | Fase 1 (Wave A) | Avaliações via API Java / BFF (`evaluations`) |
 
 **Modalidades suportadas:** EAD/online, presencial e híbrido.
 
@@ -198,8 +198,8 @@ NEXT_PUBLIC_APP_URL=https://navoxi-lms-production.up.railway.app
 
 | Rota | Descrição |
 |---|---|
-| `/repositorio` | Upload e gestão de conteúdos (vídeo, PDF, SCORM, imagem, link) com campo de uso |
-| `/repositorio/questoes` | Banco de questões (múltipla escolha, verdadeiro/falso, dissertativa) |
+| `/repositorio` | Upload e gestão de conteúdos (vídeo, PDF, SCORM, imagem, link) com campo de uso — **conteúdos ainda mock** |
+| `/repositorio/questoes` | Banco de questões via API Java / BFF (`questions`) |
 
 ### Comunicação
 
@@ -330,8 +330,9 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core e admin de usuá
 |---|---|
 | Autenticação | Senha BCrypt (backend) + Microsoft Entra; JWT de usuário nas rotas de dados |
 | Aprendizagem core | API Java (cursos, matrículas, progresso) quando `NEXT_PUBLIC_USE_JAVA_API=true` |
+| Questões / Avaliações | API Java (Wave A) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off |
 | Auditoria / Config / Comunicação / Integrações | Mock — não persistidos; auditoria com IP seed fixo e export sem handler |
-| Certificados / Avaliações | Mock — não persistidos |
+| Certificados | Mock — não persistidos |
 | Upload de arquivos | Simulado (metadados apenas) |
 | E-mail / push / SMS | Simulados na UI |
 | Integrações SSO/RH/BI | Status mock; toggles alteram apenas o estado local |
@@ -353,7 +354,7 @@ Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-
 
 ## Caminho para produção (Fase 2+)
 
-1. **Persistir** auditoria UI, configurações, comunicação, integrações, certificados e avaliações na API Java (seguir FE-5).
+1. **Persistir** auditoria UI, configurações, comunicação, integrações e certificados na API Java (seguir FE-5; questões/avaliações já em Wave A).
 2. **RBAC** — Permissões avaliadas no servidor (já em andamento no backend).
 3. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
 4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF.

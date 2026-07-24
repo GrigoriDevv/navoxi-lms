@@ -86,6 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     currentUser,
     log,
     dispatchNotification,
+    refreshNotifications,
   });
   const {
     questions,

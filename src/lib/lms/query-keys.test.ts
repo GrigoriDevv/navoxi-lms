@@ -11,6 +11,8 @@ describe("lmsKeys", () => {
       "lms",
       "enrollment-requests",
     ]);
+    expect(lmsKeys.questions()).toEqual(["lms", "questions"]);
+    expect(lmsKeys.evaluations()).toEqual(["lms", "evaluations"]);
   });
 
   it("scopes enrollments and progress by userId", () => {

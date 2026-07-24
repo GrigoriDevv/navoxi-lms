@@ -6,6 +6,8 @@ export const LMS_BFF_ALLOWED_PREFIXES = [
   "users",
   "enrollment-requests",
   "enrollments",
+  "questions",
+  "evaluations",
 ] as const;
 
 export function isAllowedLmsPath(segments: string[]): boolean {

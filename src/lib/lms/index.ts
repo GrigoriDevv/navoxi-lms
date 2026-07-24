@@ -3,7 +3,9 @@ export {
   invalidateCatalog,
   invalidateCourses,
   invalidateEnrollmentRequests,
+  invalidateEvaluations,
   invalidateMyLearning,
+  invalidateQuestions,
 } from "./invalidate";
 export { useCourses, useCreateCourse, useUpdateCourse } from "./use-courses";
 export {
@@ -21,3 +23,15 @@ export {
   useDecideEnrollmentRequest,
   useEnrollmentRequests,
 } from "./use-enrollment-requests";
+export {
+  useCreateQuestion,
+  useDeleteQuestion,
+  useQuestions,
+  useUpdateQuestion,
+} from "./use-questions";
+export {
+  useApplyEvaluation,
+  useCreateEvaluation,
+  useEvaluations,
+  useUpdateEvaluation,
+} from "./use-evaluations";

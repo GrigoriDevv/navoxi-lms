@@ -29,3 +29,11 @@ export function invalidateMyLearning(
     invalidateCourses(queryClient),
   ]);
 }
+
+export function invalidateQuestions(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: lmsKeys.questions() });
+}
+
+export function invalidateEvaluations(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: lmsKeys.evaluations() });
+}

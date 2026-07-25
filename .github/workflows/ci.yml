@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: LMS_API_TOKEN never NEXT_PUBLIC
+        run: node scripts/check-lms-api-token-server-only.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

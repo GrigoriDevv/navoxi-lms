@@ -60,6 +60,18 @@ lms:
     public-base-url: ${LMS_S3_PUBLIC_BASE_URL:}
     max-file-bytes: ${LMS_S3_MAX_FILE_BYTES:104857600}
     presign-ttl-seconds: ${LMS_S3_PRESIGN_TTL_SECONDS:3600}
+  media:
+    # CSV de hosts permitidos em videoUrl (match exato). Vazio = qualquer host http(s).
+    # Host de LMS_S3_PUBLIC_BASE_URL é sempre incluído quando definido.
+    video-url-allowed-hosts: ${LMS_VIDEO_URL_ALLOWED_HOSTS:}
+  retention:
+    enabled: ${LMS_RETENTION_ENABLED:false}
+    progress-months: ${LMS_RETENTION_PROGRESS_MONTHS:24}
+    access-log-months: ${LMS_RETENTION_ACCESS_LOG_MONTHS:12}
+  api-rate-limit:
+    enabled: ${LMS_API_RATE_LIMIT_ENABLED:true}
+    max-requests: ${LMS_API_RATE_LIMIT_MAX:60}
+    window-seconds: ${LMS_API_RATE_LIMIT_WINDOW_SECONDS:60}
 
 springdoc:
   api-docs:
@@ -98,6 +110,11 @@ lms:
       enabled: ${LMS_LOGIN_RATE_LIMIT_ENABLED:false}
       max-attempts: ${LMS_LOGIN_RATE_LIMIT_MAX:60}
       window-seconds: ${LMS_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
+  api-rate-limit:
+    # Local/dev: off por default (testes + DX). Ative com LMS_API_RATE_LIMIT_ENABLED=true.
+    enabled: ${LMS_API_RATE_LIMIT_ENABLED:false}
+    max-requests: ${LMS_API_RATE_LIMIT_MAX:120}
+    window-seconds: ${LMS_API_RATE_LIMIT_WINDOW_SECONDS:60}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
 
@@ -132,9 +149,15 @@ lms:
       enabled: ${LMS_LOGIN_RATE_LIMIT_ENABLED:true}
       max-attempts: ${LMS_LOGIN_RATE_LIMIT_MAX:10}
       window-seconds: ${LMS_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
+  api-rate-limit:
+    enabled: ${LMS_API_RATE_LIMIT_ENABLED:true}
+    max-requests: ${LMS_API_RATE_LIMIT_MAX:60}
+    window-seconds: ${LMS_API_RATE_LIMIT_WINDOW_SECONDS:60}
   seed:
     # Deploy: seed off. DeploySecurityValidator falha se true.
     enabled: false
+  retention:
+    enabled: ${LMS_RETENTION_ENABLED:true}
   cors:
     # Obrigatório em prod — sem default vazio (fail-fast se CORS_ORIGINS ausente/vazio).
     allowed-origins: ${CORS_ORIGINS}

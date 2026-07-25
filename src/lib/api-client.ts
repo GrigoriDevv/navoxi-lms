@@ -457,13 +457,44 @@ export const lmsApi = {
     return data.map(mapUser);
   },
 
+  createUser: async (body: {
+    name: string;
+    email: string;
+    role: User["role"];
+    unitId: User["unitId"];
+    department: string;
+    authProvider?: "local" | "microsoft" | "both";
+    password?: string;
+  }) => {
+    const data = await request<ApiUser>("/api/v1/users", {
+      method: "POST",
+      body: JSON.stringify({
+        name: body.name,
+        email: body.email,
+        role: body.role,
+        unitId: body.unitId,
+        department: body.department,
+        authProvider: body.authProvider ?? "microsoft",
+        password: body.password,
+      }),
+    });
+    return mapUser(data);
+  },
+
   updateUser: async (
     id: string,
-    body: Partial<Pick<User, "role" | "unitId" | "status">>
+    body: Partial<Pick<User, "role" | "unitId" | "status" | "name" | "department">>
   ) => {
     const data = await request<ApiUser>(`/api/v1/users/${id}`, {
       method: "PATCH",
       body: JSON.stringify(body),
+    });
+    return mapUser(data);
+  },
+
+  deleteUser: async (id: string) => {
+    const data = await request<ApiUser>(`/api/v1/users/${id}`, {
+      method: "DELETE",
     });
     return mapUser(data);
   },

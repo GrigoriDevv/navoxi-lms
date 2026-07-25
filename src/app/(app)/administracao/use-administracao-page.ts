@@ -18,6 +18,7 @@ export function useAdministracaoPage() {
   const [loading, setLoading] = useState(javaApi);
   const [apiError, setApiError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -78,11 +79,7 @@ export function useAdministracaoPage() {
     ? ["admin_premium", "admin_unidade", "gestor_conteudo", "instrutor", "aluno"]
     : ["gestor_conteudo", "instrutor", "aluno"];
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (javaApi) return;
-    addUser(form);
-    setOpen(false);
+  const resetForm = () => {
     setForm({
       name: "",
       email: "",
@@ -93,9 +90,40 @@ export function useAdministracaoPage() {
     });
   };
 
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (javaApi) {
+      setSubmitting(true);
+      setApiError(null);
+      try {
+        const created = await lmsApi.createUser({
+          name: form.name,
+          email: form.email,
+          role: form.role,
+          unitId: isGlobal ? form.unitId : (unitId ?? "matriz"),
+          department: form.department,
+          authProvider: "microsoft",
+        });
+        setApiUsers((prev) =>
+          [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+        );
+        setOpen(false);
+        resetForm();
+      } catch (err) {
+        setApiError(err instanceof Error ? err.message : "Falha ao criar usuário");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+    addUser(form);
+    setOpen(false);
+    resetForm();
+  };
+
   const patchUser = async (
     id: string,
-    body: Partial<Pick<User, "role" | "unitId" | "status">>
+    body: Partial<Pick<User, "role" | "unitId" | "status" | "name" | "department">>
   ) => {
     setSavingId(id);
     setApiError(null);
@@ -104,6 +132,19 @@ export function useAdministracaoPage() {
       setApiUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Falha ao atualizar usuário");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const deactivateUser = async (id: string) => {
+    setSavingId(id);
+    setApiError(null);
+    try {
+      const updated = await lmsApi.deleteUser(id);
+      setApiUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Falha ao desativar usuário");
     } finally {
       setSavingId(null);
     }
@@ -125,6 +166,7 @@ export function useAdministracaoPage() {
     loading,
     apiError,
     savingId,
+    submitting,
     form,
     setForm,
     users,
@@ -136,5 +178,6 @@ export function useAdministracaoPage() {
     blockedCount,
     submit,
     patchUser,
+    deactivateUser,
   };
 }

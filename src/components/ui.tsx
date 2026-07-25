@@ -36,11 +36,15 @@ export function Button({
   onClick,
   type = "button",
   variant = "primary",
+  disabled = false,
+  className = "",
 }: {
   children: ReactNode;
   onClick?: () => void;
   type?: "button" | "submit";
   variant?: "primary" | "outline";
+  disabled?: boolean;
+  className?: string;
 }) {
   const base =
     "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition";
@@ -49,7 +53,12 @@ export function Button({
       ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-sm"
       : "border border-slate-300 text-slate-700 hover:bg-slate-50";
   return (
-    <button type={type} onClick={onClick} className={`${base} ${styles}`}>
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${styles} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`.trim()}
+    >
       {children}
     </button>
   );

@@ -10,8 +10,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:secrets": "node scripts/check-lms-api-token-server-only.mjs",
     "test": "npm run test:unit && npm run test:bff",
-    "test:unit": "node --test scripts/demo-auth-config.test.mjs scripts/mock-module-gates.test.mjs scripts/api-config.test.mjs scripts/login-429-bff.test.mjs",
+    "test:unit": "npm run check:secrets && node --test scripts/demo-auth-config.test.mjs scripts/mock-module-gates.test.mjs scripts/api-config.test.mjs scripts/login-429-bff.test.mjs",
     "test:bff": "vitest run",
     "test:backend": "cd backend && mvn test -q",
     "test:e2e": "playwright test"

@@ -30,6 +30,11 @@ public class ApiExceptionHandler {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
   }
 
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<Map<String, String>> conflict(ConflictException ex) {
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+  }
+
   @ExceptionHandler(TooManyRequestsException.class)
   public ResponseEntity<Map<String, String>> tooManyRequests(TooManyRequestsException ex) {
     return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -72,6 +77,12 @@ public class ApiExceptionHandler {
 
   public static class ForbiddenException extends RuntimeException {
     public ForbiddenException(String message) {
+      super(message);
+    }
+  }
+
+  public static class ConflictException extends RuntimeException {
+    public ConflictException(String message) {
       super(message);
     }
   }

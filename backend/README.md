@@ -125,3 +125,5 @@ Em **produção** do Next, `LMS_API_TOKEN` fraco/ausente lança erro (mesmo valo
 
 - `POST /api/v1/auth/**` (Next→Java): `Authorization: Bearer <LMS_API_TOKEN>`
 - Demais `/api/v1/**`: `Authorization: Bearer <accessToken JWT>` do login (via BFF)
+
+`LMS_API_TOKEN` é **server-only**: nunca em `NEXT_PUBLIC_*` e lido apenas em [`src/lib/api-config.server.ts`](../src/lib/api-config.server.ts) (marcado com `import "server-only"`), consumido só pelas rotas `/api/auth/**`. Validado com canário no build: o valor não aparece em `.next/static` (bundle client).

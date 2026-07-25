@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
-import { lmsApiUpstreamUrl } from "@/lib/api-config";
+import { lmsApiUpstreamUrl } from "@/lib/api-config.server";
 import { bffSessionGateError, isAllowedLmsPath } from "@/lib/lms-bff-path";
 
 async function proxy(request: NextRequest, pathSegments: string[]) {

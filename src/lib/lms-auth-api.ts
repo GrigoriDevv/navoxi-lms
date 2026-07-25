@@ -1,5 +1,6 @@
+import "server-only";
 import type { Role, UnitId } from "./types";
-import { lmsApiToken, lmsApiUpstreamUrl } from "./api-config";
+import { lmsApiToken, lmsApiUpstreamUrl } from "./api-config.server";
 
 export class AuthUpstreamError extends Error {
   constructor(

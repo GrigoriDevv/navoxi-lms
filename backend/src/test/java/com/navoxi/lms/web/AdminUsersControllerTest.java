@@ -1,7 +1,9 @@
 package com.navoxi.lms.web;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -95,6 +97,101 @@ class AdminUsersControllerTest {
                 .content("{\"role\":\"instrutor\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.role").value("instrutor"));
+  }
+
+  @Test
+  void patchNameAsAdmin() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/users/" + alunoId)
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Aluno Renomeado\",\"department\":\"RH\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("Aluno Renomeado"))
+        .andExpect(jsonPath("$.department").value("RH"));
+  }
+
+  @Test
+  void createUserAsAdmin() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/users")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "name": "Novo Instrutor",
+                      "email": "instrutor.novo@navoxi.com",
+                      "role": "instrutor",
+                      "unitId": "matriz",
+                      "department": "TI",
+                      "authProvider": "microsoft"
+                    }
+                    """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.email").value("instrutor.novo@navoxi.com"))
+        .andExpect(jsonPath("$.role").value("instrutor"))
+        .andExpect(jsonPath("$.status").value("ativo"));
+  }
+
+  @Test
+  void createDuplicateEmailConflicts() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/users")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "name": "Dup",
+                      "email": "aluno@navoxi.com",
+                      "role": "aluno",
+                      "unitId": "matriz",
+                      "department": "Ops"
+                    }
+                    """))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
+  void createForbiddenForAluno() throws Exception {
+    String alunoJwt =
+        AuthTestSupport.loginAccessToken(mockMvc, objectMapper, "aluno@navoxi.com", "secret123");
+    mockMvc
+        .perform(
+            post("/api/v1/users")
+                .header("Authorization", "Bearer " + alunoJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "name": "X",
+                      "email": "x@navoxi.com",
+                      "role": "aluno",
+                      "unitId": "matriz",
+                      "department": "Ops"
+                    }
+                    """))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void softDeleteAsAdmin() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/users/" + alunoId).header("Authorization", "Bearer " + adminJwt))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("inativo"));
+  }
+
+  @Test
+  void softDeleteSelfRejected() throws Exception {
+    mockMvc
+        .perform(delete("/api/v1/users/u-admin").header("Authorization", "Bearer " + adminJwt))
+        .andExpect(status().isBadRequest());
   }
 
   @Test

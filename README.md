@@ -349,6 +349,7 @@ Em propostas e contratos, **não vender como prontos / persistidos**:
 | Comunicação restante (alertas, mail interno, campanhas) | Mock / seed React — posts/destaques já em Wave B |
 | Integrações e automações | Mock / seed React |
 | Auditoria (UI `/auditoria`) | Mock seed — `access_log` Postgres existe para LGPD (login/export/delete), mas a tela admin ainda não consome |
+| Retenção LGPD | Política + purge automático (`lesson_progress` 24m, `access_log` 12m): [`docs/lgpd-data-retention.md`](docs/lgpd-data-retention.md) |
 | Configurações / permissões / jobs agendados | Mock / seed React |
 
 Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-java-migration.md) (Wave C permissions/jobs; depois contents/alerts/mail/integrations).
@@ -358,7 +359,7 @@ Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-
 1. **Persistir** auditoria UI, configurações, comunicação restante, integrações e certificados na API Java (seguir FE-5; Wave A questões/avaliações e Wave B posts/destaques já feitos).
 2. **RBAC** — Permissões avaliadas no servidor (já em andamento no backend).
 3. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
-4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF. MP4 de aulas: upload via `POST /api/v1/media/videos` (`LMS_S3_*`); `videoUrl` no Postgres só http(s) — **data URL rejeitado**.
+4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF. MP4 de aulas: upload via `POST /api/v1/media/videos` (`LMS_S3_*`); `videoUrl` no Postgres só http(s) — **data/blob e schemes perigosos rejeitados**; hosts opcionais via `LMS_VIDEO_URL_ALLOWED_HOSTS` (CSV) + host de `LMS_S3_PUBLIC_BASE_URL`.
 5. **Filas** — Jobs agendados (lembretes, sincronização, relatórios) via worker/cron.
 
 ## Testes

@@ -1,5 +1,6 @@
 package com.navoxi.lms.service;
 
+import com.navoxi.lms.config.S3Properties;
 import com.navoxi.lms.domain.entity.Course;
 import com.navoxi.lms.domain.entity.CourseLesson;
 import com.navoxi.lms.domain.entity.CourseModule;
@@ -18,7 +19,16 @@ import com.navoxi.lms.web.dto.LessonDto;
 import com.navoxi.lms.web.dto.LessonRequest;
 import com.navoxi.lms.web.dto.LessonUpdateRequest;
 import com.navoxi.lms.web.dto.ModuleDto;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +41,7 @@ public class LessonService {
   private final LessonProgressRepository progress;
   private final EnrollmentRepository enrollments;
   private final NotificationService notifications;
+  private final Set<String> videoUrlAllowedHosts;
 
   public LessonService(
       CourseService courseService,
@@ -38,13 +49,17 @@ public class LessonService {
       CourseLessonRepository lessons,
       LessonProgressRepository progress,
       EnrollmentRepository enrollments,
-      NotificationService notifications) {
+      NotificationService notifications,
+      S3Properties s3Properties,
+      @Value("${lms.media.video-url-allowed-hosts:}") String videoUrlAllowedHostsCsv) {
     this.courseService = courseService;
     this.modules = modules;
     this.lessons = lessons;
     this.progress = progress;
     this.enrollments = enrollments;
     this.notifications = notifications;
+    this.videoUrlAllowedHosts =
+        buildAllowedHosts(videoUrlAllowedHostsCsv, s3Properties.getPublicBaseUrl());
   }
 
   @Transactional(readOnly = true)
@@ -70,7 +85,7 @@ public class LessonService {
       throw new BadRequestException("Informe youtubeVideoId ou videoUrl");
     }
 
-    String videoUrl = normalizeVideoUrl(req.videoUrl());
+    String videoUrl = normalizeVideoUrl(req.videoUrl(), videoUrlAllowedHosts);
 
     Course course = courseService.requireAccessible(actor, courseId);
     CourseModule module = resolveModule(course, req.moduleId(), req.moduleTitle());
@@ -136,7 +151,7 @@ public class LessonService {
       }
     }
     if (req.videoUrl() != null) {
-      lesson.setVideoUrl(normalizeVideoUrl(req.videoUrl()));
+      lesson.setVideoUrl(normalizeVideoUrl(req.videoUrl(), videoUrlAllowedHosts));
       if (lesson.getVideoUrl() != null) {
         lesson.setYoutubeVideoId(null);
       }
@@ -193,22 +208,77 @@ public class LessonService {
     return value.trim();
   }
 
+  static Set<String> buildAllowedHosts(String csv, String publicBaseUrl) {
+    LinkedHashSet<String> hosts = new LinkedHashSet<>();
+    if (csv != null && !csv.isBlank()) {
+      Arrays.stream(csv.split(","))
+          .map(String::trim)
+          .filter(s -> !s.isEmpty())
+          .map(s -> s.toLowerCase(Locale.ROOT))
+          .forEach(hosts::add);
+    }
+    if (publicBaseUrl != null && !publicBaseUrl.isBlank()) {
+      try {
+        URI base = new URI(publicBaseUrl.trim());
+        if (base.getHost() != null && !base.getHost().isBlank()) {
+          hosts.add(base.getHost().toLowerCase(Locale.ROOT));
+        }
+      } catch (URISyntaxException ignored) {
+        // ignore malformed public base; S3 config is validated elsewhere
+      }
+    }
+    return Set.copyOf(hosts);
+  }
+
   /**
-   * Rejects data:/blob: payloads (DoS). Only http(s) URLs are stored in {@code video_url}.
+   * Rejects dangerous schemes and optional host allowlist. Only http(s) URLs are stored.
+   * Empty {@code allowedHosts} = any http(s) host (local/demo).
    */
   static String normalizeVideoUrl(String value) {
+    return normalizeVideoUrl(value, Set.of());
+  }
+
+  static String normalizeVideoUrl(String value, Collection<String> allowedHosts) {
     String trimmed = blankToNull(value);
     if (trimmed == null) {
       return null;
     }
-    String lower = trimmed.toLowerCase();
-    if (lower.startsWith("data:") || lower.startsWith("blob:")) {
+
+    URI uri;
+    try {
+      uri = new URI(trimmed);
+    } catch (URISyntaxException ex) {
+      throw new BadRequestException("videoUrl inválida");
+    }
+
+    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
+    if ("data".equals(scheme) || "blob".equals(scheme)) {
       throw new BadRequestException(
           "videoUrl não pode ser data URL ou blob. Faça upload via /api/v1/media/videos.");
     }
-    if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+    if (!"http".equals(scheme) && !"https".equals(scheme)) {
       throw new BadRequestException("videoUrl deve ser uma URL http(s)");
     }
+    if (uri.getRawUserInfo() != null) {
+      throw new BadRequestException("videoUrl não pode conter credenciais");
+    }
+    String host = uri.getHost();
+    if (host == null || host.isBlank()) {
+      throw new BadRequestException("videoUrl deve ter um host válido");
+    }
+
+    if (allowedHosts != null && !allowedHosts.isEmpty()) {
+      String normalizedHost = host.toLowerCase(Locale.ROOT);
+      Set<String> allowed =
+          allowedHosts.stream()
+              .filter(h -> h != null && !h.isBlank())
+              .map(h -> h.toLowerCase(Locale.ROOT))
+              .collect(Collectors.toSet());
+      if (!allowed.contains(normalizedHost)) {
+        throw new BadRequestException("videoUrl host não permitido");
+      }
+    }
+
     return trimmed;
   }
 }

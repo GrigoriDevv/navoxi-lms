@@ -26,7 +26,7 @@ export function isWeakLmsApiToken(token: string | undefined | null): boolean {
 
 /**
  * Base URL usada pelo browser — always same-origin BFF.
- * Server-side proxies use LMS_API_URL + LMS_API_TOKEN.
+ * Server-side proxies (`api-config.server.ts`) usam LMS_API_URL + LMS_API_TOKEN.
  */
 export function apiBaseUrl(): string {
   if (typeof window !== "undefined") {
@@ -36,19 +36,4 @@ export function apiBaseUrl(): string {
     /\/$/,
     ""
   );
-}
-
-export function lmsApiUpstreamUrl(): string {
-  return (process.env.LMS_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
-}
-
-export function lmsApiToken(): string {
-  const fromEnv = process.env.LMS_API_TOKEN;
-  const token = fromEnv ?? "local-dev-token";
-  if (process.env.NODE_ENV === "production" && isWeakLmsApiToken(fromEnv ?? token)) {
-    throw new Error(
-      "LMS_API_TOKEN fraco ou ausente em produção — defina um secret forte (≥24 chars), sem local-dev-token"
-    );
-  }
-  return token;
 }

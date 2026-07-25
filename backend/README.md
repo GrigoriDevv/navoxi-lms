@@ -36,7 +36,7 @@ Rotas de dados exigem `Authorization: Bearer <accessToken JWT>` emitido no login
 
 Microsoft SSO: `POST /api/v1/auth/sso/microsoft` com `{ "email", "name", "microsoftOid" }`. Com `LMS_JIT_PROVISIONING=true` (default em `prod`), cria `UserAccount` no primeiro login (default `aluno`; bootstrap admin via `LMS_BOOTSTRAP_ADMIN_EMAILS` ou banco vazio). Domínio: `LMS_ALLOWED_EMAIL_DOMAINS`.
 
-Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unidade`).
+Admin directory: `GET/POST/PATCH/DELETE /api/v1/users` (roles `admin_premium` / `admin_unidade`). Create pré-provisiona SSO (`authProvider=microsoft` default) ou local/both com senha; DELETE é soft-delete (`inativo`).
 
 **Escopo de unidade:** list/get/mutate de cursos, catálogo, aulas e matrículas filtram por `UserAccount.unitId` no servidor (`UnitScope`). Só `admin_premium` vê todas as unidades. O `useAuthScope` do front é UX — não substitui o filtro da API.
 
@@ -57,7 +57,9 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
 | POST | `/api/v1/auth/login` |
 | POST | `/api/v1/auth/sso/microsoft` |
 | GET | `/api/v1/users` |
+| POST | `/api/v1/users` |
 | PATCH | `/api/v1/users/{id}` |
+| DELETE | `/api/v1/users/{id}` (soft: `status=inativo`) |
 | GET | `/api/v1/users/me` |
 | GET | `/api/v1/users/me/export` |
 | DELETE | `/api/v1/users/me` |
@@ -69,7 +71,9 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
 - Tabela `access_log` (Flyway `V4`): quem, ação, recurso, IP, user-agent, quando. Escrita em login, SSO, `GET /users/me`, export e delete.
 - `GET /api/v1/users/me/export` — portabilidade JSON (perfil, matrículas, progresso, solicitações, notificações, access_log do titular).
 - `DELETE /api/v1/users/me` — direito ao esquecimento via scrub irreversível de PII + `status=inativo` (evita cascade em matrículas/progresso). JWT deixa de autenticar.
-- Criptografia em repouso do Postgres em produção: ver [Produção (Railway) — Encryption at rest](#encryption-at-rest-postgres). Não confundir com criptografia em coluna (`pgcrypto`), avaliada só se entrar CPF/dado sensível no modelo.
+- **Retenção:** progresso 24 meses / `access_log` 12 meses — job diário se `LMS_RETENTION_ENABLED=true`. Política: [`docs/lgpd-data-retention.md`](../docs/lgpd-data-retention.md).
+- Criptografia em repouso do Postgres em produção: ver [Produção (Railway) — Encryption at rest](#encryption-at-rest-postgres).
+- **Criptografia em coluna:** avaliada e **não aplicável** ao modelo atual (sem CPF/dado sensível). Decisão e gatilhos: [`docs/lgpd-column-encryption.md`](../docs/lgpd-column-encryption.md).
 
 ## Produção (Railway)
 
@@ -86,6 +90,7 @@ Admin directory: `GET/PATCH /api/v1/users` (roles `admin_premium` / `admin_unida
    - Seed **off** (hardcoded; `LMS_SEED_ENABLED` ignorado)
    - `LMS_BLOCK_DEMO_SEED_LOGINS=true`
    - Rate limit login: 10 req / 60s por IP e por e-mail (`LMS_LOGIN_RATE_LIMIT_*`)
+   - Rate limit API (mutações + `GET /users/me/export`): 60 req / 60s por IP e por usuário (`LMS_API_RATE_LIMIT_*`; off em local)
 5. Fail-fast no boot se token fraco, CORS vazio ou seed ligado fora do profile `local`.
 
 ### Encryption at rest (Postgres)
@@ -108,6 +113,9 @@ Em trânsito (assunto separado): preferir **Private Network** entre API e Postgr
 | `LMS_LOGIN_RATE_LIMIT_ENABLED` | `true` (default prod) |
 | `LMS_LOGIN_RATE_LIMIT_MAX` | `10` (default) |
 | `LMS_LOGIN_RATE_LIMIT_WINDOW_SECONDS` | `60` (default) |
+| `LMS_API_RATE_LIMIT_ENABLED` | `true` (default prod; off em local) |
+| `LMS_API_RATE_LIMIT_MAX` | `60` (default) |
+| `LMS_API_RATE_LIMIT_WINDOW_SECONDS` | `60` (default) |
 
 ## Front
 
@@ -125,3 +133,5 @@ Em **produção** do Next, `LMS_API_TOKEN` fraco/ausente lança erro (mesmo valo
 
 - `POST /api/v1/auth/**` (Next→Java): `Authorization: Bearer <LMS_API_TOKEN>`
 - Demais `/api/v1/**`: `Authorization: Bearer <accessToken JWT>` do login (via BFF)
+
+`LMS_API_TOKEN` é **server-only**: nunca em `NEXT_PUBLIC_*` e lido apenas em [`src/lib/api-config.server.ts`](../src/lib/api-config.server.ts) (marcado com `import "server-only"`), consumido só pelas rotas `/api/auth/**`. Gate contínuo: `npm run check:secrets` / CI (`scripts/check-lms-api-token-server-only.mjs`). Validado com canário no build: o valor não aparece em `.next/static` (bundle client).

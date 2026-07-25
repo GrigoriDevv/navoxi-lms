@@ -20,10 +20,15 @@ public class SecurityConfig {
 
   private final ApiTokenFilter apiTokenFilter;
   private final JwtAuthFilter jwtAuthFilter;
+  private final ApiRateLimitFilter apiRateLimitFilter;
 
-  public SecurityConfig(ApiTokenFilter apiTokenFilter, JwtAuthFilter jwtAuthFilter) {
+  public SecurityConfig(
+      ApiTokenFilter apiTokenFilter,
+      JwtAuthFilter jwtAuthFilter,
+      ApiRateLimitFilter apiRateLimitFilter) {
     this.apiTokenFilter = apiTokenFilter;
     this.jwtAuthFilter = jwtAuthFilter;
+    this.apiRateLimitFilter = apiRateLimitFilter;
   }
 
   @Bean
@@ -70,6 +75,7 @@ public class SecurityConfig {
 
     http.addFilterBefore(apiTokenFilter, UsernamePasswordAuthenticationFilter.class);
     http.addFilterAfter(jwtAuthFilter, ApiTokenFilter.class);
+    http.addFilterAfter(apiRateLimitFilter, JwtAuthFilter.class);
     return http.build();
   }
 }

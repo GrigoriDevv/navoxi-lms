@@ -16,6 +16,7 @@ public class AccessLogService {
   public static final String ACTION_USERS_ME = "users.me.read";
   public static final String ACTION_USERS_EXPORT = "users.me.export";
   public static final String ACTION_USERS_DELETE = "users.me.delete";
+  public static final String ACTION_RETENTION_PURGE = "retention.purge";
 
   private final AccessLogRepository logs;
 

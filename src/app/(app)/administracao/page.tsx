@@ -31,6 +31,7 @@ export default function AdministracaoPage() {
     loading,
     apiError,
     savingId,
+    submitting,
     form,
     setForm,
     users,
@@ -42,6 +43,7 @@ export default function AdministracaoPage() {
     blockedCount,
     submit,
     patchUser,
+    deactivateUser,
   } = useAdministracaoPage();
 
   return (
@@ -54,7 +56,6 @@ export default function AdministracaoPage() {
             : `Gestão de usuários · escopo: ${unitLabel}`
         }
         action={
-          !javaApi &&
           (can("manage_users_all") || can("manage_users_unit")) && (
             <Button onClick={() => setOpen(true)}>
               <Icon name="plus" className="w-4 h-4" />
@@ -67,8 +68,9 @@ export default function AdministracaoPage() {
       {javaApi && (
         <Card className="p-4 mb-4 bg-slate-50 border-slate-200">
           <p className="text-sm text-slate-700">
-            Usuários vêm do Postgres. Novos acessos entram via Microsoft SSO (JIT).
-            Altere perfil/unidade abaixo para promover contas.
+            Usuários vêm do Postgres. Pré-cadastre aqui (SSO no mesmo e-mail reutiliza a
+            conta) ou deixe o Microsoft SSO criar via JIT. Altere perfil/unidade abaixo
+            para promover; use Desativar para soft-delete.
           </p>
         </Card>
       )}
@@ -123,7 +125,7 @@ export default function AdministracaoPage() {
           <Table
             head={
               javaApi
-                ? ["Usuário", "Perfil", "Unidade", "Status"]
+                ? ["Usuário", "Perfil", "Unidade", "Status", ""]
                 : ["Usuário", "Perfil", "Unidade", "Departamento", "Status"]
             }
           >
@@ -214,6 +216,20 @@ export default function AdministracaoPage() {
                     </Badge>
                   )}
                 </td>
+                {javaApi && (can("manage_users_all") || can("manage_users_unit")) && (
+                  <td className="px-4 py-3 text-right">
+                    {u.status !== "inativo" && (
+                      <Button
+                        variant="outline"
+                        className="text-xs px-2 py-1"
+                        disabled={savingId === u.id}
+                        onClick={() => void deactivateUser(u.id)}
+                      >
+                        Desativar
+                      </Button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </Table>
@@ -221,7 +237,11 @@ export default function AdministracaoPage() {
       </div>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Cadastrar novo usuário">
-        <form onSubmit={submit}>
+        <form
+          onSubmit={(e) => {
+            void submit(e);
+          }}
+        >
           <Field label="Nome completo">
             <input required className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
@@ -251,11 +271,18 @@ export default function AdministracaoPage() {
           <Field label="Departamento">
             <input className={inputClass} value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
           </Field>
+          {javaApi && (
+            <p className="text-xs text-slate-500 mb-2">
+              Conta pré-provisionada para Microsoft SSO (sem senha local).
+            </p>
+          )}
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button type="submit">
+            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
               <Icon name="check" className="w-4 h-4" />
-              Salvar usuário
+              {submitting ? "Salvando…" : "Salvar usuário"}
             </Button>
           </div>
         </form>

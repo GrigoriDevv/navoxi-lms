@@ -70,8 +70,14 @@ Admin directory: `GET/POST/PATCH/DELETE /api/v1/users` (roles `admin_premium` / 
 | GET | `/api/v1/attempts/{id}` |
 | PUT | `/api/v1/attempts/{id}/answers` |
 | POST | `/api/v1/attempts/{id}/submit` |
+| GET | `/api/v1/permissions` |
+| GET/PATCH | `/api/v1/permissions/{id}` |
+| GET | `/api/v1/scheduled-jobs` |
+| GET/PATCH | `/api/v1/scheduled-jobs/{id}` |
 
 Submit auto-corrige questões `multipla` / `verdadeiro` (`corrigida` + `scorePct`); com dissertativa → `aguardando_correcao`.
+
+Permissions e scheduled jobs são configuração global (`admin_premium`). A matriz de permissões é persistência/exibição: o enforcement continua nos `@PreAuthorize` por role.
 
 ### LGPD (MVP)
 

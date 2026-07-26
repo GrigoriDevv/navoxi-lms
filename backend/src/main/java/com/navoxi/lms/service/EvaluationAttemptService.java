@@ -3,9 +3,11 @@ package com.navoxi.lms.service;
 import com.navoxi.lms.domain.entity.AttemptAnswer;
 import com.navoxi.lms.domain.entity.Evaluation;
 import com.navoxi.lms.domain.entity.EvaluationAttempt;
+import com.navoxi.lms.domain.entity.Question;
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.AttemptStatus;
 import com.navoxi.lms.domain.enums.EvaluationStatus;
+import com.navoxi.lms.domain.enums.QuestionType;
 import com.navoxi.lms.domain.enums.Role;
 import com.navoxi.lms.repository.EvaluationAttemptRepository;
 import com.navoxi.lms.repository.EvaluationRepository;
@@ -15,6 +17,7 @@ import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.AttemptAnswerDto;
 import com.navoxi.lms.web.dto.AttemptDto;
+import com.navoxi.lms.web.dto.GradeAnswerRequest;
 import com.navoxi.lms.web.dto.SaveAnswersRequest;
 import java.time.Instant;
 import java.util.HashSet;
@@ -144,6 +147,42 @@ public class EvaluationAttemptService {
     return toDto(attempts.save(attempt));
   }
 
+  @Transactional
+  public AttemptDto gradeAnswer(
+      UserAccount actor, String attemptId, String answerId, GradeAnswerRequest body) {
+    EvaluationAttempt attempt =
+        attempts
+            .findById(attemptId)
+            .orElseThrow(() -> new NotFoundException("Tentativa não encontrada"));
+    UnitScope.assertCanAccessUnit(actor, attempt.getEvaluation().getUnitId());
+    if (!isStaff(actor)) {
+      throw new ForbiddenException("Sem permissão para corrigir esta tentativa");
+    }
+    if (attempt.getStatus() != AttemptStatus.aguardando_correcao
+        && attempt.getStatus() != AttemptStatus.corrigida) {
+      throw new BadRequestException("Tentativa não está em correção");
+    }
+
+    AttemptAnswer answer =
+        attempt.getAnswers().stream()
+            .filter(a -> a.getId().equals(answerId))
+            .findFirst()
+            .orElseThrow(() -> new NotFoundException("Resposta não encontrada"));
+
+    Question question = grading.requireQuestion(answer.getQuestionId());
+    if (question.getType() != QuestionType.dissertativa) {
+      throw new BadRequestException("Apenas questões dissertativas são corrigidas manualmente");
+    }
+    if (body == null || body.isCorrect() == null) {
+      throw new BadRequestException("isCorrect é obrigatório");
+    }
+
+    answer.setIsCorrect(body.isCorrect());
+    answer.setFeedback(body.feedback());
+    grading.recomputeAfterManualGrade(attempt);
+    return toDto(attempts.save(attempt));
+  }
+
   private EvaluationAttempt requireOwnedOpen(UserAccount actor, String attemptId) {
     EvaluationAttempt attempt =
         attempts
@@ -194,7 +233,8 @@ public class EvaluationAttemptService {
                         ans.getQuestionId(),
                         ans.getResponseText(),
                         ans.getSelectedOption(),
-                        ans.getIsCorrect()))
+                        ans.getIsCorrect(),
+                        ans.getFeedback()))
             .toList();
     return new AttemptDto(
         a.getId(),

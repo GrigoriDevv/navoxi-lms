@@ -324,6 +324,7 @@ export interface AttemptAnswer {
   responseText?: string | null;
   selectedOption?: string | null;
   isCorrect?: boolean | null;
+  feedback?: string | null;
 }
 
 export interface EvaluationAttempt {

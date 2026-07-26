@@ -154,6 +154,7 @@ type ApiAttemptAnswer = {
   responseText?: string | null;
   selectedOption?: string | null;
   isCorrect?: boolean | null;
+  feedback?: string | null;
 };
 
 type ApiAttempt = {
@@ -280,6 +281,7 @@ function mapAttemptAnswer(a: ApiAttemptAnswer): AttemptAnswer {
     responseText: a.responseText ?? null,
     selectedOption: a.selectedOption ?? null,
     isCorrect: a.isCorrect ?? null,
+    feedback: a.feedback ?? null,
   };
 }
 
@@ -719,6 +721,24 @@ export const lmsApi = {
     const data = await request<ApiAttempt>(`/api/v1/attempts/${id}/submit`, {
       method: "POST",
     });
+    return mapAttempt(data);
+  },
+
+  gradeAttemptAnswer: async (
+    attemptId: string,
+    answerId: string,
+    body: { isCorrect: boolean; feedback?: string | null }
+  ) => {
+    const data = await request<ApiAttempt>(
+      `/api/v1/attempts/${attemptId}/answers/${answerId}/grade`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          isCorrect: body.isCorrect,
+          feedback: body.feedback ?? null,
+        }),
+      }
+    );
     return mapAttempt(data);
   },
 

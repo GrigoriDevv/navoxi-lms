@@ -2,10 +2,12 @@ package com.navoxi.lms.web;
 
 import com.navoxi.lms.service.EvaluationAttemptService;
 import com.navoxi.lms.web.dto.AttemptDto;
+import com.navoxi.lms.web.dto.GradeAnswerRequest;
 import com.navoxi.lms.web.dto.SaveAnswersRequest;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -56,5 +58,13 @@ public class EvaluationAttemptController {
   @PostMapping("/attempts/{id}/submit")
   public AttemptDto submit(@PathVariable String id) {
     return attempts.submit(currentUser.require(), id);
+  }
+
+  @PatchMapping("/attempts/{attemptId}/answers/{answerId}/grade")
+  public AttemptDto gradeAnswer(
+      @PathVariable String attemptId,
+      @PathVariable String answerId,
+      @RequestBody GradeAnswerRequest body) {
+    return attempts.gradeAnswer(currentUser.require(), attemptId, answerId, body);
   }
 }

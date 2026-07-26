@@ -187,6 +187,27 @@ type ApiAttempt = {
   answers: ApiAttemptAnswer[];
 };
 
+type ApiAttemptAnswer = {
+  id: string;
+  questionId: string;
+  responseText?: string | null;
+  selectedOption?: string | null;
+  isCorrect?: boolean | null;
+};
+
+type ApiAttempt = {
+  id: string;
+  evaluationId: string;
+  userId: string;
+  userName: string;
+  attemptNumber: number;
+  status: EvaluationAttempt["status"];
+  startedAt: string;
+  submittedAt?: string | null;
+  scorePct?: number | null;
+  answers: ApiAttemptAnswer[];
+};
+
 type ApiPost = {
   id: string;
   title: string;
@@ -390,6 +411,31 @@ function mapAttemptAnswer(a: ApiAttemptAnswer): AttemptAnswer {
     selectedOption: a.selectedOption ?? null,
     isCorrect: a.isCorrect ?? null,
     feedback: a.feedback ?? null,
+  };
+}
+
+function mapAttempt(a: ApiAttempt): EvaluationAttempt {
+  return {
+    id: a.id,
+    evaluationId: a.evaluationId,
+    userId: a.userId,
+    userName: a.userName,
+    attemptNumber: a.attemptNumber,
+    status: a.status,
+    startedAt: a.startedAt,
+    submittedAt: a.submittedAt ?? null,
+    scorePct: a.scorePct ?? null,
+    answers: (a.answers ?? []).map(mapAttemptAnswer),
+  };
+}
+
+function mapAttemptAnswer(a: ApiAttemptAnswer): AttemptAnswer {
+  return {
+    id: a.id,
+    questionId: a.questionId,
+    responseText: a.responseText ?? null,
+    selectedOption: a.selectedOption ?? null,
+    isCorrect: a.isCorrect ?? null,
   };
 }
 

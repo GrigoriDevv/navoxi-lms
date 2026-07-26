@@ -384,6 +384,29 @@ export interface StudentPendingRow {
   pendingEvaluations: PendingEvaluation[];
 }
 
+export type AttemptStatus = "em_andamento" | "enviada" | "corrigida";
+
+export interface AttemptAnswer {
+  id: string;
+  questionId: string;
+  responseText?: string | null;
+  selectedOption?: string | null;
+  isCorrect?: boolean | null;
+}
+
+export interface EvaluationAttempt {
+  id: string;
+  evaluationId: string;
+  userId: string;
+  userName: string;
+  attemptNumber: number;
+  status: AttemptStatus;
+  startedAt: string;
+  submittedAt?: string | null;
+  scorePct?: number | null;
+  answers: AttemptAnswer[];
+}
+
 export interface Destaque {
   id: string;
   title: string;

@@ -8,6 +8,7 @@ export const LMS_BFF_ALLOWED_PREFIXES = [
   "enrollments",
   "questions",
   "evaluations",
+  "attempts",
   "posts",
   "destaques",
   "media",

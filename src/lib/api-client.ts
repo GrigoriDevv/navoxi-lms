@@ -4,6 +4,8 @@ import type {
   CourseModule,
   Destaque,
   Evaluation,
+  EvaluationAttempt,
+  AttemptAnswer,
   InscricaoCurso,
   LessonProgress,
   Notification,
@@ -142,6 +144,27 @@ type ApiEvaluation = {
   appliedAt?: string | null;
 };
 
+type ApiAttemptAnswer = {
+  id: string;
+  questionId: string;
+  responseText?: string | null;
+  selectedOption?: string | null;
+  isCorrect?: boolean | null;
+};
+
+type ApiAttempt = {
+  id: string;
+  evaluationId: string;
+  userId: string;
+  userName: string;
+  attemptNumber: number;
+  status: EvaluationAttempt["status"];
+  startedAt: string;
+  submittedAt?: string | null;
+  scorePct?: number | null;
+  answers: ApiAttemptAnswer[];
+};
+
 type ApiPost = {
   id: string;
   title: string;
@@ -223,6 +246,31 @@ function mapEvaluation(e: ApiEvaluation): Evaluation {
     status: e.status,
     dueDate: e.dueDate,
     appliedAt: e.appliedAt ?? undefined,
+  };
+}
+
+function mapAttemptAnswer(a: ApiAttemptAnswer): AttemptAnswer {
+  return {
+    id: a.id,
+    questionId: a.questionId,
+    responseText: a.responseText ?? null,
+    selectedOption: a.selectedOption ?? null,
+    isCorrect: a.isCorrect ?? null,
+  };
+}
+
+function mapAttempt(a: ApiAttempt): EvaluationAttempt {
+  return {
+    id: a.id,
+    evaluationId: a.evaluationId,
+    userId: a.userId,
+    userName: a.userName,
+    attemptNumber: a.attemptNumber,
+    status: a.status,
+    startedAt: a.startedAt,
+    submittedAt: a.submittedAt ?? null,
+    scorePct: a.scorePct ?? null,
+    answers: (a.answers ?? []).map(mapAttemptAnswer),
   };
 }
 
@@ -578,6 +626,50 @@ export const lmsApi = {
       method: "POST",
     });
     return mapEvaluation(data);
+  },
+
+  listMyAttempts: async () => {
+    const data = await request<ApiAttempt[]>("/api/v1/attempts/mine");
+    return data.map(mapAttempt);
+  },
+
+  listEvaluationAttempts: async (evaluationId: string) => {
+    const data = await request<ApiAttempt[]>(`/api/v1/evaluations/${evaluationId}/attempts`);
+    return data.map(mapAttempt);
+  },
+
+  startEvaluationAttempt: async (evaluationId: string) => {
+    const data = await request<ApiAttempt>(`/api/v1/evaluations/${evaluationId}/attempts`, {
+      method: "POST",
+    });
+    return mapAttempt(data);
+  },
+
+  getAttempt: async (id: string) => {
+    const data = await request<ApiAttempt>(`/api/v1/attempts/${id}`);
+    return mapAttempt(data);
+  },
+
+  saveAttemptAnswers: async (
+    id: string,
+    answers: Array<{
+      questionId: string;
+      responseText?: string | null;
+      selectedOption?: string | null;
+    }>
+  ) => {
+    const data = await request<ApiAttempt>(`/api/v1/attempts/${id}/answers`, {
+      method: "PUT",
+      body: JSON.stringify({ answers }),
+    });
+    return mapAttempt(data);
+  },
+
+  submitAttempt: async (id: string) => {
+    const data = await request<ApiAttempt>(`/api/v1/attempts/${id}/submit`, {
+      method: "POST",
+    });
+    return mapAttempt(data);
   },
 
   listPosts: async () => {

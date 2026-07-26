@@ -8,7 +8,8 @@ Base: retenção limitada aos fins do tratamento (LGPD Arts. 15 e 16). Este docu
 |------|-------|------|
 | `lesson_progress` | **24 meses** após `completed_at` | Delete das linhas |
 | `access_log` | **12 meses** após `created_at` | Delete das linhas |
-| Avaliações (catálogo `evaluations` / questions) | N/A — não são dado do titular | Quando existirem **respostas/tentativas** do aluno: 24 meses após a tentativa |
+| Avaliações (catálogo `evaluations` / questions) | N/A — não são dado do titular | — |
+| Tentativas / respostas (`evaluation_attempts`, `attempt_answers`) | **24 meses** após `submitted_at` (ou `started_at` se não enviada) | **Persistido** (V8); purge automático ainda **não** implementado — estender `RetentionPurgeService` no próximo ciclo |
 | Certificados | **5 anos** após emissão (ou até `expiresAt`) | Hoje são **mock** no frontend; job Java quando houver tabela Postgres |
 
 Overrides opcionais via env (meses): `LMS_RETENTION_PROGRESS_MONTHS`, `LMS_RETENTION_ACCESS_LOG_MONTHS`.
@@ -33,7 +34,7 @@ O purge **não** substitui o direito ao esquecimento: só aplica prazos de reten
 ## Fora de escopo (neste ciclo)
 
 - Tabela/persistência de certificados
-- Tentativas/respostas de avaliação do aluno
+- Purge automático de `evaluation_attempts` / `attempt_answers` (prazo já documentado acima)
 - Anonimização parcial de linhas (purge usa **delete**)
 
 ## Relacionados

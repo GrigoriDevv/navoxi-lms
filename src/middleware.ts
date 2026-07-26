@@ -3,7 +3,7 @@ import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
 import { canAccessRoute } from "@/lib/rbac";
 import type { Role } from "@/lib/types";
 
-const PUBLIC_PATHS = ["/login", "/api/auth"];
+const PUBLIC_PATHS = ["/login", "/api/auth", "/certificados", "/api/certificates"];
 
 function isPublic(pathname: string): boolean {
   if (pathname === "/") return true;

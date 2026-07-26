@@ -1,5 +1,7 @@
 import type {
+  Certificado,
   Course,
+  CourseCompletionRow,
   CourseLesson,
   CourseModule,
   Destaque,
@@ -9,9 +11,12 @@ import type {
   InscricaoCurso,
   LessonProgress,
   Notification,
+  Permission,
   Post,
   Question,
+  ScheduledJob,
   SolicitacaoMatricula,
+  StudentPendingRow,
   User,
 } from "./types";
 import { apiBaseUrl } from "./api-config";
@@ -129,6 +134,8 @@ type ApiQuestion = {
   category: string;
   unitId: Question["unitId"];
   usageCount: number;
+  options?: string[] | null;
+  correctKey?: string | null;
 };
 
 type ApiEvaluation = {
@@ -142,6 +149,20 @@ type ApiEvaluation = {
   status: Evaluation["status"];
   dueDate: string;
   appliedAt?: string | null;
+  passingScorePct?: number | null;
+};
+
+type ApiCertificate = {
+  id: string;
+  userId: string;
+  userName: string;
+  courseId: string;
+  courseTitle: string;
+  unitId: Certificado["unitId"];
+  issuedAt: string;
+  expiresAt: string;
+  status: Certificado["status"];
+  validationHash: string;
 };
 
 type ApiAttemptAnswer = {
@@ -150,6 +171,7 @@ type ApiAttemptAnswer = {
   responseText?: string | null;
   selectedOption?: string | null;
   isCorrect?: boolean | null;
+  feedback?: string | null;
 };
 
 type ApiAttempt = {
@@ -185,6 +207,99 @@ type ApiDestaque = {
   publishedAt: string;
   expiresAt?: string | null;
 };
+
+type ApiPermission = {
+  id: string;
+  name: string;
+  description: string;
+  roles: Permission["roles"];
+};
+
+type ApiScheduledJob = {
+  id: string;
+  name: string;
+  schedule: string;
+  module: string;
+  action: string;
+  enabled: boolean;
+  lastRun?: string | null;
+  nextRun?: string | null;
+};
+
+type ApiCompletionRow = {
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: CourseCompletionRow["unitId"];
+  enrolled: number;
+  completed: number;
+  inProgress: number;
+  notStarted: number;
+  avgProgressPct: number;
+  completionRatePct: number;
+};
+
+type ApiPendingEvaluation = {
+  evaluationId: string;
+  name: string;
+  dueDate: string;
+  state: StudentPendingRow["pendingEvaluations"][number]["state"];
+};
+
+type ApiPendingRow = {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: StudentPendingRow["unitId"];
+  progressPct: number;
+  lessonsTotal: number;
+  lessonsCompleted: number;
+  lessonsPending: number;
+  pendingLessonTitles: string[];
+  evaluationsTotal: number;
+  evaluationsPending: number;
+  pendingEvaluations: ApiPendingEvaluation[];
+};
+
+export type ReportFilters = {
+  courseId?: string;
+  turmaId?: string;
+  unitId?: string;
+  userId?: string;
+};
+
+function reportQuery(filters?: ReportFilters): string {
+  if (!filters) return "";
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function mapCompletionRow(r: ApiCompletionRow): CourseCompletionRow {
+  return {
+    ...r,
+    turmaId: r.turmaId ?? undefined,
+    turmaName: r.turmaName ?? undefined,
+  };
+}
+
+function mapPendingRow(r: ApiPendingRow): StudentPendingRow {
+  return {
+    ...r,
+    turmaId: r.turmaId ?? undefined,
+    turmaName: r.turmaName ?? undefined,
+    pendingLessonTitles: r.pendingLessonTitles ?? [],
+    pendingEvaluations: r.pendingEvaluations ?? [],
+  };
+}
 
 function mapCourse(c: ApiCourse): Course {
   return { ...c };
@@ -231,6 +346,8 @@ function mapQuestion(q: ApiQuestion): Question {
     category: q.category,
     unitId: q.unitId,
     usageCount: q.usageCount,
+    options: q.options ?? undefined,
+    correctKey: q.correctKey ?? undefined,
   };
 }
 
@@ -246,6 +363,22 @@ function mapEvaluation(e: ApiEvaluation): Evaluation {
     status: e.status,
     dueDate: e.dueDate,
     appliedAt: e.appliedAt ?? undefined,
+    passingScorePct: e.passingScorePct ?? undefined,
+  };
+}
+
+function mapCertificate(c: ApiCertificate): Certificado {
+  return {
+    id: c.id,
+    userId: c.userId,
+    userName: c.userName,
+    courseId: c.courseId,
+    courseTitle: c.courseTitle,
+    unitId: c.unitId,
+    issuedAt: c.issuedAt,
+    expiresAt: c.expiresAt,
+    status: c.status,
+    validationHash: c.validationHash,
   };
 }
 
@@ -256,6 +389,7 @@ function mapAttemptAnswer(a: ApiAttemptAnswer): AttemptAnswer {
     responseText: a.responseText ?? null,
     selectedOption: a.selectedOption ?? null,
     isCorrect: a.isCorrect ?? null,
+    feedback: a.feedback ?? null,
   };
 }
 
@@ -296,6 +430,28 @@ function mapDestaque(d: ApiDestaque): Destaque {
     pinned: d.pinned,
     publishedAt: d.publishedAt,
     expiresAt: d.expiresAt ?? undefined,
+  };
+}
+
+function mapPermission(p: ApiPermission): Permission {
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    roles: p.roles ?? [],
+  };
+}
+
+function mapScheduledJob(j: ApiScheduledJob): ScheduledJob {
+  return {
+    id: j.id,
+    name: j.name,
+    schedule: j.schedule,
+    module: j.module,
+    action: j.action,
+    enabled: j.enabled,
+    lastRun: j.lastRun ?? undefined,
+    nextRun: j.nextRun ?? undefined,
   };
 }
 
@@ -560,6 +716,8 @@ export const lmsApi = {
         type: body.type,
         category: body.category,
         unitId: body.unitId,
+        options: body.options ?? null,
+        correctKey: body.correctKey ?? null,
       }),
     });
     return mapQuestion(data);
@@ -573,6 +731,8 @@ export const lmsApi = {
         type: body.type,
         category: body.category,
         unitId: body.unitId,
+        options: body.options ?? null,
+        correctKey: body.correctKey ?? null,
       }),
     });
     return mapQuestion(data);
@@ -597,6 +757,7 @@ export const lmsApi = {
         questionIds: body.questionIds,
         status: body.status,
         dueDate: body.dueDate,
+        passingScorePct: body.passingScorePct,
       }),
     });
     return mapEvaluation(data);
@@ -616,6 +777,7 @@ export const lmsApi = {
         questionIds: body.questionIds,
         status: body.status,
         dueDate: body.dueDate,
+        passingScorePct: body.passingScorePct,
       }),
     });
     return mapEvaluation(data);
@@ -669,6 +831,24 @@ export const lmsApi = {
     const data = await request<ApiAttempt>(`/api/v1/attempts/${id}/submit`, {
       method: "POST",
     });
+    return mapAttempt(data);
+  },
+
+  gradeAttemptAnswer: async (
+    attemptId: string,
+    answerId: string,
+    body: { isCorrect: boolean; feedback?: string | null }
+  ) => {
+    const data = await request<ApiAttempt>(
+      `/api/v1/attempts/${attemptId}/answers/${answerId}/grade`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          isCorrect: body.isCorrect,
+          feedback: body.feedback ?? null,
+        }),
+      }
+    );
     return mapAttempt(data);
   },
 
@@ -744,6 +924,103 @@ export const lmsApi = {
       }),
     });
     return mapDestaque(data);
+  },
+
+  listPermissions: async () => {
+    const data = await request<ApiPermission[]>("/api/v1/permissions");
+    return data.map(mapPermission);
+  },
+
+  updatePermission: async (id: string, body: Partial<Omit<Permission, "id">>) => {
+    const data = await request<ApiPermission>(`/api/v1/permissions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: body.name,
+        description: body.description,
+        roles: body.roles,
+      }),
+    });
+    return mapPermission(data);
+  },
+
+  listScheduledJobs: async () => {
+    const data = await request<ApiScheduledJob[]>("/api/v1/scheduled-jobs");
+    return data.map(mapScheduledJob);
+  },
+
+  updateScheduledJob: async (
+    id: string,
+    body: Partial<Omit<ScheduledJob, "id">>
+  ) => {
+    const data = await request<ApiScheduledJob>(`/api/v1/scheduled-jobs/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: body.name,
+        schedule: body.schedule,
+        module: body.module,
+        action: body.action,
+        enabled: body.enabled,
+        lastRun: body.lastRun,
+        nextRun: body.nextRun,
+      }),
+    });
+    return mapScheduledJob(data);
+  },
+
+  getCompletionReport: async (filters?: ReportFilters) => {
+    const data = await request<ApiCompletionRow[]>(
+      `/api/v1/reports/completion${reportQuery(filters)}`
+    );
+    return data.map(mapCompletionRow);
+  },
+
+  getPendingReport: async (filters?: ReportFilters) => {
+    const data = await request<ApiPendingRow[]>(
+      `/api/v1/reports/pending${reportQuery(filters)}`
+    );
+    return data.map(mapPendingRow);
+  },
+
+  listMyCertificates: async () => {
+    const data = await request<ApiCertificate[]>("/api/v1/certificates/me");
+    return data.map(mapCertificate);
+  },
+
+  downloadCertificatePdf: async (id: string) => {
+    const res = await fetch(toBffPath(`/api/v1/certificates/${id}/pdf`), {
+      credentials: "same-origin",
+    });
+    if (!res.ok) {
+      throw new ApiError(`API ${res.status}`, res.status);
+    }
+    return res.blob();
+  },
+
+  verifyCertificate: async (hash: string) => {
+    const res = await fetch(`/api/certificates/verify/${encodeURIComponent(hash)}`, {
+      credentials: "same-origin",
+    });
+    const text = await res.text();
+    const data = text ? (JSON.parse(text) as ApiCertificate | { error?: string }) : null;
+    if (!res.ok) {
+      const msg =
+        data && typeof data === "object" && "error" in data && data.error
+          ? String(data.error)
+          : `API ${res.status}`;
+      throw new ApiError(msg, res.status);
+    }
+    return mapCertificate(data as ApiCertificate);
+  },
+
+  downloadCertificatePdfByHash: async (hash: string) => {
+    const res = await fetch(
+      `/api/certificates/verify/${encodeURIComponent(hash)}/pdf`,
+      { credentials: "same-origin" }
+    );
+    if (!res.ok) {
+      throw new ApiError(`API ${res.status}`, res.status);
+    }
+    return res.blob();
   },
 };
 

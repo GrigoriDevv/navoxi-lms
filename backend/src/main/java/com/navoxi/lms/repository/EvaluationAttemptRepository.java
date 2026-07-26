@@ -2,6 +2,7 @@ package com.navoxi.lms.repository;
 
 import com.navoxi.lms.domain.entity.EvaluationAttempt;
 import com.navoxi.lms.domain.enums.AttemptStatus;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 public interface EvaluationAttemptRepository extends JpaRepository<EvaluationAttempt, String> {
 
   List<EvaluationAttempt> findByUserIdOrderByStartedAtDesc(String userId);
+
+  List<EvaluationAttempt> findByUserIdIn(Collection<String> userIds);
 
   List<EvaluationAttempt> findByEvaluationIdOrderByStartedAtDesc(String evaluationId);
 

@@ -17,7 +17,9 @@ public final class QuestionEvaluationMapper {
         q.getType(),
         q.getCategory(),
         q.getUnitId(),
-        q.getUsageCount());
+        q.getUsageCount(),
+        q.getOptions() == null ? null : List.copyOf(q.getOptions()),
+        q.getCorrectKey());
   }
 
   public static EvaluationDto toDto(Evaluation e) {
@@ -32,6 +34,7 @@ public final class QuestionEvaluationMapper {
         e.getQuestionCount(),
         e.getStatus(),
         e.getDueDate(),
-        e.getAppliedAt());
+        e.getAppliedAt(),
+        e.getPassingScorePct() == null ? 70.0 : e.getPassingScorePct());
   }
 }

@@ -99,16 +99,16 @@ Com `NEXT_PUBLIC_USE_JAVA_API=true` + backend Java:
 
 ### Demo UI / Fase 2 (mock — oculto em produção)
 
-Rotas abaixo usam seed/`localStorage` e **não** têm backend Java. Em `NODE_ENV=production` ficam bloqueadas (nav + deep link → redirect `/dashboard`), salvo `NEXT_PUBLIC_SHOW_MOCK_MODULES=true` (staging/demo controlada).
+Rotas abaixo ficam **gated em prod** (nav + deep link → redirect `/dashboard`), salvo `NEXT_PUBLIC_SHOW_MOCK_MODULES=true` (staging/demo controlada). Algumas já misturam API Java com slices mock.
 
 | Rota | Status |
 |---|---|
 | `/auditoria` | Mock (export sem handler; IP seed `10.2.31.5`) |
-| `/configuracoes` | Mock |
-| `/comunicacao` | Mock |
-| `/integracoes` | Mock (SSO/RH/BI só UI) |
-| `/aprendizagem/certificados` | Mock |
-| `/aprendizagem/avaliacoes` | Mock |
+| `/configuracoes` | Gated — settings mock; jobs agendados via Java (Wave C) quando API on |
+| `/comunicacao` | Gated — posts/destaques Java (Wave B); alertas/mail/campanhas mock |
+| `/integracoes` | Gated — SSO/RH/BI mock; jobs via store Java (Wave C) quando API on |
+| `/aprendizagem/certificados` | Mock (lista UI); emissão/PDF/verify no Java |
+| `/aprendizagem/avaliacoes` | Avaliações via Java (Wave A); rota não gated |
 | `/administracao` | **Fase 1** com Java API; oculto em prod se `NEXT_PUBLIC_USE_JAVA_API` ≠ `true` |
 
 O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são filtrados automaticamente conforme **RBAC**, escopo de unidade e o gate de módulos mock (`src/lib/mock-module-gates.ts`).
@@ -128,7 +128,7 @@ O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são fil
 
 | Rota | Requisitos | Status | Descrição |
 |---|---|---|---|
-| `/identidade` | Admin Premium | Preview / parcial | Perfis, matriz de permissões, políticas de segurança, sessões |
+| `/identidade` | Admin Premium | Preview / parcial | Perfis, matriz de permissões (Java API / BFF quando `NEXT_PUBLIC_USE_JAVA_API=true`), políticas de segurança, sessões |
 | `/administracao` | Admin Premium / Unidade | **Fase 1** (com Java API) | Gestão de usuários, busca, departamentos |
 
 ### Aprendizagem
@@ -213,9 +213,9 @@ O banner de destaques no dashboard consome o store (`DestaquesBanner` → `useAu
 
 | Rota | Status | Descrição |
 |---|---|---|
-| `/relatorios` | Preview | KPIs e gráficos |
-| `/configuracoes` | **Demo UI / Fase 2** | Parâmetros gerais, módulos, interface (mock) |
-| `/integracoes` | **Demo UI / Fase 2** | SSO, RH, BI, webhooks (mock) |
+| `/relatorios` | Preview (misto) | KPIs e gráficos mock na página; endpoints Java `GET /api/v1/reports/completion` e `/reports/pending` já disponíveis (não plugados na UI) |
+| `/configuracoes` | **Demo UI / Fase 2** (misto) | Parâmetros/UI mock; jobs agendados via Java (Wave C). Rota gated. |
+| `/integracoes` | **Demo UI / Fase 2** (misto) | SSO/RH/BI mock; jobs via store Java (Wave C). Rota gated. |
 | `/auditoria` | **Demo UI / Fase 2** | Trilha de auditoria mock; export sem handler |
 
 ## Controle de acesso (RBAC)
@@ -319,12 +319,13 @@ Toda mutação relevante (criar curso, inscrever aluno, alterar configuração) 
 | `Question` / `Evaluation` | Avaliações vinculadas a curso/turma |
 | `ContentAsset` | Repositório de mídias |
 | `Post` / `Destaque` / `InternalMail` | Comunicação interna |
-| `Integration` / `Automation` / `ScheduledJob` | Integrações e automações |
+| `Integration` / `Automation` | Integrações e automações (mock) |
+| `ScheduledJob` / `Permission` | Jobs e matriz de permissões (API Java Wave C) |
 | `AuditLog` / `Notification` | Auditoria e alertas |
 
 ## Limitações do MVP / o que não vender como pronto
 
-A **Fase 1** tem backend Java real para auth, aprendizagem core, questões/avaliações, posts/destaques e admin de usuários. O restante abaixo é **demo UI** (seed / estado local) e fica **oculto em produção** sem `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`. Slices mock-only vivem nos domain hooks FE-4 (`use-communication-store` / `use-repository-store` / `use-admin-store`), marcados com `// MOCK: not wired to backend`; inventário em [`AGENTS.md`](AGENTS.md#data-wiring). Playbook de migração mock → Java (FE-5): [`docs/fe-5-mock-to-java-migration.md`](docs/fe-5-mock-to-java-migration.md).
+A **Fase 1** tem backend Java real para auth, aprendizagem core, questões/avaliações, posts/destaques, permissions/jobs e admin de usuários. O restante abaixo é **demo UI** (seed / estado local) e fica **oculto em produção** sem `NEXT_PUBLIC_SHOW_MOCK_MODULES=true`. Slices mock-only vivem nos domain hooks FE-4 (`use-communication-store` / `use-repository-store` / `use-admin-store`), marcados com `// MOCK: not wired to backend`; inventário em [`AGENTS.md`](AGENTS.md#data-wiring). Playbook de migração mock → Java (FE-5): [`docs/fe-5-mock-to-java-migration.md`](docs/fe-5-mock-to-java-migration.md).
 
 | Aspecto | Estado atual |
 |---|---|
@@ -332,8 +333,10 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core, questões/avali
 | Aprendizagem core | API Java (cursos, matrículas, progresso) quando `NEXT_PUBLIC_USE_JAVA_API=true` |
 | Questões / Avaliações | API Java (Wave A) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off |
 | Posts / Destaques | API Java (Wave B) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off |
-| Auditoria / Config / Comunicação restante (alertas, mail, campanhas) / Integrações | Mock — não persistidos; auditoria com IP seed fixo e export sem handler |
-| Certificados | Mock — não persistidos |
+| Permissions / Jobs agendados | API Java (Wave C) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off. `/configuracoes` e `/integracoes` permanecem gated (settings/integrations ainda mock) |
+| Relatórios de conclusão | Endpoints Java `GET /api/v1/reports/completion` (por curso/turma) e `GET /api/v1/reports/pending` (pendências por aluno) para `admin_premium`/`admin_unidade`. A página `/relatorios` **ainda mostra KPIs mock** — não plugada |
+| Auditoria / Config restante / Comunicação restante (alertas, mail, campanhas) / Integrações | Mock — não persistidos; auditoria com IP seed fixo e export sem handler |
+| Certificados | Emissão automática no Java (matrícula concluída + avaliações aprovadas); PDF on-the-fly; verificação pública `/certificados/verificar/[hash]`. Lista `/aprendizagem/certificados` ainda mock/gated |
 | Upload de arquivos | Simulado (metadados apenas) |
 | E-mail / push / SMS | Simulados na UI |
 | Integrações SSO/RH/BI | Status mock; toggles alteram apenas o estado local |
@@ -347,16 +350,16 @@ Em propostas e contratos, **não vender como prontos / persistidos**:
 | Módulo | Estado |
 |---|---|
 | Comunicação restante (alertas, mail interno, campanhas) | Mock / seed React — posts/destaques já em Wave B |
-| Integrações e automações | Mock / seed React |
+| Integrações e automações | Mock / seed React — jobs agendados já em Wave C |
 | Auditoria (UI `/auditoria`) | Mock seed — `access_log` Postgres existe para LGPD (login/export/delete), mas a tela admin ainda não consome |
 | Retenção LGPD | Política + purge automático (`lesson_progress` 24m, `access_log` 12m): [`docs/lgpd-data-retention.md`](docs/lgpd-data-retention.md) |
-| Configurações / permissões / jobs agendados | Mock / seed React |
+| Configurações (parâmetros UI) | Mock / seed React — matriz de permissões e jobs agendados via Java; rota `/configuracoes` gated |
 
-Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-java-migration.md) (Wave C permissions/jobs; depois contents/alerts/mail/integrations).
+Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-java-migration.md) (depois contents/alerts/mail/integrations).
 
 ## Caminho para produção (Fase 2+)
 
-1. **Persistir** auditoria UI, configurações, comunicação restante, integrações e certificados na API Java (seguir FE-5; Wave A questões/avaliações e Wave B posts/destaques já feitos).
+1. **Persistir** auditoria UI, configurações restantes, comunicação restante, integrações e certificados na API Java (seguir FE-5; Waves A–C questões/avaliações, posts/destaques e permissions/jobs já feitos).
 2. **RBAC** — Permissões avaliadas no servidor (já em andamento no backend).
 3. **Integrações** — SuccessFactors/RH, Power BI, webhooks de certificados.
 4. **Storage** — S3 ou equivalente para conteúdos e certificados PDF. MP4 de aulas: upload via `POST /api/v1/media/videos` (`LMS_S3_*`); `videoUrl` no Postgres só http(s) — **data/blob e schemes perigosos rejeitados**; hosts opcionais via `LMS_VIDEO_URL_ALLOWED_HOSTS` (CSV) + host de `LMS_S3_PUBLIC_BASE_URL`.

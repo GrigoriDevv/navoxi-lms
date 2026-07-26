@@ -12,4 +12,6 @@ export const lmsKeys = {
   evaluations: () => [...lmsKeys.all, "evaluations"] as const,
   posts: () => [...lmsKeys.all, "posts"] as const,
   destaques: () => [...lmsKeys.all, "destaques"] as const,
+  permissions: () => [...lmsKeys.all, "permissions"] as const,
+  scheduledJobs: () => [...lmsKeys.all, "scheduled-jobs"] as const,
 };

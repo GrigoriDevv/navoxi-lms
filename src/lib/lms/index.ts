@@ -6,8 +6,10 @@ export {
   invalidateEnrollmentRequests,
   invalidateEvaluations,
   invalidateMyLearning,
+  invalidatePermissions,
   invalidatePosts,
   invalidateQuestions,
+  invalidateScheduledJobs,
 } from "./invalidate";
 export { useCourses, useCreateCourse, useUpdateCourse } from "./use-courses";
 export {
@@ -43,3 +45,8 @@ export {
   useDestaques,
   useUpdateDestaque,
 } from "./use-destaques";
+export { usePermissions, useUpdatePermission } from "./use-permissions";
+export {
+  useScheduledJobs,
+  useUpdateScheduledJob,
+} from "./use-scheduled-jobs";

@@ -2,8 +2,10 @@ package com.navoxi.lms.service;
 
 import com.navoxi.lms.domain.entity.Question;
 import com.navoxi.lms.domain.entity.UserAccount;
+import com.navoxi.lms.domain.enums.QuestionType;
 import com.navoxi.lms.repository.QuestionRepository;
 import com.navoxi.lms.security.UnitScope;
+import com.navoxi.lms.web.ApiExceptionHandler.BadRequestException;
 import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.QuestionDto;
 import com.navoxi.lms.web.dto.QuestionRequest;
@@ -65,9 +67,54 @@ public class QuestionService {
   }
 
   private void apply(Question q, QuestionRequest req) {
+    validateAnswerKey(req.type(), req.options(), req.correctKey());
     q.setText(req.text());
     q.setType(req.type());
     q.setCategory(req.category());
     q.setUnitId(req.unitId());
+    switch (req.type()) {
+      case multipla -> {
+        q.setOptions(List.copyOf(req.options()));
+        q.setCorrectKey(req.correctKey());
+      }
+      case verdadeiro -> {
+        q.setOptions(null);
+        q.setCorrectKey(req.correctKey().trim().toLowerCase());
+      }
+      case dissertativa -> {
+        q.setOptions(null);
+        q.setCorrectKey(null);
+      }
+    }
+  }
+
+  static void validateAnswerKey(QuestionType type, List<String> options, String correctKey) {
+    switch (type) {
+      case multipla -> {
+        if (options == null || options.size() < 2) {
+          throw new BadRequestException("Questão múltipla exige ao menos 2 opções");
+        }
+        if (correctKey == null || correctKey.isBlank() || !options.contains(correctKey)) {
+          throw new BadRequestException("correctKey deve ser uma das opções");
+        }
+      }
+      case verdadeiro -> {
+        if (correctKey == null || correctKey.isBlank()) {
+          throw new BadRequestException("correctKey obrigatório para verdadeiro/falso");
+        }
+        String normalized = correctKey.trim().toLowerCase();
+        if (!normalized.equals("verdadeiro") && !normalized.equals("falso")) {
+          throw new BadRequestException("correctKey deve ser verdadeiro ou falso");
+        }
+      }
+      case dissertativa -> {
+        if (options != null && !options.isEmpty()) {
+          throw new BadRequestException("Questão dissertativa não deve ter opções");
+        }
+        if (correctKey != null && !correctKey.isBlank()) {
+          throw new BadRequestException("Questão dissertativa não deve ter gabarito");
+        }
+      }
+    }
   }
 }

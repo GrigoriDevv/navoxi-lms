@@ -1,8 +1,10 @@
 package com.navoxi.lms.domain.entity;
 
+import com.navoxi.lms.domain.converter.StringListJsonConverter;
 import com.navoxi.lms.domain.enums.QuestionType;
 import com.navoxi.lms.domain.enums.UnitId;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -11,6 +13,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -37,6 +40,13 @@ public class Question {
 
   @Column(name = "usage_count", nullable = false)
   private Integer usageCount = 0;
+
+  @Convert(converter = StringListJsonConverter.class)
+  @Column(name = "options_json", columnDefinition = "TEXT")
+  private List<String> options;
+
+  @Column(name = "correct_key", length = 255)
+  private String correctKey;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
@@ -108,6 +118,22 @@ public class Question {
 
   public void setUsageCount(Integer usageCount) {
     this.usageCount = usageCount;
+  }
+
+  public List<String> getOptions() {
+    return options;
+  }
+
+  public void setOptions(List<String> options) {
+    this.options = options;
+  }
+
+  public String getCorrectKey() {
+    return correctKey;
+  }
+
+  public void setCorrectKey(String correctKey) {
+    this.correctKey = correctKey;
   }
 
   public Instant getCreatedAt() {

@@ -223,6 +223,7 @@ export default function DashboardPage() {
               />
             </WidgetShell>
 
+            {!shouldHidePath("/aprendizagem/turmas") && (
             <WidgetShell
               title="Turmas em destaque"
               status={effectiveStatus}
@@ -248,6 +249,7 @@ export default function DashboardPage() {
                 </Link>
               </div>
             </WidgetShell>
+            )}
           </div>
 
           {role === "admin_premium" &&

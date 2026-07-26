@@ -1022,6 +1022,44 @@ export const lmsApi = {
     }
     return res.blob();
   },
+
+  search: async (
+    q: string,
+    opts?: { types?: Array<"course" | "lesson" | "question">; limit?: number }
+  ) => {
+    const params = new URLSearchParams({ q });
+    if (opts?.types?.length) {
+      params.set("types", opts.types.join(","));
+    }
+    if (opts?.limit != null) {
+      params.set("limit", String(opts.limit));
+    }
+    return request<{
+      query: string;
+      courses: Array<{
+        id: string;
+        title: string;
+        category: string;
+        unitId: string;
+        href: string;
+      }>;
+      lessons: Array<{
+        id: string;
+        title: string;
+        courseId: string;
+        courseTitle: string;
+        href: string;
+      }>;
+      questions: Array<{
+        id: string;
+        text: string;
+        category: string;
+        type: string;
+        unitId: string;
+        href: string;
+      }>;
+    }>(`/api/v1/search?${params.toString()}`);
+  },
 };
 
 type ApiEnrollmentRequest = {

@@ -23,6 +23,8 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["scheduled-jobs"])).toBe(true);
     expect(isAllowedLmsPath(["scheduled-jobs", "sj1"])).toBe(true);
     expect(isAllowedLmsPath(["media", "videos"])).toBe(true);
+    expect(isAllowedLmsPath(["reports", "completion"])).toBe(true);
+    expect(isAllowedLmsPath(["reports", "pending"])).toBe(true);
   });
 
   it("rejects empty, unknown, and traversal", () => {

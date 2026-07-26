@@ -2,6 +2,7 @@ package com.navoxi.lms.repository;
 
 import com.navoxi.lms.domain.entity.LessonProgress;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,8 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
   Optional<LessonProgress> findByUserIdAndLessonId(String userId, String lessonId);
 
   List<LessonProgress> findByUserId(String userId);
+
+  List<LessonProgress> findByUserIdIn(Collection<String> userIds);
 
   @Query(
       "select count(p) from LessonProgress p where p.user.id = :userId and p.lesson.course.id = :courseId")

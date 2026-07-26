@@ -1,5 +1,6 @@
 import type {
   Course,
+  CourseCompletionRow,
   CourseLesson,
   CourseModule,
   Destaque,
@@ -14,6 +15,7 @@ import type {
   Question,
   ScheduledJob,
   SolicitacaoMatricula,
+  StudentPendingRow,
   User,
 } from "./types";
 import { apiBaseUrl } from "./api-config";
@@ -208,6 +210,81 @@ type ApiScheduledJob = {
   lastRun?: string | null;
   nextRun?: string | null;
 };
+
+type ApiCompletionRow = {
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: CourseCompletionRow["unitId"];
+  enrolled: number;
+  completed: number;
+  inProgress: number;
+  notStarted: number;
+  avgProgressPct: number;
+  completionRatePct: number;
+};
+
+type ApiPendingEvaluation = {
+  evaluationId: string;
+  name: string;
+  dueDate: string;
+  state: StudentPendingRow["pendingEvaluations"][number]["state"];
+};
+
+type ApiPendingRow = {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: StudentPendingRow["unitId"];
+  progressPct: number;
+  lessonsTotal: number;
+  lessonsCompleted: number;
+  lessonsPending: number;
+  pendingLessonTitles: string[];
+  evaluationsTotal: number;
+  evaluationsPending: number;
+  pendingEvaluations: ApiPendingEvaluation[];
+};
+
+export type ReportFilters = {
+  courseId?: string;
+  turmaId?: string;
+  unitId?: string;
+  userId?: string;
+};
+
+function reportQuery(filters?: ReportFilters): string {
+  if (!filters) return "";
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function mapCompletionRow(r: ApiCompletionRow): CourseCompletionRow {
+  return {
+    ...r,
+    turmaId: r.turmaId ?? undefined,
+    turmaName: r.turmaName ?? undefined,
+  };
+}
+
+function mapPendingRow(r: ApiPendingRow): StudentPendingRow {
+  return {
+    ...r,
+    turmaId: r.turmaId ?? undefined,
+    turmaName: r.turmaName ?? undefined,
+    pendingLessonTitles: r.pendingLessonTitles ?? [],
+    pendingEvaluations: r.pendingEvaluations ?? [],
+  };
+}
 
 function mapCourse(c: ApiCourse): Course {
   return { ...c };
@@ -855,6 +932,20 @@ export const lmsApi = {
       }),
     });
     return mapScheduledJob(data);
+  },
+
+  getCompletionReport: async (filters?: ReportFilters) => {
+    const data = await request<ApiCompletionRow[]>(
+      `/api/v1/reports/completion${reportQuery(filters)}`
+    );
+    return data.map(mapCompletionRow);
+  },
+
+  getPendingReport: async (filters?: ReportFilters) => {
+    const data = await request<ApiPendingRow[]>(
+      `/api/v1/reports/pending${reportQuery(filters)}`
+    );
+    return data.map(mapPendingRow);
   },
 };
 

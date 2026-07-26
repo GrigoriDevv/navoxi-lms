@@ -15,6 +15,7 @@ Inventário para não tratar mock como backend real. Detalhes de produto e rotas
 | Questões e avaliações | Postgres via BFF (`questions`, `evaluations`) | idem; `use-questions` / `use-evaluations` + `use-repository-store` |
 | Posts e destaques | Postgres via BFF (`posts`, `destaques`) | idem; `use-posts` / `use-destaques` + `use-communication-store` |
 | Permissions e scheduled jobs | Postgres via BFF (`permissions`, `scheduled-jobs`) | idem; `use-permissions` / `use-scheduled-jobs` + `use-admin-store` |
+| Relatórios de conclusão (`reports/completion`, `reports/pending`) | Postgres via BFF (`reports`) — agregados read-only | idem; `lmsApi.getCompletionReport` / `getPendingReport` (sem hook/UI; página `/relatorios` ainda mostra KPIs mock) |
 | Notificações | Postgres | idem (`use-notifications-store`) |
 | Admin usuários (`GET/POST/PATCH/DELETE /api/v1/users`) | Postgres | idem; página `/administracao` |
 | **FE-1 restantes** (`contents`, `alertRules`, `internalMails`, `automations`, `integrations`) | **Mock** — `seed.*` + estado React | Domain hooks FE-4: `use-communication-store` (alertRules/internalMails/automations), `use-repository-store` (só `contents`), `use-admin-store` (integrations + settings/audit/users locais); `// MOCK` nos slices; `/comunicacao`, `/configuracoes` e `/integracoes` permanecem gated (ainda têm mocks mistos). Migração Java: [FE-5](docs/fe-5-mock-to-java-migration.md) |
@@ -31,6 +32,7 @@ flowchart TB
     QuestionsEval[questions evaluations]
     PostsDestaques[posts destaques]
     PermsJobs[permissions scheduled-jobs]
+    Reports[reports completion pending]
     Notif[notifications]
     UsersAdmin[GET POST PATCH DELETE users]
     AccessLog[access_log LGPD]

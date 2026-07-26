@@ -213,7 +213,7 @@ O banner de destaques no dashboard consome o store (`DestaquesBanner` → `useAu
 
 | Rota | Status | Descrição |
 |---|---|---|
-| `/relatorios` | Preview | KPIs e gráficos |
+| `/relatorios` | Preview (misto) | KPIs e gráficos mock na página; endpoints Java `GET /api/v1/reports/completion` e `/reports/pending` já disponíveis (não plugados na UI) |
 | `/configuracoes` | **Demo UI / Fase 2** (misto) | Parâmetros/UI mock; jobs agendados via Java (Wave C). Rota gated. |
 | `/integracoes` | **Demo UI / Fase 2** (misto) | SSO/RH/BI mock; jobs via store Java (Wave C). Rota gated. |
 | `/auditoria` | **Demo UI / Fase 2** | Trilha de auditoria mock; export sem handler |
@@ -334,6 +334,7 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core, questões/avali
 | Questões / Avaliações | API Java (Wave A) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off |
 | Posts / Destaques | API Java (Wave B) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off |
 | Permissions / Jobs agendados | API Java (Wave C) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off. `/configuracoes` e `/integracoes` permanecem gated (settings/integrations ainda mock) |
+| Relatórios de conclusão | Endpoints Java `GET /api/v1/reports/completion` (por curso/turma) e `GET /api/v1/reports/pending` (pendências por aluno) para `admin_premium`/`admin_unidade`. A página `/relatorios` **ainda mostra KPIs mock** — não plugada |
 | Auditoria / Config restante / Comunicação restante (alertas, mail, campanhas) / Integrações | Mock — não persistidos; auditoria com IP seed fixo e export sem handler |
 | Certificados | Mock — não persistidos |
 | Upload de arquivos | Simulado (metadados apenas) |

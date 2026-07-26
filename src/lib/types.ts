@@ -340,6 +340,46 @@ export interface EvaluationAttempt {
   answers: AttemptAnswer[];
 }
 
+export interface CourseCompletionRow {
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: UnitId;
+  enrolled: number;
+  completed: number;
+  inProgress: number;
+  notStarted: number;
+  avgProgressPct: number;
+  completionRatePct: number;
+}
+
+export interface PendingEvaluation {
+  evaluationId: string;
+  name: string;
+  dueDate: string;
+  state: "nao_iniciada" | "em_andamento" | "aguardando_correcao";
+}
+
+export interface StudentPendingRow {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: UnitId;
+  progressPct: number;
+  lessonsTotal: number;
+  lessonsCompleted: number;
+  lessonsPending: number;
+  pendingLessonTitles: string[];
+  evaluationsTotal: number;
+  evaluationsPending: number;
+  pendingEvaluations: PendingEvaluation[];
+}
+
 export interface Destaque {
   id: string;
   title: string;

@@ -129,6 +129,8 @@ type ApiQuestion = {
   category: string;
   unitId: Question["unitId"];
   usageCount: number;
+  options?: string[] | null;
+  correctKey?: string | null;
 };
 
 type ApiEvaluation = {
@@ -231,6 +233,8 @@ function mapQuestion(q: ApiQuestion): Question {
     category: q.category,
     unitId: q.unitId,
     usageCount: q.usageCount,
+    options: q.options ?? undefined,
+    correctKey: q.correctKey ?? undefined,
   };
 }
 
@@ -560,6 +564,8 @@ export const lmsApi = {
         type: body.type,
         category: body.category,
         unitId: body.unitId,
+        options: body.options ?? null,
+        correctKey: body.correctKey ?? null,
       }),
     });
     return mapQuestion(data);
@@ -573,6 +579,8 @@ export const lmsApi = {
         type: body.type,
         category: body.category,
         unitId: body.unitId,
+        options: body.options ?? null,
+        correctKey: body.correctKey ?? null,
       }),
     });
     return mapQuestion(data);

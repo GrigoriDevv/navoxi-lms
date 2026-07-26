@@ -43,7 +43,9 @@ class QuestionEvaluationControllerTest {
         "text": "Qual o prazo de SLA?",
         "type": "multipla",
         "category": "Comercial",
-        "unitId": "matriz"
+        "unitId": "matriz",
+        "options": ["24h", "48h", "72h"],
+        "correctKey": "24h"
       }
       """;
 
@@ -100,12 +102,52 @@ class QuestionEvaluationControllerTest {
                 .content(QUESTION_BODY))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.text").value("Qual o prazo de SLA?"))
-        .andExpect(jsonPath("$.usageCount").value(0));
+        .andExpect(jsonPath("$.usageCount").value(0))
+        .andExpect(jsonPath("$.options.length()").value(3))
+        .andExpect(jsonPath("$.correctKey").value("24h"));
 
     mockMvc
         .perform(get("/api/v1/questions").header("Authorization", "Bearer " + adminJwt))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1));
+  }
+
+  @Test
+  void createQuestionRejectsInvalidAnswerKey() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/questions")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "text": "Sem gabarito válido",
+                      "type": "multipla",
+                      "category": "TI",
+                      "unitId": "matriz",
+                      "options": ["A", "B"],
+                      "correctKey": "C"
+                    }
+                    """))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            post("/api/v1/questions")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "text": "VF inválido",
+                      "type": "verdadeiro",
+                      "category": "TI",
+                      "unitId": "matriz",
+                      "correctKey": "talvez"
+                    }
+                    """))
+        .andExpect(status().isBadRequest());
   }
 
   @Test

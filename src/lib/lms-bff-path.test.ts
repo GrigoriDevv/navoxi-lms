@@ -11,6 +11,9 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["questions", "q1"])).toBe(true);
     expect(isAllowedLmsPath(["evaluations"])).toBe(true);
     expect(isAllowedLmsPath(["evaluations", "av1", "apply"])).toBe(true);
+    expect(isAllowedLmsPath(["evaluations", "av1", "attempts"])).toBe(true);
+    expect(isAllowedLmsPath(["attempts"])).toBe(true);
+    expect(isAllowedLmsPath(["attempts", "a1", "submit"])).toBe(true);
     expect(isAllowedLmsPath(["posts"])).toBe(true);
     expect(isAllowedLmsPath(["posts", "p1"])).toBe(true);
     expect(isAllowedLmsPath(["destaques"])).toBe(true);

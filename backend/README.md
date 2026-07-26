@@ -65,6 +65,11 @@ Admin directory: `GET/POST/PATCH/DELETE /api/v1/users` (roles `admin_premium` / 
 | DELETE | `/api/v1/users/me` |
 | GET | `/api/v1/users/me/enrollments` |
 | GET | `/api/v1/users/me/progress` |
+| GET | `/api/v1/attempts/mine` |
+| GET/POST | `/api/v1/evaluations/{id}/attempts` |
+| GET | `/api/v1/attempts/{id}` |
+| PUT | `/api/v1/attempts/{id}/answers` |
+| POST | `/api/v1/attempts/{id}/submit` |
 
 ### LGPD (MVP)
 

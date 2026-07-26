@@ -28,11 +28,15 @@ public class EvaluationAttemptService {
 
   private final EvaluationAttemptRepository attempts;
   private final EvaluationRepository evaluations;
+  private final AttemptGradingService grading;
 
   public EvaluationAttemptService(
-      EvaluationAttemptRepository attempts, EvaluationRepository evaluations) {
+      EvaluationAttemptRepository attempts,
+      EvaluationRepository evaluations,
+      AttemptGradingService grading) {
     this.attempts = attempts;
     this.evaluations = evaluations;
+    this.grading = grading;
   }
 
   @Transactional(readOnly = true)
@@ -135,8 +139,8 @@ public class EvaluationAttemptService {
   @Transactional
   public AttemptDto submit(UserAccount actor, String attemptId) {
     EvaluationAttempt attempt = requireOwnedOpen(actor, attemptId);
-    attempt.setStatus(AttemptStatus.enviada);
     attempt.setSubmittedAt(Instant.now());
+    grading.gradeOnSubmit(attempt);
     return toDto(attempts.save(attempt));
   }
 

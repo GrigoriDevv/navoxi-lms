@@ -295,6 +295,8 @@ export interface Question {
   category: string;
   unitId: UnitId;
   usageCount: number;
+  options?: string[] | null;
+  correctKey?: string | null;
 }
 
 export interface Evaluation {
@@ -310,7 +312,11 @@ export interface Evaluation {
   appliedAt?: string;
 }
 
-export type AttemptStatus = "em_andamento" | "enviada" | "corrigida";
+export type AttemptStatus =
+  | "em_andamento"
+  | "enviada"
+  | "aguardando_correcao"
+  | "corrigida";
 
 export interface AttemptAnswer {
   id: string;

@@ -20,6 +20,8 @@ export default function QuestoesPage() {
     type: "multipla" as Question["type"],
     category: "Segurança",
     unitId: (unitId ?? "matriz") as UnitId,
+    optionsText: "",
+    correctKey: "",
   });
 
   const filtered = questions.filter(
@@ -27,20 +29,54 @@ export default function QuestoesPage() {
   );
 
   const reset = () =>
-    setForm({ text: "", type: "multipla", category: "Segurança", unitId: (unitId ?? "matriz") as UnitId });
+    setForm({
+      text: "",
+      type: "multipla",
+      category: "Segurança",
+      unitId: (unitId ?? "matriz") as UnitId,
+      optionsText: "",
+      correctKey: "",
+    });
 
   const openEdit = (q: Question) => {
     setEditing(q);
-    setForm({ text: q.text, type: q.type, category: q.category, unitId: q.unitId });
+    setForm({
+      text: q.text,
+      type: q.type,
+      category: q.category,
+      unitId: q.unitId,
+      optionsText: (q.options ?? []).join("\n"),
+      correctKey: q.correctKey ?? "",
+    });
+  };
+
+  const toPayload = (): Omit<Question, "id" | "usageCount"> => {
+    const options =
+      form.type === "multipla"
+        ? form.optionsText
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : null;
+    return {
+      text: form.text,
+      type: form.type,
+      category: form.category,
+      unitId: form.unitId,
+      options,
+      correctKey:
+        form.type === "dissertativa" ? null : form.correctKey.trim() || null,
+    };
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = toPayload();
     if (editing) {
-      updateQuestion(editing.id, form);
+      updateQuestion(editing.id, payload);
       setEditing(null);
     } else {
-      addQuestion(form);
+      addQuestion(payload);
       setOpen(false);
     }
     reset();
@@ -113,6 +149,29 @@ export default function QuestoesPage() {
               <input className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
             </Field>
           </div>
+          {form.type === "multipla" && (
+            <Field label="Opções (uma por linha)">
+              <textarea
+                required
+                className={inputClass}
+                rows={3}
+                value={form.optionsText}
+                onChange={(e) => setForm({ ...form, optionsText: e.target.value })}
+                placeholder={"Opção A\nOpção B"}
+              />
+            </Field>
+          )}
+          {form.type !== "dissertativa" && (
+            <Field label="Gabarito (correctKey)">
+              <input
+                required
+                className={inputClass}
+                value={form.correctKey}
+                onChange={(e) => setForm({ ...form, correctKey: e.target.value })}
+                placeholder={form.type === "verdadeiro" ? "verdadeiro ou falso" : "Texto exato de uma opção"}
+              />
+            </Field>
+          )}
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => { setOpen(false); setEditing(null); reset(); }}>Cancelar</Button>
             <Button type="submit">{editing ? "Salvar" : "Cadastrar"}</Button>

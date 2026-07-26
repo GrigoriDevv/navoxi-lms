@@ -71,6 +71,8 @@ Admin directory: `GET/POST/PATCH/DELETE /api/v1/users` (roles `admin_premium` / 
 | PUT | `/api/v1/attempts/{id}/answers` |
 | POST | `/api/v1/attempts/{id}/submit` |
 
+Submit auto-corrige questões `multipla` / `verdadeiro` (`corrigida` + `scorePct`); com dissertativa → `aguardando_correcao`.
+
 ### LGPD (MVP)
 
 - Tabela `access_log` (Flyway `V4`): quem, ação, recurso, IP, user-agent, quando. Escrita em login, SSO, `GET /users/me`, export e delete.

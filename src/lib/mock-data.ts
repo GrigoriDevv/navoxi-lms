@@ -185,11 +185,53 @@ export const lessonProgress: LessonProgress[] = [
 ];
 
 export const questions: Question[] = [
-  { id: "q1", text: "Quais equipamentos de proteção são obrigatórios em trabalhos em altura?", type: "multipla", category: "Segurança", unitId: "matriz", usageCount: 24 },
-  { id: "q2", text: "O código de ética se aplica a terceiros?", type: "verdadeiro", category: "Compliance", unitId: "matriz", usageCount: 56 },
-  { id: "q3", text: "Descreva o procedimento de isolamento de sistemas críticos.", type: "dissertativa", category: "Segurança", unitId: "matriz", usageCount: 12 },
-  { id: "q4", text: "Qual o prazo para resposta ao cliente (SLA)?", type: "multipla", category: "Comercial", unitId: "nordeste", usageCount: 18 },
-  { id: "q5", text: "Qual política regula o acesso a ambientes de infraestrutura crítica?", type: "multipla", category: "Segurança", unitId: "matriz", usageCount: 31 },
+  {
+    id: "q1",
+    text: "Quais equipamentos de proteção são obrigatórios em trabalhos em altura?",
+    type: "multipla",
+    category: "Segurança",
+    unitId: "matriz",
+    usageCount: 24,
+    options: ["Capacete e cinto", "Apenas luvas", "Nenhum"],
+    correctKey: "Capacete e cinto",
+  },
+  {
+    id: "q2",
+    text: "O código de ética se aplica a terceiros?",
+    type: "verdadeiro",
+    category: "Compliance",
+    unitId: "matriz",
+    usageCount: 56,
+    correctKey: "verdadeiro",
+  },
+  {
+    id: "q3",
+    text: "Descreva o procedimento de isolamento de sistemas críticos.",
+    type: "dissertativa",
+    category: "Segurança",
+    unitId: "matriz",
+    usageCount: 12,
+  },
+  {
+    id: "q4",
+    text: "Qual o prazo para resposta ao cliente (SLA)?",
+    type: "multipla",
+    category: "Comercial",
+    unitId: "nordeste",
+    usageCount: 18,
+    options: ["24h", "48h", "72h"],
+    correctKey: "24h",
+  },
+  {
+    id: "q5",
+    text: "Qual política regula o acesso a ambientes de infraestrutura crítica?",
+    type: "multipla",
+    category: "Segurança",
+    unitId: "matriz",
+    usageCount: 31,
+    options: ["Política de Acesso", "Política de Férias", "Código de Vestimenta"],
+    correctKey: "Política de Acesso",
+  },
 ];
 
 export const evaluations: Evaluation[] = [

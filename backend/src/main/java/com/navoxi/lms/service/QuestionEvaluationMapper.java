@@ -17,7 +17,9 @@ public final class QuestionEvaluationMapper {
         q.getType(),
         q.getCategory(),
         q.getUnitId(),
-        q.getUsageCount());
+        q.getUsageCount(),
+        q.getOptions() == null ? null : List.copyOf(q.getOptions()),
+        q.getCorrectKey());
   }
 
   public static EvaluationDto toDto(Evaluation e) {

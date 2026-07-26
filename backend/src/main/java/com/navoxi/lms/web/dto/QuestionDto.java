@@ -2,6 +2,7 @@ package com.navoxi.lms.web.dto;
 
 import com.navoxi.lms.domain.enums.QuestionType;
 import com.navoxi.lms.domain.enums.UnitId;
+import java.util.List;
 
 public record QuestionDto(
     String id,
@@ -9,4 +10,6 @@ public record QuestionDto(
     QuestionType type,
     String category,
     UnitId unitId,
-    Integer usageCount) {}
+    Integer usageCount,
+    List<String> options,
+    String correctKey) {}

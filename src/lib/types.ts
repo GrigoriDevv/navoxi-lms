@@ -117,6 +117,8 @@ export interface Certificado {
   issuedAt: string;
   expiresAt: string;
   status: "valido" | "expirado" | "revogado";
+  /** Hash público de verificação (API Java). Ausente no seed mock. */
+  validationHash?: string;
 }
 
 export interface InteresseCurso {
@@ -310,6 +312,8 @@ export interface Evaluation {
   status: "rascunho" | "publicada" | "encerrada" | "aplicada";
   dueDate: string;
   appliedAt?: string;
+  /** Nota mínima 0–100 (default 70 no backend). */
+  passingScorePct?: number;
 }
 
 export type AttemptStatus =

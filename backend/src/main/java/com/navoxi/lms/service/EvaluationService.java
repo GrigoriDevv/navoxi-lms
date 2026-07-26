@@ -121,6 +121,11 @@ public class EvaluationService {
     e.setQuestionCount(ids.size());
     e.setStatus(req.status());
     e.setDueDate(req.dueDate());
+    double passing = req.passingScorePct() == null ? 70.0 : req.passingScorePct();
+    if (passing < 0 || passing > 100) {
+      throw new BadRequestException("passingScorePct deve estar entre 0 e 100");
+    }
+    e.setPassingScorePct(passing);
   }
 
   private static String blankToNull(String value) {

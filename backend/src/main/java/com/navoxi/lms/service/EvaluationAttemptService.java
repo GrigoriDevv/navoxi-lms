@@ -32,14 +32,17 @@ public class EvaluationAttemptService {
   private final EvaluationAttemptRepository attempts;
   private final EvaluationRepository evaluations;
   private final AttemptGradingService grading;
+  private final CertificateService certificates;
 
   public EvaluationAttemptService(
       EvaluationAttemptRepository attempts,
       EvaluationRepository evaluations,
-      AttemptGradingService grading) {
+      AttemptGradingService grading,
+      CertificateService certificates) {
     this.attempts = attempts;
     this.evaluations = evaluations;
     this.grading = grading;
+    this.certificates = certificates;
   }
 
   @Transactional(readOnly = true)
@@ -144,7 +147,9 @@ public class EvaluationAttemptService {
     EvaluationAttempt attempt = requireOwnedOpen(actor, attemptId);
     attempt.setSubmittedAt(Instant.now());
     grading.gradeOnSubmit(attempt);
-    return toDto(attempts.save(attempt));
+    EvaluationAttempt saved = attempts.save(attempt);
+    maybeIssueCertificate(saved);
+    return toDto(saved);
   }
 
   @Transactional
@@ -180,7 +185,16 @@ public class EvaluationAttemptService {
     answer.setIsCorrect(body.isCorrect());
     answer.setFeedback(body.feedback());
     grading.recomputeAfterManualGrade(attempt);
-    return toDto(attempts.save(attempt));
+    EvaluationAttempt saved = attempts.save(attempt);
+    maybeIssueCertificate(saved);
+    return toDto(saved);
+  }
+
+  private void maybeIssueCertificate(EvaluationAttempt attempt) {
+    if (attempt.getStatus() != AttemptStatus.corrigida) {
+      return;
+    }
+    certificates.tryIssue(attempt.getUser().getId(), attempt.getEvaluation().getCourseId());
   }
 
   private EvaluationAttempt requireOwnedOpen(UserAccount actor, String attemptId) {

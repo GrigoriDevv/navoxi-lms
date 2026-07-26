@@ -77,6 +77,11 @@ Admin directory: `GET/POST/PATCH/DELETE /api/v1/users` (roles `admin_premium` / 
 | GET/PATCH | `/api/v1/scheduled-jobs/{id}` |
 | GET | `/api/v1/reports/completion` |
 | GET | `/api/v1/reports/pending` |
+| GET | `/api/v1/certificates/me` |
+| GET | `/api/v1/certificates/{id}/pdf` |
+| GET | `/api/v1/certificates/verify/{hash}` (público) |
+| GET | `/api/v1/certificates/verify/{hash}/pdf` (público) |
+| PATCH | `/api/v1/certificates/{id}/revoke` |
 
 Submit auto-corrige questões `multipla` / `verdadeiro` (`corrigida` + `scorePct`); com dissertativa → `aguardando_correcao`.
 
@@ -88,6 +93,12 @@ Relatórios (`admin_premium` global; `admin_unidade` restrito à própria unidad
 
 - `GET /reports/completion?courseId=&turmaId=&unitId=` — agrega matrículas não canceladas por curso/turma (`enrolled`, `completed`, `inProgress`, `notStarted`, `avgProgressPct`, `completionRatePct`). Turma vem do `turmaId` desnormalizado da matrícula (bucket nulo = sem turma).
 - `GET /reports/pending?courseId=&turmaId=&unitId=&userId=` — pendências por aluno: aulas sem `LessonProgress` e avaliações `publicada`/`aplicada` sem tentativa `corrigida` (estado `nao_iniciada` / `em_andamento` / `aguardando_correcao`). Só retorna linhas com alguma pendência.
+
+Certificados (Flyway `V12`; PDF via OpenPDF; validade `LMS_CERTIFICATE_VALIDITY_MONTHS`, default 24):
+
+- Emissão automática quando a matrícula fica `concluida` **e** cada avaliação `publicada`/`aplicada` do curso (turma matching) tem tentativa `corrigida` com `scorePct >= passingScorePct` (default 70). Curso sem avaliações → emite só com conclusão das aulas.
+- `GET /certificates/me`, `GET /certificates/{id}/pdf` (dono ou staff), `PATCH /certificates/{id}/revoke` (staff).
+- Públicos: `GET /certificates/verify/{hash}` e `.../pdf` (sem JWT). Front: `/certificados/verificar/[hash]`.
 
 ### LGPD (MVP)
 

@@ -1,4 +1,5 @@
 import type {
+  Certificado,
   Course,
   CourseCompletionRow,
   CourseLesson,
@@ -148,6 +149,20 @@ type ApiEvaluation = {
   status: Evaluation["status"];
   dueDate: string;
   appliedAt?: string | null;
+  passingScorePct?: number | null;
+};
+
+type ApiCertificate = {
+  id: string;
+  userId: string;
+  userName: string;
+  courseId: string;
+  courseTitle: string;
+  unitId: Certificado["unitId"];
+  issuedAt: string;
+  expiresAt: string;
+  status: Certificado["status"];
+  validationHash: string;
 };
 
 type ApiAttemptAnswer = {
@@ -348,6 +363,22 @@ function mapEvaluation(e: ApiEvaluation): Evaluation {
     status: e.status,
     dueDate: e.dueDate,
     appliedAt: e.appliedAt ?? undefined,
+    passingScorePct: e.passingScorePct ?? undefined,
+  };
+}
+
+function mapCertificate(c: ApiCertificate): Certificado {
+  return {
+    id: c.id,
+    userId: c.userId,
+    userName: c.userName,
+    courseId: c.courseId,
+    courseTitle: c.courseTitle,
+    unitId: c.unitId,
+    issuedAt: c.issuedAt,
+    expiresAt: c.expiresAt,
+    status: c.status,
+    validationHash: c.validationHash,
   };
 }
 
@@ -726,6 +757,7 @@ export const lmsApi = {
         questionIds: body.questionIds,
         status: body.status,
         dueDate: body.dueDate,
+        passingScorePct: body.passingScorePct,
       }),
     });
     return mapEvaluation(data);
@@ -745,6 +777,7 @@ export const lmsApi = {
         questionIds: body.questionIds,
         status: body.status,
         dueDate: body.dueDate,
+        passingScorePct: body.passingScorePct,
       }),
     });
     return mapEvaluation(data);
@@ -946,6 +979,48 @@ export const lmsApi = {
       `/api/v1/reports/pending${reportQuery(filters)}`
     );
     return data.map(mapPendingRow);
+  },
+
+  listMyCertificates: async () => {
+    const data = await request<ApiCertificate[]>("/api/v1/certificates/me");
+    return data.map(mapCertificate);
+  },
+
+  downloadCertificatePdf: async (id: string) => {
+    const res = await fetch(toBffPath(`/api/v1/certificates/${id}/pdf`), {
+      credentials: "same-origin",
+    });
+    if (!res.ok) {
+      throw new ApiError(`API ${res.status}`, res.status);
+    }
+    return res.blob();
+  },
+
+  verifyCertificate: async (hash: string) => {
+    const res = await fetch(`/api/certificates/verify/${encodeURIComponent(hash)}`, {
+      credentials: "same-origin",
+    });
+    const text = await res.text();
+    const data = text ? (JSON.parse(text) as ApiCertificate | { error?: string }) : null;
+    if (!res.ok) {
+      const msg =
+        data && typeof data === "object" && "error" in data && data.error
+          ? String(data.error)
+          : `API ${res.status}`;
+      throw new ApiError(msg, res.status);
+    }
+    return mapCertificate(data as ApiCertificate);
+  },
+
+  downloadCertificatePdfByHash: async (hash: string) => {
+    const res = await fetch(
+      `/api/certificates/verify/${encodeURIComponent(hash)}/pdf`,
+      { credentials: "same-origin" }
+    );
+    if (!res.ok) {
+      throw new ApiError(`API ${res.status}`, res.status);
+    }
+    return res.blob();
   },
 };
 

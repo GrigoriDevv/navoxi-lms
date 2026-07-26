@@ -107,7 +107,7 @@ Rotas abaixo ficam **gated em prod** (nav + deep link → redirect `/dashboard`)
 | `/configuracoes` | Gated — settings mock; jobs agendados via Java (Wave C) quando API on |
 | `/comunicacao` | Gated — posts/destaques Java (Wave B); alertas/mail/campanhas mock |
 | `/integracoes` | Gated — SSO/RH/BI mock; jobs via store Java (Wave C) quando API on |
-| `/aprendizagem/certificados` | Mock |
+| `/aprendizagem/certificados` | Mock (lista UI); emissão/PDF/verify no Java |
 | `/aprendizagem/avaliacoes` | Avaliações via Java (Wave A); rota não gated |
 | `/administracao` | **Fase 1** com Java API; oculto em prod se `NEXT_PUBLIC_USE_JAVA_API` ≠ `true` |
 
@@ -336,7 +336,7 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core, questões/avali
 | Permissions / Jobs agendados | API Java (Wave C) quando `NEXT_PUBLIC_USE_JAVA_API=true`; seed local se off. `/configuracoes` e `/integracoes` permanecem gated (settings/integrations ainda mock) |
 | Relatórios de conclusão | Endpoints Java `GET /api/v1/reports/completion` (por curso/turma) e `GET /api/v1/reports/pending` (pendências por aluno) para `admin_premium`/`admin_unidade`. A página `/relatorios` **ainda mostra KPIs mock** — não plugada |
 | Auditoria / Config restante / Comunicação restante (alertas, mail, campanhas) / Integrações | Mock — não persistidos; auditoria com IP seed fixo e export sem handler |
-| Certificados | Mock — não persistidos |
+| Certificados | Emissão automática no Java (matrícula concluída + avaliações aprovadas); PDF on-the-fly; verificação pública `/certificados/verificar/[hash]`. Lista `/aprendizagem/certificados` ainda mock/gated |
 | Upload de arquivos | Simulado (metadados apenas) |
 | E-mail / push / SMS | Simulados na UI |
 | Integrações SSO/RH/BI | Status mock; toggles alteram apenas o estado local |

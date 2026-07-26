@@ -15,6 +15,7 @@ export const LMS_BFF_ALLOWED_PREFIXES = [
   "scheduled-jobs",
   "media",
   "reports",
+  "certificates",
 ] as const;
 
 export function isAllowedLmsPath(segments: string[]): boolean {

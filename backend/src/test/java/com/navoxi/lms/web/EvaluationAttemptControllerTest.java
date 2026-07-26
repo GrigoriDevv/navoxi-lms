@@ -357,6 +357,13 @@ class EvaluationAttemptControllerTest {
     org.junit.jupiter.api.Assertions.assertNotNull(essayAnswer);
     org.junit.jupiter.api.Assertions.assertTrue(essayAnswer.get("isCorrect").asBoolean());
     org.junit.jupiter.api.Assertions.assertEquals("Boa explicação", essayAnswer.get("feedback").asText());
+
+    var gradeNotifs =
+        notifications.findByUserIdOrderByCreatedAtDesc("u-aluno").stream()
+            .filter(n -> n.getDetails() != null && n.getDetails().startsWith("grade-result:"))
+            .toList();
+    org.junit.jupiter.api.Assertions.assertEquals(1, gradeNotifs.size());
+    org.junit.jupiter.api.Assertions.assertEquals("Resultado da correção", gradeNotifs.get(0).getTitle());
   }
 
   @Test

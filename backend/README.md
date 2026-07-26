@@ -100,6 +100,14 @@ Certificados (Flyway `V12`; PDF via OpenPDF; validade `LMS_CERTIFICATE_VALIDITY_
 - `GET /certificates/me`, `GET /certificates/{id}/pdf` (dono ou staff), `PATCH /certificates/{id}/revoke` (staff).
 - Públicos: `GET /certificates/verify/{hash}` e `.../pdf` (sem JWT). Front: `/certificados/verificar/[hash]`.
 
+### Email (SMTP)
+
+Canal opcional espelhando notificações in-app (`NotificationService.notify` → SMTP). Default **off** (`LMS_MAIL_ENABLED=false`).
+
+- Eventos cobertos: novo material (já via `LessonService`), resultado de correção (ao fechar tentativa `corrigida`), prova prestes a fechar (job horário, janela `LMS_DEADLINE_REMINDER_WINDOW_HOURS`, default 24h; dedupe `details=deadline-reminder:{evalId}`).
+- Envs: `LMS_MAIL_*`, `LMS_PUBLIC_APP_URL`, `SPRING_MAIL_*` (host/user/pass). Compatível com Amazon SES SMTP e Resend SMTP.
+- Falha SMTP: WARN, não reverte a notificação persistida.
+
 ### LGPD (MVP)
 
 - Tabela `access_log` (Flyway `V4`): quem, ação, recurso, IP, user-agent, quando. Escrita em login, SSO, `GET /users/me`, export e delete.
@@ -150,6 +158,12 @@ Em trânsito (assunto separado): preferir **Private Network** entre API e Postgr
 | `LMS_API_RATE_LIMIT_ENABLED` | `true` (default prod; off em local) |
 | `LMS_API_RATE_LIMIT_MAX` | `60` (default) |
 | `LMS_API_RATE_LIMIT_WINDOW_SECONDS` | `60` (default) |
+| `LMS_MAIL_ENABLED` | `false` até SMTP configurado |
+| `LMS_MAIL_FROM` | remetente verificado no provedor |
+| `LMS_PUBLIC_APP_URL` | URL do front (links no email) |
+| `SPRING_MAIL_HOST` / `PORT` / `USERNAME` / `PASSWORD` | SMTP (SES/Resend/etc.) |
+| `LMS_DEADLINE_REMINDER_ENABLED` | `true` (default) |
+| `LMS_DEADLINE_REMINDER_WINDOW_HOURS` | `24` (default) |
 
 ## Front
 

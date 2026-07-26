@@ -7,6 +7,7 @@ import com.navoxi.lms.domain.entity.Question;
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.domain.enums.AttemptStatus;
 import com.navoxi.lms.domain.enums.EvaluationStatus;
+import com.navoxi.lms.domain.enums.NotificationType;
 import com.navoxi.lms.domain.enums.QuestionType;
 import com.navoxi.lms.domain.enums.Role;
 import com.navoxi.lms.repository.EvaluationAttemptRepository;
@@ -33,16 +34,19 @@ public class EvaluationAttemptService {
   private final EvaluationRepository evaluations;
   private final AttemptGradingService grading;
   private final CertificateService certificates;
+  private final NotificationService notifications;
 
   public EvaluationAttemptService(
       EvaluationAttemptRepository attempts,
       EvaluationRepository evaluations,
       AttemptGradingService grading,
-      CertificateService certificates) {
+      CertificateService certificates,
+      NotificationService notifications) {
     this.attempts = attempts;
     this.evaluations = evaluations;
     this.grading = grading;
     this.certificates = certificates;
+    this.notifications = notifications;
   }
 
   @Transactional(readOnly = true)
@@ -149,6 +153,7 @@ public class EvaluationAttemptService {
     grading.gradeOnSubmit(attempt);
     EvaluationAttempt saved = attempts.save(attempt);
     maybeIssueCertificate(saved);
+    maybeNotifyGradeResult(saved);
     return toDto(saved);
   }
 
@@ -186,8 +191,32 @@ public class EvaluationAttemptService {
     answer.setFeedback(body.feedback());
     grading.recomputeAfterManualGrade(attempt);
     EvaluationAttempt saved = attempts.save(attempt);
+    maybeNotifyGradeResult(saved);
     maybeIssueCertificate(saved);
     return toDto(saved);
+  }
+
+  private void maybeNotifyGradeResult(EvaluationAttempt attempt) {
+    if (attempt.getStatus() != AttemptStatus.corrigida) {
+      return;
+    }
+    String marker = "grade-result:" + attempt.getId();
+    if (notifications.existsWithDetails(attempt.getUser().getId(), marker)) {
+      return;
+    }
+    Evaluation evaluation = attempt.getEvaluation();
+    String score =
+        attempt.getScorePct() == null
+            ? "—"
+            : String.format(java.util.Locale.ROOT, "%.0f%%", attempt.getScorePct());
+    notifications.notify(
+        attempt.getUser(),
+        "Resultado da correção",
+        "Sua tentativa em \"" + evaluation.getName() + "\" foi corrigida. Nota: " + score + ".",
+        NotificationType.curso,
+        "/aprendizagem/cursos/" + evaluation.getCourseId(),
+        "Aprendizagem",
+        marker);
   }
 
   private void maybeIssueCertificate(EvaluationAttempt attempt) {

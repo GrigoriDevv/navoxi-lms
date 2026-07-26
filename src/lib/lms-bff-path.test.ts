@@ -18,6 +18,10 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["posts", "p1"])).toBe(true);
     expect(isAllowedLmsPath(["destaques"])).toBe(true);
     expect(isAllowedLmsPath(["destaques", "d1"])).toBe(true);
+    expect(isAllowedLmsPath(["permissions"])).toBe(true);
+    expect(isAllowedLmsPath(["permissions", "p1"])).toBe(true);
+    expect(isAllowedLmsPath(["scheduled-jobs"])).toBe(true);
+    expect(isAllowedLmsPath(["scheduled-jobs", "sj1"])).toBe(true);
     expect(isAllowedLmsPath(["media", "videos"])).toBe(true);
   });
 

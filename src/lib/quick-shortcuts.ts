@@ -146,6 +146,9 @@ export function getActionsForPermissions(
     if (a.action === "create_user" && shouldHidePath("/administracao")) {
       return false;
     }
+    if (a.action === "create_turma" && shouldHidePath("/aprendizagem/turmas")) {
+      return false;
+    }
     return a.permissions.some((p) => can(p));
   });
 }

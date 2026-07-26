@@ -19,6 +19,9 @@ const MOCK_ONLY_PATHS = [
   "/comunicacao",
   "/integracoes",
   "/aprendizagem/certificados",
+  "/aprendizagem/turmas",
+  "/aprendizagem/trilhas",
+  "/aprendizagem/calendario",
 ];
 
 function isMockOnlyPath(pathname) {
@@ -48,6 +51,10 @@ test("source exports gate helpers", () => {
   // Wave C: /configuracoes and /integracoes stay gated (settings/integrations still mock)
   assert.match(source, /\/configuracoes/);
   assert.match(source, /\/integracoes/);
+  // Product decision: mock learning surfaces hidden in prod until Java entities exist
+  assert.match(source, /\/aprendizagem\/turmas/);
+  assert.match(source, /\/aprendizagem\/trilhas/);
+  assert.match(source, /\/aprendizagem\/calendario/);
 });
 
 test("dev: mocks visible by default", () => {
@@ -63,6 +70,9 @@ test("prod: mocks hidden unless flag", () => {
 test("prod hide mock paths and admin without Java", () => {
   assert.equal(resolveShouldHidePath("/auditoria", false, true), true);
   assert.equal(resolveShouldHidePath("/aprendizagem/certificados", false, true), true);
+  assert.equal(resolveShouldHidePath("/aprendizagem/turmas", false, true), true);
+  assert.equal(resolveShouldHidePath("/aprendizagem/trilhas", false, true), true);
+  assert.equal(resolveShouldHidePath("/aprendizagem/calendario", false, true), true);
   assert.equal(resolveShouldHidePath("/aprendizagem/avaliacoes", false, true), false);
   assert.equal(resolveShouldHidePath("/dashboard", false, true), false);
   assert.equal(resolveShouldHidePath("/administracao", false, false), true);
@@ -72,4 +82,5 @@ test("prod hide mock paths and admin without Java", () => {
 test("when mocks visible, nothing hidden", () => {
   assert.equal(resolveShouldHidePath("/auditoria", true, false), false);
   assert.equal(resolveShouldHidePath("/administracao", true, false), false);
+  assert.equal(resolveShouldHidePath("/aprendizagem/turmas", true, true), false);
 });

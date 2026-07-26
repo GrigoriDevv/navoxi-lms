@@ -108,6 +108,9 @@ Rotas abaixo ficam **gated em prod** (nav + deep link → redirect `/dashboard`)
 | `/comunicacao` | Gated — posts/destaques Java (Wave B); alertas/mail/campanhas mock |
 | `/integracoes` | Gated — SSO/RH/BI mock; jobs via store Java (Wave C) quando API on |
 | `/aprendizagem/certificados` | Mock (lista UI); emissão/PDF/verify no Java |
+| `/aprendizagem/turmas` | Mock — sem entidade Java; oculto em prod |
+| `/aprendizagem/trilhas` | Mock — sem entidade Java; oculto em prod |
+| `/aprendizagem/calendario` | Mock — sem entidade Java; oculto em prod |
 | `/aprendizagem/avaliacoes` | Avaliações via Java (Wave A); rota não gated |
 | `/administracao` | **Fase 1** com Java API; oculto em prod se `NEXT_PUBLIC_USE_JAVA_API` ≠ `true` |
 
@@ -138,9 +141,9 @@ O perfil e a unidade vêm do cadastro do usuário. Menus, rotas e dados são fil
 | `/aprendizagem/catalogo` | Fase 1 | Catálogo navegável + aba **Minhas inscrições** |
 | `/aprendizagem/cursos` | Fase 1 | CRUD de cursos + importação de aulas via YouTube |
 | `/aprendizagem/cursos/[courseId]` | Fase 1 | Player de aulas e progresso |
-| `/aprendizagem/turmas` | Fase 1 / parcial | Gestão de turmas vinculadas a cursos e salas |
-| `/aprendizagem/trilhas` | Preview | Trilhas com etapas sequenciais e progresso |
-| `/aprendizagem/calendario` | Preview | Calendário acadêmico de eventos |
+| `/aprendizagem/turmas` | **Demo UI / Fase 2** (oculto em prod) | Gestão de turmas — mock; só `turmaId`/`turmaName` denormalizados na matrícula |
+| `/aprendizagem/trilhas` | **Demo UI / Fase 2** (oculto em prod) | Trilhas com etapas sequenciais — mock sem backend |
+| `/aprendizagem/calendario` | **Demo UI / Fase 2** (oculto em prod) | Calendário acadêmico — mock sem backend |
 | `/aprendizagem/biblioteca` | Preview | Biblioteca de materiais de aprendizagem |
 | `/aprendizagem/salas` | Preview | Cadastro de salas e recursos presenciais |
 | `/aprendizagem/certificados` | **Demo UI / Fase 2** | Emissão e gestão de certificados (mock) |
@@ -337,6 +340,7 @@ A **Fase 1** tem backend Java real para auth, aprendizagem core, questões/avali
 | Relatórios de conclusão | Endpoints Java `GET /api/v1/reports/completion` (por curso/turma) e `GET /api/v1/reports/pending` (pendências por aluno) para `admin_premium`/`admin_unidade`. A página `/relatorios` **ainda mostra KPIs mock** — não plugada |
 | Auditoria / Config restante / Comunicação restante (alertas, mail, campanhas) / Integrações | Mock — não persistidos; auditoria com IP seed fixo e export sem handler |
 | Certificados | Emissão automática no Java (matrícula concluída + avaliações aprovadas); PDF on-the-fly; verificação pública `/certificados/verificar/[hash]`. Lista `/aprendizagem/certificados` ainda mock/gated |
+| Turmas / Trilhas / Calendário | Mock UI; **ocultos em prod** (`MOCK_ONLY_PATHS`). Sem CRUD Java — decisão de produto: não mostrar até backend real |
 | Upload de arquivos | Simulado (metadados apenas) |
 | E-mail / push / SMS | Simulados na UI |
 | Integrações SSO/RH/BI | Status mock; toggles alteram apenas o estado local |
@@ -354,6 +358,7 @@ Em propostas e contratos, **não vender como prontos / persistidos**:
 | Auditoria (UI `/auditoria`) | Mock seed — `access_log` Postgres existe para LGPD (login/export/delete), mas a tela admin ainda não consome |
 | Retenção LGPD | Política + purge automático (`lesson_progress` 24m, `access_log` 12m): [`docs/lgpd-data-retention.md`](docs/lgpd-data-retention.md) |
 | Configurações (parâmetros UI) | Mock / seed React — matriz de permissões e jobs agendados via Java; rota `/configuracoes` gated |
+| Turmas / Trilhas / Calendário | Mock UI — ocultos em prod até backend Java; páginas permanecem no repo para roadmap |
 
 Ordem e contratos para persistir na API Java: playbook [FE-5](docs/fe-5-mock-to-java-migration.md) (depois contents/alerts/mail/integrations).
 

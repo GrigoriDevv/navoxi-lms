@@ -20,7 +20,7 @@ Inventário para não tratar mock como backend real. Detalhes de produto e rotas
 | Notificações | Postgres | idem (`use-notifications-store`) |
 | Admin usuários (`GET/POST/PATCH/DELETE /api/v1/users`) | Postgres | idem; página `/administracao` |
 | **FE-1 restantes** (`contents`, `alertRules`, `internalMails`, `automations`, `integrations`) | **Mock** — `seed.*` + estado React | Domain hooks FE-4: `use-communication-store` (alertRules/internalMails/automations), `use-repository-store` (só `contents`), `use-admin-store` (integrations + settings/audit/users locais); `// MOCK` nos slices; `/comunicacao`, `/configuracoes` e `/integracoes` permanecem gated (ainda têm mocks mistos). Migração Java: [FE-5](docs/fe-5-mock-to-java-migration.md) |
-| Aprendizagem demo (turmas, trilhas, salas, interesses) | **Mock** | `use-learning-store.ts` quando Java API off ou campos sem endpoint |
+| Aprendizagem demo (turmas, trilhas, salas, interesses, calendário) | **Mock** | `use-learning-store.ts` quando Java API off ou campos sem endpoint; `/aprendizagem/turmas`, `/trilhas`, `/calendario` **gated** em `MOCK_ONLY_PATHS` (prod) |
 | Lista UI de certificados (`/aprendizagem/certificados`) | **Mock** (seed) | gated em `MOCK_ONLY_PATHS`; emissão/verify/PDF já no Java |
 | Outros mock admin (`users` lista local, `messages`, `auditLogs`, `settings`) | **Mock** | `use-admin-store` / communication; admin Java de usuários usa API direta |
 | Preferências UI | localStorage | `use-auth-store` |
@@ -44,7 +44,7 @@ flowchart TB
     CommMock[use-communication-store alertRules mail automations]
     RepoContents[use-repository-store contents]
     AdminMock[use-admin-store integrations settings audit]
-    LearnMock[turmas trilhas salas interesses certListMock]
+    LearnMock[turmas trilhas calendario salas interesses certListMock]
   end
   UI[Pages] --> java
   UI --> mock

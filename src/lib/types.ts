@@ -117,6 +117,8 @@ export interface Certificado {
   issuedAt: string;
   expiresAt: string;
   status: "valido" | "expirado" | "revogado";
+  /** Hash público de verificação (API Java). Ausente no seed mock. */
+  validationHash?: string;
 }
 
 export interface InteresseCurso {
@@ -310,6 +312,8 @@ export interface Evaluation {
   status: "rascunho" | "publicada" | "encerrada" | "aplicada";
   dueDate: string;
   appliedAt?: string;
+  /** Nota mínima 0–100 (default 70 no backend). */
+  passingScorePct?: number;
 }
 
 export type AttemptStatus =
@@ -324,6 +328,7 @@ export interface AttemptAnswer {
   responseText?: string | null;
   selectedOption?: string | null;
   isCorrect?: boolean | null;
+  feedback?: string | null;
 }
 
 export interface EvaluationAttempt {
@@ -337,6 +342,46 @@ export interface EvaluationAttempt {
   submittedAt?: string | null;
   scorePct?: number | null;
   answers: AttemptAnswer[];
+}
+
+export interface CourseCompletionRow {
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: UnitId;
+  enrolled: number;
+  completed: number;
+  inProgress: number;
+  notStarted: number;
+  avgProgressPct: number;
+  completionRatePct: number;
+}
+
+export interface PendingEvaluation {
+  evaluationId: string;
+  name: string;
+  dueDate: string;
+  state: "nao_iniciada" | "em_andamento" | "aguardando_correcao";
+}
+
+export interface StudentPendingRow {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  courseId: string;
+  courseTitle: string;
+  turmaId?: string | null;
+  turmaName?: string | null;
+  unitId: UnitId;
+  progressPct: number;
+  lessonsTotal: number;
+  lessonsCompleted: number;
+  lessonsPending: number;
+  pendingLessonTitles: string[];
+  evaluationsTotal: number;
+  evaluationsPending: number;
+  pendingEvaluations: PendingEvaluation[];
 }
 
 export interface Destaque {

@@ -17,9 +17,12 @@ Controllers em `backend/src/main/java/com/navoxi/lms/web/` hoje:
 | `CatalogController` / `LessonController` | módulos e aulas |
 | `EnrollmentController` / `EnrollmentRequestController` | matrículas |
 | `UserController` / `AdminUsersController` | usuário atual + admin users |
+| `QuestionController` / `EvaluationController` / `EvaluationAttemptController` | Wave A + tentativas |
+| `PostController` / `DestaqueController` | Wave B |
+| `PermissionController` / `ScheduledJobController` | Wave C |
 | `HealthController` / notificações | health + inbox |
 
-**Ausentes:** `Question`, `Evaluation`, `Post`, `Destaque`, `Permission` (CRUD de matriz), `ScheduledJob`, e os demais FE-1 (`ContentAsset`, `AlertRule`, `InternalMail`, `Automation`, `Integration`).
+**Ausentes:** os FE-1 restantes (`ContentAsset`, `AlertRule`, `InternalMail`, `Automation`, `Integration`).
 
 Sem esses endpoints, o front **não** deve inventar RQ/BFF vazios.
 
@@ -31,13 +34,13 @@ Gates de rota em prod: [`src/lib/mock-module-gates.ts`](../src/lib/mock-module-g
 
 | Slice | Hook / origem (hoje) | Rotas UI principais | Gate prod | API Java |
 |---|---|---|---|---|
-| `questions` | `store.tsx` → `useApp` / `useAuthScope` | `/repositorio/questoes` | (não em `MOCK_ONLY_PATHS`; dados mock) | **missing** |
-| `evaluations` | idem | `/aprendizagem/avaliacoes` | `MOCK_ONLY_PATHS` | **missing** |
-| `posts` | idem | `/comunicacao` | `MOCK_ONLY_PATHS` | **missing** |
-| `destaques` | idem | `/comunicacao` | `MOCK_ONLY_PATHS` | **missing** |
-| `permissions` | idem | `/configuracoes`, `/identidade` | `configuracoes` gated | **missing** |
-| `scheduledJobs` | idem | `/configuracoes`, `/integracoes` | ambos gated | **missing** |
-| `contents` | idem | `/repositorio` | (dados mock) | **missing** |
+| `questions` | `use-questions` + `use-repository-store` | `/repositorio/questoes` | rota liberada | **Wave A (feito)** |
+| `evaluations` | `use-evaluations` + `use-repository-store` | `/aprendizagem/avaliacoes` | rota liberada | **Wave A (feito)** |
+| `posts` | `use-posts` + `use-communication-store` | `/comunicacao` | `MOCK_ONLY_PATHS` (mocks mistos) | **Wave B (feito)** |
+| `destaques` | `use-destaques` + `use-communication-store` | `/comunicacao` | idem | **Wave B (feito)** |
+| `permissions` | `use-permissions` + `use-admin-store` | `/configuracoes`, `/identidade` | `configuracoes` gated (mocks mistos) | **Wave C (feito)** |
+| `scheduledJobs` | `use-scheduled-jobs` + `use-admin-store` | `/configuracoes`, `/integracoes` | ambos gated (mocks mistos) | **Wave C (feito)** |
+| `contents` | `store.tsx` → `useApp` / `useAuthScope` | `/repositorio` | (dados mock) | **missing** |
 | `alertRules` | idem | `/comunicacao` | gated | **missing** |
 | `internalMails` | idem | `/comunicacao` | gated | **missing** |
 | `automations` | idem | `/integracoes` | gated | **missing** |
@@ -55,6 +58,8 @@ flowchart LR
   later[Waves_later_contents_alerts_mail]
   waveA --> waveB --> waveC --> later
 ```
+
+Waves A, B e C entregues (PRs de questões/avaliações, posts/destaques e permissions/scheduled-jobs). As rotas `/comunicacao`, `/configuracoes` e `/integracoes` seguem gated porque ainda misturam slices mock (`alertRules`, `internalMails`, `automations`, `integrations`, `settings`).
 
 ### Wave A — repositório (prioridade 1)
 
@@ -76,8 +81,10 @@ Shapes de referência FE: `Question`, `Evaluation` em `src/lib/types.ts` (`unitI
 
 | Recurso | Contrato mínimo |
 |---|---|
-| Permissions | `GET /permissions`, `PATCH /permissions/{id}` (roles) |
-| Scheduled jobs | `GET /scheduled-jobs`, `PATCH /scheduled-jobs/{id}` (enable / schedule) |
+| Permissions | `GET /permissions`, `GET/PATCH /permissions/{id}` (roles) |
+| Scheduled jobs | `GET /scheduled-jobs`, `GET/PATCH /scheduled-jobs/{id}` (enable / schedule) |
+
+Ambos são configuração global (sem escopo de unidade) e exigem `admin_premium` — mesmo perfil que abre `/identidade` e `/configuracoes` no [`rbac.ts`](../src/lib/rbac.ts). A matriz persistida é exibição/configuração: o enforcement real continua nos `@PreAuthorize` por role.
 
 ### Fora de escopo imediato (waves seguintes)
 
@@ -142,4 +149,4 @@ Executar **nesta ordem** num PR (ou duo BE+FE linkados):
 
 ## Próximo PR de código
 
-Quando **Wave A** existir no Spring: branch FE `feat/fe-5-wave-a-questions-evaluations` seguindo este playbook. Waves B e C em PRs separados.
+Waves A–C entregues. Próximo: `contents` (repositório) e depois comunicação restante (`alertRules`, `internalMails`, `automations`) e `integrations` — um PR por slice/wave, mesmo playbook.

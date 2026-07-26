@@ -13,4 +13,6 @@ public record EvaluationRequest(
     @NotNull UnitId unitId,
     @NotNull List<String> questionIds,
     @NotNull EvaluationStatus status,
-    @NotBlank String dueDate) {}
+    @NotBlank String dueDate,
+    /** Opcional; default 70 se omitido. */
+    Double passingScorePct) {}

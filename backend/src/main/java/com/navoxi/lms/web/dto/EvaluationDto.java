@@ -14,4 +14,5 @@ public record EvaluationDto(
     Integer questionCount,
     EvaluationStatus status,
     String dueDate,
-    String appliedAt) {}
+    String appliedAt,
+    Double passingScorePct) {}

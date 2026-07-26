@@ -1,6 +1,7 @@
 package com.navoxi.lms.web;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -324,6 +325,338 @@ class EvaluationAttemptControllerTest {
     org.junit.jupiter.api.Assertions.assertEquals(Boolean.TRUE, vfCorrect);
     org.junit.jupiter.api.Assertions.assertNull(essayCorrect);
   }
+
+  @Test
+  void staffGradesEssayCorrectClosesAttempt() throws Exception {
+    MixAttempt mix = startMixedSubmittedAttempt();
+    String essayAnswerId = answerIdForQuestion(mix.submittedBody(), mix.essayId());
+
+    MvcResult graded =
+        mockMvc
+            .perform(
+                patch("/api/v1/attempts/" + mix.attemptId() + "/answers/" + essayAnswerId + "/grade")
+                    .header("Authorization", "Bearer " + adminJwt)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        { "isCorrect": true, "feedback": "Boa explicação" }
+                        """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("corrigida"))
+            .andExpect(jsonPath("$.scorePct").value(100.0))
+            .andReturn();
+
+    JsonNode answers = objectMapper.readTree(graded.getResponse().getContentAsString()).get("answers");
+    JsonNode essayAnswer = null;
+    for (JsonNode a : answers) {
+      if (a.get("questionId").asText().equals(mix.essayId())) {
+        essayAnswer = a;
+        break;
+      }
+    }
+    org.junit.jupiter.api.Assertions.assertNotNull(essayAnswer);
+    org.junit.jupiter.api.Assertions.assertTrue(essayAnswer.get("isCorrect").asBoolean());
+    org.junit.jupiter.api.Assertions.assertEquals("Boa explicação", essayAnswer.get("feedback").asText());
+  }
+
+  @Test
+  void staffGradesEssayWrongPartialScore() throws Exception {
+    MixAttempt mix = startMixedSubmittedAttempt();
+    String essayAnswerId = answerIdForQuestion(mix.submittedBody(), mix.essayId());
+
+    mockMvc
+        .perform(
+            patch("/api/v1/attempts/" + mix.attemptId() + "/answers/" + essayAnswerId + "/grade")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    { "isCorrect": false, "feedback": "Incompleto" }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("corrigida"))
+        .andExpect(jsonPath("$.scorePct").value(50.0));
+  }
+
+  @Test
+  void alunoCannotGradeEssay() throws Exception {
+    MixAttempt mix = startMixedSubmittedAttempt();
+    String essayAnswerId = answerIdForQuestion(mix.submittedBody(), mix.essayId());
+
+    mockMvc
+        .perform(
+            patch("/api/v1/attempts/" + mix.attemptId() + "/answers/" + essayAnswerId + "/grade")
+                .header("Authorization", "Bearer " + alunoJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    { "isCorrect": true }
+                    """))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void cannotManuallyGradeObjectiveAnswer() throws Exception {
+    MixAttempt mix = startMixedSubmittedAttempt();
+    String vfAnswerId = answerIdForQuestion(mix.submittedBody(), mix.vfId());
+
+    mockMvc
+        .perform(
+            patch("/api/v1/attempts/" + mix.attemptId() + "/answers/" + vfAnswerId + "/grade")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    { "isCorrect": false }
+                    """))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void twoEssaysStayPendingUntilBothGraded() throws Exception {
+    MvcResult e1 =
+        mockMvc
+            .perform(
+                post("/api/v1/questions")
+                    .header("Authorization", "Bearer " + adminJwt)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "text": "Essay 1",
+                          "type": "dissertativa",
+                          "category": "Science",
+                          "unitId": "matriz"
+                        }
+                        """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String essay1 = objectMapper.readTree(e1.getResponse().getContentAsString()).get("id").asText();
+
+    MvcResult e2 =
+        mockMvc
+            .perform(
+                post("/api/v1/questions")
+                    .header("Authorization", "Bearer " + adminJwt)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "text": "Essay 2",
+                          "type": "dissertativa",
+                          "category": "Science",
+                          "unitId": "matriz"
+                        }
+                        """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String essay2 = objectMapper.readTree(e2.getResponse().getContentAsString()).get("id").asText();
+
+    String courseId = LearningTestFixtures.saveCourse(courses, "c-2essay", "Two essays").getId();
+    MvcResult eval =
+        mockMvc
+            .perform(
+                post("/api/v1/evaluations")
+                    .header("Authorization", "Bearer " + adminJwt)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "name": "Só dissertativas",
+                          "courseId": "%s",
+                          "unitId": "matriz",
+                          "questionIds": ["%s", "%s"],
+                          "status": "aplicada",
+                          "dueDate": "2026-12-31"
+                        }
+                        """
+                            .formatted(courseId, essay1, essay2)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String evalId = objectMapper.readTree(eval.getResponse().getContentAsString()).get("id").asText();
+
+    MvcResult started =
+        mockMvc
+            .perform(
+                post("/api/v1/evaluations/" + evalId + "/attempts")
+                    .header("Authorization", "Bearer " + alunoJwt))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String attemptId =
+        objectMapper.readTree(started.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc
+        .perform(
+            put("/api/v1/attempts/" + attemptId + "/answers")
+                .header("Authorization", "Bearer " + alunoJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "answers": [
+                        {"questionId":"%s","responseText":"r1"},
+                        {"questionId":"%s","responseText":"r2"}
+                      ]
+                    }
+                    """
+                        .formatted(essay1, essay2)))
+        .andExpect(status().isOk());
+
+    MvcResult submitted =
+        mockMvc
+            .perform(
+                post("/api/v1/attempts/" + attemptId + "/submit")
+                    .header("Authorization", "Bearer " + alunoJwt))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("aguardando_correcao"))
+            .andReturn();
+    JsonNode body = objectMapper.readTree(submitted.getResponse().getContentAsString());
+    String a1 = answerIdForQuestion(body, essay1);
+    String a2 = answerIdForQuestion(body, essay2);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/attempts/" + attemptId + "/answers/" + a1 + "/grade")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    { "isCorrect": true }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("aguardando_correcao"))
+        .andExpect(jsonPath("$.scorePct").value(50.0));
+
+    mockMvc
+        .perform(
+            patch("/api/v1/attempts/" + attemptId + "/answers/" + a2 + "/grade")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    { "isCorrect": true }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("corrigida"))
+        .andExpect(jsonPath("$.scorePct").value(100.0));
+  }
+
+  private MixAttempt startMixedSubmittedAttempt() throws Exception {
+    MvcResult vf =
+        mockMvc
+            .perform(
+                post("/api/v1/questions")
+                    .header("Authorization", "Bearer " + adminJwt)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "text": "Terra é redonda?",
+                          "type": "verdadeiro",
+                          "category": "Science",
+                          "unitId": "matriz",
+                          "correctKey": "verdadeiro"
+                        }
+                        """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String vfId = objectMapper.readTree(vf.getResponse().getContentAsString()).get("id").asText();
+
+    MvcResult essay =
+        mockMvc
+            .perform(
+                post("/api/v1/questions")
+                    .header("Authorization", "Bearer " + adminJwt)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "text": "Explique gravidade",
+                          "type": "dissertativa",
+                          "category": "Science",
+                          "unitId": "matriz"
+                        }
+                        """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String essayId =
+        objectMapper.readTree(essay.getResponse().getContentAsString()).get("id").asText();
+
+    String courseId =
+        LearningTestFixtures.saveCourse(
+                courses, "c-mix-" + System.nanoTime(), "Mix grade")
+            .getId();
+    MvcResult eval =
+        mockMvc
+            .perform(
+                post("/api/v1/evaluations")
+                    .header("Authorization", "Bearer " + adminJwt)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "name": "Mista grade",
+                          "courseId": "%s",
+                          "unitId": "matriz",
+                          "questionIds": ["%s", "%s"],
+                          "status": "aplicada",
+                          "dueDate": "2026-12-31"
+                        }
+                        """
+                            .formatted(courseId, vfId, essayId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String mixEvalId =
+        objectMapper.readTree(eval.getResponse().getContentAsString()).get("id").asText();
+
+    MvcResult started =
+        mockMvc
+            .perform(
+                post("/api/v1/evaluations/" + mixEvalId + "/attempts")
+                    .header("Authorization", "Bearer " + alunoJwt))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String attemptId =
+        objectMapper.readTree(started.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc
+        .perform(
+            put("/api/v1/attempts/" + attemptId + "/answers")
+                .header("Authorization", "Bearer " + alunoJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "answers": [
+                        {"questionId":"%s","selectedOption":"Verdadeiro"},
+                        {"questionId":"%s","responseText":"Atração entre massas"}
+                      ]
+                    }
+                    """
+                        .formatted(vfId, essayId)))
+        .andExpect(status().isOk());
+
+    MvcResult submitted =
+        mockMvc
+            .perform(
+                post("/api/v1/attempts/" + attemptId + "/submit")
+                    .header("Authorization", "Bearer " + alunoJwt))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("aguardando_correcao"))
+            .andReturn();
+
+    return new MixAttempt(
+        attemptId,
+        vfId,
+        essayId,
+        objectMapper.readTree(submitted.getResponse().getContentAsString()));
+  }
+
+  private static String answerIdForQuestion(JsonNode attemptBody, String questionId) {
+    for (JsonNode a : attemptBody.get("answers")) {
+      if (a.get("questionId").asText().equals(questionId)) {
+        return a.get("id").asText();
+      }
+    }
+    throw new AssertionError("answer not found for question " + questionId);
+  }
+
+  private record MixAttempt(String attemptId, String vfId, String essayId, JsonNode submittedBody) {}
 
   @Test
   void secondOpenAttemptBlocked() throws Exception {

@@ -18,7 +18,15 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["posts", "p1"])).toBe(true);
     expect(isAllowedLmsPath(["destaques"])).toBe(true);
     expect(isAllowedLmsPath(["destaques", "d1"])).toBe(true);
+    expect(isAllowedLmsPath(["permissions"])).toBe(true);
+    expect(isAllowedLmsPath(["permissions", "p1"])).toBe(true);
+    expect(isAllowedLmsPath(["scheduled-jobs"])).toBe(true);
+    expect(isAllowedLmsPath(["scheduled-jobs", "sj1"])).toBe(true);
     expect(isAllowedLmsPath(["media", "videos"])).toBe(true);
+    expect(isAllowedLmsPath(["reports", "completion"])).toBe(true);
+    expect(isAllowedLmsPath(["reports", "pending"])).toBe(true);
+    expect(isAllowedLmsPath(["certificates", "me"])).toBe(true);
+    expect(isAllowedLmsPath(["certificates", "id", "pdf"])).toBe(true);
   });
 
   it("rejects empty, unknown, and traversal", () => {

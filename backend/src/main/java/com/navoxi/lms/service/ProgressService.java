@@ -25,18 +25,21 @@ public class ProgressService {
   private final EnrollmentRepository enrollments;
   private final EnrollmentService enrollmentService;
   private final NotificationService notifications;
+  private final CertificateService certificates;
 
   public ProgressService(
       CourseLessonRepository lessons,
       LessonProgressRepository progress,
       EnrollmentRepository enrollments,
       EnrollmentService enrollmentService,
-      NotificationService notifications) {
+      NotificationService notifications,
+      CertificateService certificates) {
     this.lessons = lessons;
     this.progress = progress;
     this.enrollments = enrollments;
     this.enrollmentService = enrollmentService;
     this.notifications = notifications;
+    this.certificates = certificates;
   }
 
   @Transactional(readOnly = true)
@@ -91,6 +94,7 @@ public class ProgressService {
           "/aprendizagem/cursos/" + courseId,
           "Aprendizagem",
           "Progresso: 100%");
+      certificates.tryIssue(user.getId(), courseId);
     }
 
     return saved;

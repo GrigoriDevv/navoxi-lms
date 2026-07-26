@@ -44,7 +44,8 @@ public class ApiTokenFilter extends OncePerRequestFilter {
         || path.startsWith("/swagger-ui")
         || path.equals("/swagger-ui.html")
         || path.startsWith("/api-docs")
-        || path.startsWith("/v3/api-docs");
+        || path.startsWith("/v3/api-docs")
+        || path.startsWith("/api/v1/certificates/verify/");
   }
 
   static boolean isAuthPath(String path) {

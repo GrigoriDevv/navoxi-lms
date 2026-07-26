@@ -61,6 +61,10 @@ public class Evaluation {
   @Column(name = "applied_at", length = 64)
   private String appliedAt;
 
+  /** Nota mínima (0–100) para aprovação nesta avaliação. */
+  @Column(name = "passing_score_pct", nullable = false)
+  private Double passingScorePct = 70.0;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -166,6 +170,14 @@ public class Evaluation {
 
   public void setAppliedAt(String appliedAt) {
     this.appliedAt = appliedAt;
+  }
+
+  public Double getPassingScorePct() {
+    return passingScorePct;
+  }
+
+  public void setPassingScorePct(Double passingScorePct) {
+    this.passingScorePct = passingScorePct;
   }
 
   public Instant getCreatedAt() {

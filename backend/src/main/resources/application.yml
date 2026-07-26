@@ -72,6 +72,9 @@ lms:
     enabled: ${LMS_API_RATE_LIMIT_ENABLED:true}
     max-requests: ${LMS_API_RATE_LIMIT_MAX:60}
     window-seconds: ${LMS_API_RATE_LIMIT_WINDOW_SECONDS:60}
+  certificate:
+    validity-months: ${LMS_CERTIFICATE_VALIDITY_MONTHS:24}
+    public-verify-base-url: ${LMS_CERTIFICATE_VERIFY_BASE_URL:http://localhost:3000/certificados/verificar}
 
 springdoc:
   api-docs:

@@ -34,6 +34,7 @@ public final class QuestionEvaluationMapper {
         e.getQuestionCount(),
         e.getStatus(),
         e.getDueDate(),
-        e.getAppliedAt());
+        e.getAppliedAt(),
+        e.getPassingScorePct() == null ? 70.0 : e.getPassingScorePct());
   }
 }

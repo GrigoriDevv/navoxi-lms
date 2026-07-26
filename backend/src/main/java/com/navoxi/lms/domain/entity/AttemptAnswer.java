@@ -34,6 +34,9 @@ public class AttemptAnswer {
   @Column(name = "is_correct")
   private Boolean isCorrect;
 
+  @Column(columnDefinition = "TEXT")
+  private String feedback;
+
   @PrePersist
   void onCreate() {
     if (id == null || id.isBlank()) {
@@ -87,5 +90,13 @@ public class AttemptAnswer {
 
   public void setIsCorrect(Boolean isCorrect) {
     this.isCorrect = isCorrect;
+  }
+
+  public String getFeedback() {
+    return feedback;
+  }
+
+  public void setFeedback(String feedback) {
+    this.feedback = feedback;
   }
 }

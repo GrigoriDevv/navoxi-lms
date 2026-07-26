@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 public interface NotificationRepository extends JpaRepository<Notification, String> {
   List<Notification> findByUserIdOrderByCreatedAtDesc(String userId);
 
+  boolean existsByUser_IdAndDetails(String userId, String details);
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("update Notification n set n.readFlag = true where n.user.id = :userId and n.readFlag = false")
   int markAllReadForUser(@Param("userId") String userId);

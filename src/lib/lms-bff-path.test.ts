@@ -27,6 +27,7 @@ describe("isAllowedLmsPath", () => {
     expect(isAllowedLmsPath(["reports", "pending"])).toBe(true);
     expect(isAllowedLmsPath(["certificates", "me"])).toBe(true);
     expect(isAllowedLmsPath(["certificates", "id", "pdf"])).toBe(true);
+    expect(isAllowedLmsPath(["search"])).toBe(true);
   });
 
   it("rejects empty, unknown, and traversal", () => {

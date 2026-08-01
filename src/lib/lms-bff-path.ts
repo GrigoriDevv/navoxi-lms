@@ -16,6 +16,7 @@ export const LMS_BFF_ALLOWED_PREFIXES = [
   "media",
   "reports",
   "certificates",
+  "search",
 ] as const;
 
 export function isAllowedLmsPath(segments: string[]): boolean {

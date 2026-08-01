@@ -82,6 +82,9 @@ Admin directory: `GET/POST/PATCH/DELETE /api/v1/users` (roles `admin_premium` / 
 | GET | `/api/v1/certificates/verify/{hash}` (público) |
 | GET | `/api/v1/certificates/verify/{hash}/pdf` (público) |
 | PATCH | `/api/v1/certificates/{id}/revoke` |
+| GET | `/api/v1/search?q=&types=&limit=` |
+
+Busca (`GET /api/v1/search`): `q` ≥2 chars; `types` opcional CSV `course,lesson,question` (default os três); `limit` default 20 max 50. ILIKE em título de curso/aula e texto de pergunta; escopo `UnitScope` (`admin_premium` global).
 
 Submit auto-corrige questões `multipla` / `verdadeiro` (`corrigida` + `scorePct`); com dissertativa → `aguardando_correcao`.
 

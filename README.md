@@ -24,6 +24,8 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 
 Templates sem secrets: [`.env.example`](.env.example) (Next → copiar para `.env.local`) e [`backend/.env.example`](backend/.env.example) (Spring).
 
+**Deploy Render (Blueprint):** [`docs/render-deploy.md`](docs/render-deploy.md) + [`render.yaml`](render.yaml) — API Docker + front Node + Postgres.
+
 No front (`.env.local`):
 
 ```env

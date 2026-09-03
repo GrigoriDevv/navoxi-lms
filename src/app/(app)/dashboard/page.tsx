@@ -11,6 +11,7 @@ import { WidgetShell } from "@/components/dashboard/WidgetShell";
 import { QuickShortcuts } from "@/components/home/QuickShortcuts";
 import { QuickActions } from "@/components/home/QuickActions";
 import { DestaquesBanner } from "@/components/home/DestaquesBanner";
+import { PostsMural } from "@/components/home/PostsMural";
 import Link from "next/link";
 import { useDashboardPage } from "./use-dashboard-page";
 
@@ -108,6 +109,8 @@ export default function DashboardPage() {
       )}
 
       {tab === "dashboard" && settings.layout.showDestaques && <DestaquesBanner />}
+
+      {tab === "dashboard" && <PostsMural />}
 
       {/* RF-007, RF-013–018 — Filtros */}
       <DashboardFiltersBar

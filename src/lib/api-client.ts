@@ -68,6 +68,14 @@ async function request<T>(
       data && typeof data === "object" && "error" in data
         ? String((data as { error: string }).error)
         : `API ${res.status}`;
+    if (
+      res.status === 401 &&
+      typeof window !== "undefined" &&
+      window.location.pathname !== "/login"
+    ) {
+      const next = `${window.location.pathname}${window.location.search}`;
+      window.location.replace(`/login?next=${encodeURIComponent(next)}`);
+    }
     throw new ApiError(msg, res.status);
   }
 

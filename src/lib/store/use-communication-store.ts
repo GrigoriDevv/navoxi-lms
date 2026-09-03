@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { isJavaApiEnabled } from "../api-config";
 import * as seed from "../mock-data";
 import {
@@ -32,9 +32,10 @@ export function useCommunicationStore(deps: {
   const { currentUser, log } = deps;
 
   const javaApi = isJavaApiEnabled();
+  const apiQueriesEnabled = javaApi && currentUser !== null;
 
-  const postsQuery = usePosts({ enabled: javaApi });
-  const destaquesQuery = useDestaques({ enabled: javaApi });
+  const postsQuery = usePosts({ enabled: apiQueriesEnabled });
+  const destaquesQuery = useDestaques({ enabled: apiQueriesEnabled });
   const createPostMutation = useCreatePost();
   const updatePostMutation = useUpdatePost();
   const createDestaqueMutation = useCreateDestaque();
@@ -53,13 +54,16 @@ export function useCommunicationStore(deps: {
   // MOCK: not wired to backend
   const [automations, setAutomations] = useState<Automation[]>(seed.automations);
 
-  const posts = javaApi ? (postsQuery.data ?? seed.posts) : mockPosts;
+  const posts = useMemo(
+    () => (javaApi ? (postsQuery.data ?? []) : mockPosts),
+    [javaApi, mockPosts, postsQuery.data]
+  );
   const destaques = javaApi
     ? (destaquesQuery.data ?? seed.destaques)
     : mockDestaques;
 
   const addPost: AppState["addPost"] = useCallback(
-    (p) => {
+    async (p) => {
       const unitId =
         currentUser && !hasPermission(currentUser.role, "view_all_units")
           ? currentUser.unitId
@@ -67,17 +71,13 @@ export function useCommunicationStore(deps: {
       const payload = { ...p, unitId };
 
       if (javaApi) {
-        void createPostMutation
-          .mutateAsync(payload)
-          .then((created) => {
-            log({
-              user: currentUser?.email ?? "system",
-              action: `Publicou post '${created.title}'`,
-              module: "Comunicação",
-              severity: "info",
-            });
-          })
-          .catch((err) => console.error("[lms-api] createPost", err));
+        const created = await createPostMutation.mutateAsync(payload);
+        log({
+          user: currentUser?.email ?? "system",
+          action: `Publicou post '${created.title}'`,
+          module: "Comunicação",
+          severity: "info",
+        });
         return;
       }
 
@@ -103,32 +103,28 @@ export function useCommunicationStore(deps: {
   );
 
   const updatePost: AppState["updatePost"] = useCallback(
-    (id, data) => {
+    async (id, data) => {
       if (javaApi) {
         const current = posts.find((p) => p.id === id);
         if (!current) return;
         const merged = { ...current, ...data };
-        void updatePostMutation
-          .mutateAsync({
-            id,
-            body: {
-              title: merged.title,
-              body: merged.body,
-              author: merged.author,
-              unitId: merged.unitId,
-              status: merged.status,
-              publishedAt: merged.publishedAt,
-            },
-          })
-          .then(() => {
-            log({
-              user: currentUser?.email ?? "system",
-              action: `Atualizou post '${id}'`,
-              module: "Comunicação",
-              severity: "info",
-            });
-          })
-          .catch((err) => console.error("[lms-api] updatePost", err));
+        await updatePostMutation.mutateAsync({
+          id,
+          body: {
+            title: merged.title,
+            body: merged.body,
+            author: merged.author,
+            unitId: merged.unitId,
+            status: merged.status,
+            publishedAt: merged.publishedAt,
+          },
+        });
+        log({
+          user: currentUser?.email ?? "system",
+          action: `Atualizou post '${id}'`,
+          module: "Comunicação",
+          severity: "info",
+        });
         return;
       }
 

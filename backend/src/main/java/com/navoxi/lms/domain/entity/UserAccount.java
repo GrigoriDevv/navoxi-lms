@@ -51,6 +51,9 @@ public class UserAccount {
   @Column(name = "password_hash")
   private String passwordHash;
 
+  @Column(name = "password_change_required", nullable = false)
+  private boolean passwordChangeRequired;
+
   @Column(name = "microsoft_oid", length = 128)
   private String microsoftOid;
 
@@ -143,6 +146,14 @@ public class UserAccount {
 
   public void setPasswordHash(String passwordHash) {
     this.passwordHash = passwordHash;
+  }
+
+  public boolean isPasswordChangeRequired() {
+    return passwordChangeRequired;
+  }
+
+  public void setPasswordChangeRequired(boolean passwordChangeRequired) {
+    this.passwordChangeRequired = passwordChangeRequired;
   }
 
   public String getMicrosoftOid() {

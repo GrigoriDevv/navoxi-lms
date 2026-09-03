@@ -15,6 +15,7 @@ export interface SessionPayload {
   provider: AuthProvider;
   /** JWT emitido pelo backend Java — obrigatório para /api/lms */
   accessToken?: string;
+  passwordChangeRequired?: boolean;
   exp: number;
 }
 

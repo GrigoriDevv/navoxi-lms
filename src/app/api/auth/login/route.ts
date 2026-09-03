@@ -7,11 +7,15 @@ import {
   SESSION_MAX_AGE,
   sessionCookieOptions,
 } from "@/lib/auth-session";
-import { isDemoLoginAllowed } from "@/lib/demo-auth-config";
+import {
+  isDemoLoginAllowed,
+  resolveDemoLoginFallbackAllowed,
+} from "@/lib/demo-auth-config";
 import { isDemoAccountLoginBlocked } from "@/lib/demo-account-guard";
 import { handleDemoLogin } from "@/lib/demo-login-handler";
 import { AuthUpstreamError, loginWithBackend } from "@/lib/lms-auth-api";
 import { LOGIN_RATE_LIMIT_MESSAGE } from "@/lib/auth-login-error";
+import { isJavaApiEnabled } from "@/lib/api-config";
 
 const GENERIC_AUTH_ERROR = "E-mail ou senha inválidos";
 
@@ -48,6 +52,7 @@ export async function POST(request: NextRequest) {
         avatarColor: backendUser.avatarColor,
         provider: "password",
         accessToken: backendUser.accessToken,
+        passwordChangeRequired: backendUser.passwordChangeRequired,
       },
       Date.now() + SESSION_MAX_AGE * 1000
     );
@@ -65,6 +70,7 @@ export async function POST(request: NextRequest) {
       unitId: sessionPayload.unitId,
       avatarColor: sessionPayload.avatarColor,
       provider: sessionPayload.provider,
+      passwordChangeRequired: sessionPayload.passwordChangeRequired,
     });
   } catch (err) {
     if (err instanceof AuthUpstreamError && err.status === 429) {
@@ -74,7 +80,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isDemoLoginAllowed()) {
+    // A sessão demo não possui JWT do backend. Com a API Java ativa ela criaria
+    // uma sessão parcialmente autenticada e todas as chamadas ao BFF falhariam.
+    if (!resolveDemoLoginFallbackAllowed(isJavaApiEnabled(), isDemoLoginAllowed())) {
       return NextResponse.json({ error: GENERIC_AUTH_ERROR }, { status: 401 });
     }
 

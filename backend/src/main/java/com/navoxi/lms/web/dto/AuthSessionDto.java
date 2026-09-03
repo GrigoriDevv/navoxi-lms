@@ -11,4 +11,5 @@ public record AuthSessionDto(
     UnitId unitId,
     String avatarColor,
     String provider,
-    String accessToken) {}
+    String accessToken,
+    boolean passwordChangeRequired) {}

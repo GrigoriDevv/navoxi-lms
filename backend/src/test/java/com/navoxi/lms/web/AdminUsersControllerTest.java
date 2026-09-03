@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navoxi.lms.domain.entity.UserAccount;
@@ -14,6 +16,10 @@ import com.navoxi.lms.domain.enums.Role;
 import com.navoxi.lms.domain.enums.UnitId;
 import com.navoxi.lms.domain.enums.UserStatus;
 import com.navoxi.lms.repository.UserAccountRepository;
+import com.navoxi.lms.service.mail.EmailSender;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +28,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(
     properties = {
       "spring.datasource.url=jdbc:h2:mem:lms-admin-users;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-      "lms.seed.enabled=false"
+      "lms.seed.enabled=false",
+      "lms.mail.enabled=true"
     })
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
@@ -39,6 +47,7 @@ class AdminUsersControllerTest {
   @Autowired private UserAccountRepository users;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private ObjectMapper objectMapper;
+  @MockitoBean private EmailSender emailSender;
 
   private String alunoId;
   private String adminJwt;
@@ -134,6 +143,111 @@ class AdminUsersControllerTest {
         .andExpect(jsonPath("$.email").value("instrutor.novo@navoxi.com"))
         .andExpect(jsonPath("$.role").value("instrutor"))
         .andExpect(jsonPath("$.status").value("ativo"));
+  }
+
+  @Test
+  void localUserMustDefinePasswordOnFirstLogin() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/users")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "name": "Novo Colaborador",
+                      "email": "primeiro.acesso@navoxi.com",
+                      "role": "aluno",
+                      "unitId": "matriz",
+                      "department": "Operações",
+                      "authProvider": "local",
+                      "password": "temporaria123"
+                    }
+                    """))
+        .andExpect(status().isCreated());
+
+    String firstLoginBody =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/login")
+                    .header("Authorization", "Bearer local-dev-token")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"email":"primeiro.acesso@navoxi.com","password":"temporaria123"}
+                        """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.passwordChangeRequired").value(true))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String firstAccessJwt = objectMapper.readTree(firstLoginBody).get("accessToken").asText();
+
+    mockMvc
+        .perform(
+            post("/api/v1/users/me/initial-password")
+                .header("Authorization", "Bearer " + firstAccessJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\":\"minha-senha-segura-123\"}"))
+        .andExpect(status().isNoContent());
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .header("Authorization", "Bearer local-dev-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"email":"primeiro.acesso@navoxi.com","password":"minha-senha-segura-123"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.passwordChangeRequired").value(false));
+  }
+
+  @Test
+  void generatesAndEmailsTemporaryPassword() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/users")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "name": "Gabriel Santos",
+                      "email": "gabriel.santos@navoxi.com.br",
+                      "role": "aluno",
+                      "unitId": "matriz",
+                      "department": "Operações",
+                      "authProvider": "local"
+                    }
+                    """))
+        .andExpect(status().isCreated());
+
+    ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+    verify(emailSender)
+        .send(
+            eq("gabriel.santos@navoxi.com.br"),
+            eq("Seu primeiro acesso ao Navoxi LMS"),
+            body.capture());
+
+    Matcher passwordLine = Pattern.compile("Senha temporária: ([^\\n]+)").matcher(body.getValue());
+    if (!passwordLine.find()) {
+      throw new AssertionError("E-mail não contém senha temporária");
+    }
+
+    String password = passwordLine.group(1);
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .header("Authorization", "Bearer local-dev-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        java.util.Map.of(
+                            "email", "gabriel.santos@navoxi.com.br", "password", password))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.passwordChangeRequired").value(true));
   }
 
   @Test

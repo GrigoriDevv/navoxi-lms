@@ -79,17 +79,17 @@ export default function TrilhasPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {trilhas.map((tr) => (
           <Card key={tr.id} className="p-6 flex flex-col">
-            <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-blue-100 text-brand grid place-items-center">
+            <div className="flex h-11 items-center gap-3">
+              <div className="w-11 h-11 shrink-0 rounded-xl bg-blue-100 text-brand grid place-items-center">
                 <Icon name="route" />
               </div>
-              <div className="flex gap-1">
-                <Badge color="blue">{tr.audience}</Badge>
-                <Badge color={statusColor[tr.status]}>{tr.status}</Badge>
+              <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                <Badge color="blue" className="min-w-0 truncate" title={tr.audience}>{tr.audience}</Badge>
+                <Badge color={statusColor[tr.status]} className="shrink-0">{tr.status}</Badge>
               </div>
             </div>
-            <h3 className="font-semibold text-slate-800 mt-4">{tr.name}</h3>
-            <p className="text-sm text-slate-500 mt-1">{tr.description}</p>
+            <h3 className="font-semibold text-slate-800 mt-5 min-h-12">{tr.name}</h3>
+            <p className="text-sm text-slate-500 mt-1 min-h-10">{tr.description}</p>
 
             <div className="mt-4 space-y-2 flex-1">
               {tr.steps.map((step) => (

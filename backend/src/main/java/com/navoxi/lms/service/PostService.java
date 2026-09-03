@@ -31,7 +31,9 @@ public class PostService {
   @Transactional(readOnly = true)
   public List<PostDto> list(UserAccount actor) {
     List<Post> list =
-        UnitScope.isGlobal(actor) ? posts.findAll() : posts.findByUnitId(actor.getUnitId());
+        UnitScope.isGlobal(actor)
+            ? posts.findAllByOrderByCreatedAtDescIdDesc()
+            : posts.findByUnitIdOrderByCreatedAtDescIdDesc(actor.getUnitId());
     return list.stream().map(PostDestaqueMapper::toDto).toList();
   }
 

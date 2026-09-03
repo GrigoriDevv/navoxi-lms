@@ -1,0 +1,99 @@
+# Render Blueprint — navoxi-lms (API + Front + Postgres)
+# Docs: https://render.com/docs/blueprint-spec
+# Deploy: Dashboard → New → Blueprint → select this repo
+#
+# After first sync, set LMS_CERTIFICATE_VERIFY_BASE_URL if certificates QR links matter:
+#   https://<navoxi-lms>.onrender.com/certificados/verificar
+#
+# Free Postgres expires ~30 days. Free web services spin down after idle.
+
+services:
+  - type: web
+    name: lms-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: LMS_SEED_ENABLED
+        value: "false"
+      - key: LMS_BLOCK_DEMO_SEED_LOGINS
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lms-db
+          property: connectionString
+      - key: LMS_API_TOKEN
+        fromGroup: lms-secrets
+      - key: LMS_JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        fromService:
+          name: navoxi-lms
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: LMS_PUBLIC_APP_URL
+        fromService:
+          name: navoxi-lms
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: LMS_CERTIFICATE_VERIFY_BASE_URL
+        sync: false
+      - key: LMS_MAIL_ENABLED
+        value: "true"
+      - key: LMS_MAIL_FROM
+        value: Navoxi LMS <noreply@navoxi.com.br>
+      - key: SPRING_MAIL_HOST
+        value: smtp.resend.com
+      - key: SPRING_MAIL_PORT
+        value: "587"
+      - key: SPRING_MAIL_USERNAME
+        value: resend
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: SPRING_MAIL_SMTP_AUTH
+        value: "true"
+      - key: SPRING_MAIL_SMTP_STARTTLS
+        value: "true"
+
+  - type: web
+    name: navoxi-lms
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      - key: NEXT_PUBLIC_USE_JAVA_API
+        value: "true"
+      - key: LMS_API_TOKEN
+        fromGroup: lms-secrets
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: LMS_API_URL
+        fromService:
+          name: lms-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_APP_URL
+        fromService:
+          name: navoxi-lms
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  - name: lms-db
+    plan: free
+
+envVarGroups:
+  - name: lms-secrets
+    envVars:
+      - key: LMS_API_TOKEN
+        generateValue: true

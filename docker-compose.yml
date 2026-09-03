@@ -1,0 +1,36 @@
+# Stack local para testar a API (profile local = H2 + seed).
+# Uso: docker compose up --build
+# Health: http://localhost:8080/api/v1/health
+# Front (.env.local): LMS_API_URL=http://localhost:8080 + LMS_API_TOKEN=local-dev-token
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      PORT: "8080"
+      LMS_API_TOKEN: local-dev-token
+      LMS_SEED_ENABLED: "true"
+      LMS_SEED_PASSWORD: demo1234
+      CORS_ORIGINS: http://localhost:3000
+      LMS_CERTIFICATE_VERIFY_BASE_URL: http://localhost:3000/certificados/verificar
+      LMS_PUBLIC_APP_URL: http://localhost:3000
+      LMS_BLOCK_DEMO_SEED_LOGINS: "false"
+      LMS_MAIL_ENABLED: "${LMS_MAIL_ENABLED:-false}"
+      LMS_MAIL_FROM: "${LMS_MAIL_FROM:-Navoxi LMS <noreply@navoxi.com.br>}"
+      SPRING_MAIL_HOST: "${SPRING_MAIL_HOST:-smtp.resend.com}"
+      SPRING_MAIL_PORT: "${SPRING_MAIL_PORT:-587}"
+      SPRING_MAIL_USERNAME: "${SPRING_MAIL_USERNAME:-resend}"
+      SPRING_MAIL_PASSWORD: "${SPRING_MAIL_PASSWORD:-}"
+      SPRING_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_SMTP_STARTTLS: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s

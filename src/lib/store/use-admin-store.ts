@@ -27,9 +27,10 @@ type LogFn = AppState["log"];
 
 export function useAdminStore(currentUser: AuthState | null) {
   const javaApi = isJavaApiEnabled();
+  const apiQueriesEnabled = javaApi && currentUser !== null;
 
-  const permissionsQuery = usePermissions({ enabled: javaApi });
-  const scheduledJobsQuery = useScheduledJobs({ enabled: javaApi });
+  const permissionsQuery = usePermissions({ enabled: apiQueriesEnabled });
+  const scheduledJobsQuery = useScheduledJobs({ enabled: apiQueriesEnabled });
   const updatePermissionMutation = useUpdatePermission();
   const updateScheduledJobMutation = useUpdateScheduledJob();
 

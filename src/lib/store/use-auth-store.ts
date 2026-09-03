@@ -71,8 +71,16 @@ export function useAuthStore(_users: User[]) {
           unitId?: AuthState["unitId"];
           avatarColor?: string;
           provider?: AuthState["authProvider"];
+          passwordChangeRequired?: boolean;
         };
         if (cancelled) return;
+        if (data.authenticated && data.passwordChangeRequired) {
+          setCurrentUser(null);
+          if (window.location.pathname !== "/primeiro-acesso") {
+            window.location.replace("/primeiro-acesso");
+          }
+          return;
+        }
         if (data.authenticated && data.email && data.role) {
           const u = authStateFromSession({
             id: data.id,
@@ -133,7 +141,12 @@ export function useAuthStore(_users: User[]) {
         unitId?: AuthState["unitId"];
         avatarColor?: string;
         provider?: AuthState["authProvider"];
+        passwordChangeRequired?: boolean;
       };
+      if (data.passwordChangeRequired) {
+        window.location.assign("/primeiro-acesso");
+        return;
+      }
       const u = authStateFromSession({
         id: data.id,
         email: data.email,

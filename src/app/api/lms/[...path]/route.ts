@@ -58,10 +58,14 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
     const upstreamType = upstream.headers.get("content-type");
     if (upstreamType) resHeaders.set("content-type", upstreamType);
 
-    return new NextResponse(responseBody, {
+    const response = new NextResponse(responseBody, {
       status: upstream.status,
       headers: resHeaders,
     });
+    if (upstream.status === 401) {
+      response.cookies.delete(SESSION_COOKIE);
+    }
+    return response;
   } catch {
     return NextResponse.json({ error: "Falha ao contatar API LMS" }, { status: 502 });
   }

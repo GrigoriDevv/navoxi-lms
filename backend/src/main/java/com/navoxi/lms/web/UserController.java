@@ -2,6 +2,7 @@ package com.navoxi.lms.web;
 
 import com.navoxi.lms.domain.entity.UserAccount;
 import com.navoxi.lms.service.AccessLogService;
+import com.navoxi.lms.service.AuthService;
 import com.navoxi.lms.service.CourseMapper;
 import com.navoxi.lms.service.EnrollmentService;
 import com.navoxi.lms.service.NotificationService;
@@ -9,11 +10,14 @@ import com.navoxi.lms.service.ProgressService;
 import com.navoxi.lms.service.UserPrivacyService;
 import com.navoxi.lms.web.dto.EnrollmentDto;
 import com.navoxi.lms.web.dto.LessonProgressDto;
+import com.navoxi.lms.web.dto.InitialPasswordRequest;
 import com.navoxi.lms.web.dto.NotificationDto;
 import com.navoxi.lms.web.dto.UserDataExportDto;
 import com.navoxi.lms.web.dto.UserDto;
 import java.util.List;
 import java.util.Map;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +37,7 @@ public class UserController {
   private final NotificationService notifications;
   private final UserPrivacyService privacy;
   private final AccessLogService accessLogs;
+  private final AuthService auth;
 
   public UserController(
       CurrentUserResolver currentUser,
@@ -40,13 +45,15 @@ public class UserController {
       ProgressService progress,
       NotificationService notifications,
       UserPrivacyService privacy,
-      AccessLogService accessLogs) {
+      AccessLogService accessLogs,
+      AuthService auth) {
     this.currentUser = currentUser;
     this.enrollments = enrollments;
     this.progress = progress;
     this.notifications = notifications;
     this.privacy = privacy;
     this.accessLogs = accessLogs;
+    this.auth = auth;
   }
 
   @GetMapping
@@ -54,6 +61,12 @@ public class UserController {
     UserAccount user = currentUser.require();
     accessLogs.record(user.getId(), AccessLogService.ACTION_USERS_ME, "/api/v1/users/me");
     return CourseMapper.toDto(user);
+  }
+
+  @PostMapping("/initial-password")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void defineInitialPassword(@Valid @RequestBody InitialPasswordRequest body) {
+    auth.defineInitialPassword(currentUser.require(), body.password());
   }
 
   @GetMapping("/export")

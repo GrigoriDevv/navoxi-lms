@@ -39,6 +39,8 @@ export default function ComunicacaoPage() {
   const [modal, setModal] = useState<"destaque" | "post" | "notif" | "alert" | "mail" | "camp" | null>(null);
   const [destaqueForm, setDestaqueForm] = useState({ title: "", body: "", unitId: (unitId ?? "matriz") as UnitId, visible: true, pinned: false });
   const [postForm, setPostForm] = useState({ title: "", body: "", unitId: (unitId ?? "matriz") as UnitId });
+  const [postSaving, setPostSaving] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
   const [notifForm, setNotifForm] = useState({ title: "", message: "", type: "info" as const, userId: "" });
   const [alertForm, setAlertForm] = useState({ name: "", criteria: "", channel: "sistema" as AlertRule["channel"], audience: "Todos", unitId: (unitId ?? "matriz") as UnitId, enabled: true });
   const [mailForm, setMailForm] = useState({ toUserId: "", subject: "", body: "", unitId: (unitId ?? "matriz") as UnitId });
@@ -89,7 +91,7 @@ export default function ComunicacaoPage() {
       <Card className="p-6 mb-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-slate-800">Posts publicados (mural)</h3>
-          <Button onClick={() => setModal("post")}><Icon name="plus" className="w-4 h-4" />Novo post</Button>
+          <Button onClick={() => { setPostError(null); setModal("post"); }}><Icon name="plus" className="w-4 h-4" />Novo post</Button>
         </div>
         <div className="space-y-3">
           {posts.map((p) => (
@@ -101,7 +103,7 @@ export default function ComunicacaoPage() {
               <p className="text-sm text-slate-600 mt-1">{p.body}</p>
               <p className="text-xs text-slate-400 mt-2">{p.author} · {unitLabels[p.unitId]} · {p.publishedAt}</p>
               {p.status === "rascunho" && (
-                <button onClick={() => updatePost(p.id, { status: "publicado", publishedAt: new Date().toLocaleString("pt-BR") })} className="text-xs text-brand mt-2 hover:underline">Publicar</button>
+                <button onClick={() => void updatePost(p.id, { status: "publicado" })} className="text-xs text-brand mt-2 hover:underline">Publicar</button>
               )}
             </div>
           ))}
@@ -188,10 +190,24 @@ export default function ComunicacaoPage() {
         </form>
       </Modal>
       <Modal open={modal === "post"} onClose={() => setModal(null)} title="Novo post">
-        <form onSubmit={(e) => { e.preventDefault(); addPost(postForm); setModal(null); }}>
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setPostSaving(true);
+          setPostError(null);
+          try {
+            await addPost(postForm);
+            setPostForm({ title: "", body: "", unitId: (unitId ?? "matriz") as UnitId });
+            setModal(null);
+          } catch (error) {
+            setPostError(error instanceof Error ? error.message : "Não foi possível publicar o post.");
+          } finally {
+            setPostSaving(false);
+          }
+        }}>
           <Field label="Título"><input required className={inputClass} value={postForm.title} onChange={(e) => setPostForm({ ...postForm, title: e.target.value })} /></Field>
           <Field label="Conteúdo"><textarea required className={inputClass} rows={3} value={postForm.body} onChange={(e) => setPostForm({ ...postForm, body: e.target.value })} /></Field>
-          <Button type="submit">Publicar</Button>
+          {postError && <p className="mb-3 text-sm text-red-600" role="alert">{postError}</p>}
+          <Button type="submit" disabled={postSaving}>{postSaving ? "Publicando…" : "Publicar"}</Button>
         </form>
       </Modal>
       <Modal open={modal === "notif"} onClose={() => setModal(null)} title="Disparar notificação">

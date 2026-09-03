@@ -139,8 +139,8 @@ export interface AppState {
   deleteAllCourseLessons: (courseId: string) => void;
   addInteresse: (i: Omit<InteresseCurso, "id" | "registeredAt" | "notified">) => void;
   updateCertificado: (id: string, status: Certificado["status"]) => void;
-  addPost: (p: Omit<Post, "id" | "publishedAt" | "author" | "status">) => void;
-  updatePost: (id: string, data: Partial<Post>) => void;
+  addPost: (p: Omit<Post, "id" | "publishedAt" | "author" | "status">) => Promise<void>;
+  updatePost: (id: string, data: Partial<Post>) => Promise<void>;
   addQuestion: (q: Omit<Question, "id" | "usageCount">) => void;
   updateQuestion: (id: string, data: Partial<Question>) => void;
   addEvaluation: (e: Omit<Evaluation, "id" | "questionCount">) => void;

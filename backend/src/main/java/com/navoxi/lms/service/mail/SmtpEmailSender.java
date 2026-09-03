@@ -38,6 +38,7 @@ public class SmtpEmailSender implements EmailSender {
       mailSender.send(message);
     } catch (RuntimeException ex) {
       log.warn("SMTP send failed to={} subject={}: {}", to, subject, ex.getMessage());
+      throw ex;
     }
   }
 }

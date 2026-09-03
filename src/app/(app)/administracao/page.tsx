@@ -272,9 +272,10 @@ export default function AdministracaoPage() {
             <input className={inputClass} value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
           </Field>
           {javaApi && (
-            <p className="text-xs text-slate-500 mb-2">
-              Conta pré-provisionada para Microsoft SSO (sem senha local).
-            </p>
+            <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              Uma senha temporária segura será gerada automaticamente e enviada para o e-mail
+              informado. No primeiro login, o usuário deverá definir uma senha pessoal.
+            </div>
           )}
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>

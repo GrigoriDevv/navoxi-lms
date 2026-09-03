@@ -59,17 +59,22 @@ export function useLearningStore(deps: {
   } = deps;
 
   const javaApi = isJavaApiEnabled();
+  const apiQueriesEnabled = javaApi && currentUser !== null;
   const userId = currentUser?.id;
   const userEmail = currentUser?.email;
 
-  const coursesQuery = useCourses({ enabled: javaApi });
-  const modulesQuery = useModules({ enabled: javaApi });
-  const lessonsQuery = useLessons({ enabled: javaApi });
+  const coursesQuery = useCourses({ enabled: apiQueriesEnabled });
+  const modulesQuery = useModules({ enabled: apiQueriesEnabled });
+  const lessonsQuery = useLessons({ enabled: apiQueriesEnabled });
   const enrollmentsQuery = useMyEnrollments(userId, userEmail, {
-    enabled: javaApi,
+    enabled: apiQueriesEnabled,
   });
-  const progressQuery = useMyProgress(userId, userEmail, { enabled: javaApi });
-  const enrollmentRequestsQuery = useEnrollmentRequests({ enabled: javaApi });
+  const progressQuery = useMyProgress(userId, userEmail, {
+    enabled: apiQueriesEnabled,
+  });
+  const enrollmentRequestsQuery = useEnrollmentRequests({
+    enabled: apiQueriesEnabled,
+  });
 
   const createCourseMutation = useCreateCourse();
   const updateCourseMutation = useUpdateCourse();

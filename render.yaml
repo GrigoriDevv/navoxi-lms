@@ -42,6 +42,22 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: LMS_CERTIFICATE_VERIFY_BASE_URL
         sync: false
+      - key: LMS_MAIL_ENABLED
+        value: "true"
+      - key: LMS_MAIL_FROM
+        value: Navoxi LMS <noreply@navoxi.com.br>
+      - key: SPRING_MAIL_HOST
+        value: smtp.resend.com
+      - key: SPRING_MAIL_PORT
+        value: "587"
+      - key: SPRING_MAIL_USERNAME
+        value: resend
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: SPRING_MAIL_SMTP_AUTH
+        value: "true"
+      - key: SPRING_MAIL_SMTP_STARTTLS
+        value: "true"
 
   - type: web
     name: navoxi-lms

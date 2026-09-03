@@ -102,7 +102,7 @@ export function useAdministracaoPage() {
           role: form.role,
           unitId: isGlobal ? form.unitId : (unitId ?? "matriz"),
           department: form.department,
-          authProvider: "microsoft",
+          authProvider: "local",
         });
         setApiUsers((prev) =>
           [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))

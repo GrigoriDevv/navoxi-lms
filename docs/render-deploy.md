@@ -50,7 +50,7 @@ Abra o front, faça login (contas seed bloqueadas em prod por default — use us
 
 - Web services **dormem** após ~15 min idle; o primeiro request (sobretudo Java) pode levar 1–2 min
 - Postgres **free expira em ~30 dias** (depois upgrade ou perda dos dados)
-- Sem S3 / SMTP até configurar `LMS_S3_*` / `LMS_MAIL_*`
+- Sem S3 até configurar `LMS_S3_*`. Para e-mail via Resend, verifique `navoxi.com.br` no painel e preencha `SPRING_MAIL_PASSWORD` com a API key `re_...`; o remetente padrão é `Navoxi LMS <noreply@navoxi.com.br>`.
 
 ## Troubleshooting
 

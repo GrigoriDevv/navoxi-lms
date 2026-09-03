@@ -8,6 +8,10 @@ function resolveDemoLoginAllowed(nodeEnv, allowDemoLogin, authDemoEnabled) {
   return flag !== "false";
 }
 
+function resolveDemoLoginFallbackAllowed(javaApiEnabled, demoLoginAllowed) {
+  return !javaApiEnabled && demoLoginAllowed;
+}
+
 const DEMO_SEED = new Set([
   "ana.souza@navoxi.com",
   "bruno.ferreira@navoxi.com",
@@ -51,6 +55,16 @@ test("dev ALLOW_DEMO_LOGIN=false: off", () => {
 
 test("ALLOW_DEMO_LOGIN takes precedence over AUTH_DEMO_ENABLED in non-prod", () => {
   assert.equal(resolveDemoLoginAllowed("development", "false", "true"), false);
+});
+
+test("Java API active never permits a demo login fallback", () => {
+  assert.equal(resolveDemoLoginFallbackAllowed(true, true), false);
+  assert.equal(resolveDemoLoginFallbackAllowed(true, false), false);
+});
+
+test("mock-only mode permits fallback when demo login is active", () => {
+  assert.equal(resolveDemoLoginFallbackAllowed(false, true), true);
+  assert.equal(resolveDemoLoginFallbackAllowed(false, false), false);
 });
 
 test("prod always blocks seed email password login", () => {

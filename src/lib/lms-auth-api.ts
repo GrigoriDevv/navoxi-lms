@@ -21,6 +21,7 @@ export interface BackendAuthSession {
   avatarColor: string;
   provider: "password" | "microsoft";
   accessToken: string;
+  passwordChangeRequired: boolean;
 }
 
 export async function loginWithBackend(

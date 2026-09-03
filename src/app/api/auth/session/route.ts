@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
+import { isJavaApiEnabled } from "@/lib/api-config";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -10,7 +11,8 @@ export async function GET() {
   }
 
   const session = await decodeSession(token);
-  if (!session) {
+  if (!session || (isJavaApiEnabled() && !session.accessToken)) {
+    cookieStore.delete(SESSION_COOKIE);
     return NextResponse.json({ authenticated: false });
   }
 
@@ -23,5 +25,6 @@ export async function GET() {
     unitId: session.unitId,
     avatarColor: session.avatarColor,
     provider: session.provider,
+    passwordChangeRequired: session.passwordChangeRequired,
   });
 }

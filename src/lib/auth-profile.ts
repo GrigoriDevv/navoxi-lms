@@ -10,6 +10,7 @@ export interface AuthProfile {
   avatarColor: string;
   provider: AuthProvider;
   accessToken?: string;
+  passwordChangeRequired?: boolean;
 }
 
 export function toSessionProfileFromMock(profile: {
@@ -41,6 +42,7 @@ export function toSessionPayload(
     avatarColor: profile.avatarColor,
     provider: profile.provider,
     accessToken: profile.accessToken,
+    passwordChangeRequired: profile.passwordChangeRequired,
     exp,
   };
 }

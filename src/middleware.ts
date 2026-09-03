@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth-session";
 import { canAccessRoute } from "@/lib/rbac";
 import type { Role } from "@/lib/types";
+import { isJavaApiEnabled } from "@/lib/api-config";
 
-const PUBLIC_PATHS = ["/login", "/api/auth", "/certificados", "/api/certificates"];
+const PUBLIC_PATHS = ["/login", "/api/auth", "/primeiro-acesso", "/certificados", "/api/certificates"];
 
 function isPublic(pathname: string): boolean {
   if (pathname === "/") return true;
@@ -48,12 +49,29 @@ export async function middleware(request: NextRequest) {
   }
 
   const session = await decodeSession(token);
-  if (!session) {
+  if (!session || (isJavaApiEnabled() && !session.accessToken)) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
+      const response = NextResponse.json(
+        { error: "Sessão inválida. Faça login novamente." },
+        { status: 401 }
+      );
+      response.cookies.delete(SESSION_COOKIE);
+      return response;
     }
     const login = new URL("/login", request.url);
-    return NextResponse.redirect(login);
+    const response = NextResponse.redirect(login);
+    response.cookies.delete(SESSION_COOKIE);
+    return response;
+  }
+
+  if (session.passwordChangeRequired && pathname !== "/primeiro-acesso") {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Defina sua senha pessoal para continuar." },
+        { status: 403 }
+      );
+    }
+    return NextResponse.redirect(new URL("/primeiro-acesso", request.url));
   }
 
   if (!pathname.startsWith("/api/")) {

@@ -109,6 +109,8 @@ Canal opcional espelhando notificações in-app (`NotificationService.notify` �
 
 - Eventos cobertos: novo material (já via `LessonService`), resultado de correção (ao fechar tentativa `corrigida`), prova prestes a fechar (job horário, janela `LMS_DEADLINE_REMINDER_WINDOW_HOURS`, default 24h; dedupe `details=deadline-reminder:{evalId}`).
 - Envs: `LMS_MAIL_*`, `LMS_PUBLIC_APP_URL`, `SPRING_MAIL_*` (host/user/pass). Compatível com Amazon SES SMTP e Resend SMTP.
+- Ao criar um usuário local sem informar senha, o backend gera uma credencial temporária, armazena somente o hash e envia as instruções de primeiro acesso por SMTP. A criação é recusada quando o SMTP está desabilitado.
+- Resend: use `smtp.resend.com:587`, usuário `resend`, e a API key `re_...` como `SPRING_MAIL_PASSWORD`. `LMS_MAIL_FROM` precisa usar um domínio verificado no Resend.
 - Falha SMTP: WARN, não reverte a notificação persistida.
 
 ### LGPD (MVP)

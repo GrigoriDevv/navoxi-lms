@@ -29,9 +29,10 @@ export function useRepositoryStore(deps: {
   const { currentUser, log, dispatchNotification, refreshNotifications } = deps;
 
   const javaApi = isJavaApiEnabled();
+  const apiQueriesEnabled = javaApi && currentUser !== null;
 
-  const questionsQuery = useQuestions({ enabled: javaApi });
-  const evaluationsQuery = useEvaluations({ enabled: javaApi });
+  const questionsQuery = useQuestions({ enabled: apiQueriesEnabled });
+  const evaluationsQuery = useEvaluations({ enabled: apiQueriesEnabled });
   const createQuestionMutation = useCreateQuestion();
   const updateQuestionMutation = useUpdateQuestion();
   const createEvaluationMutation = useCreateEvaluation();

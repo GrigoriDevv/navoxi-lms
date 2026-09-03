@@ -104,6 +104,17 @@ class PostDestaqueControllerTest {
   }
 
   @Test
+  void alunoListsPostsFromOwnUnit() throws Exception {
+    createPost("Comunicado para colaboradores");
+
+    mockMvc
+        .perform(get("/api/v1/posts").header("Authorization", "Bearer " + alunoJwt))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].title").value("Comunicado para colaboradores"));
+  }
+
+  @Test
   void createAndListPostsForAdmin() throws Exception {
     mockMvc
         .perform(
@@ -199,6 +210,37 @@ class PostDestaqueControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].id").value("post-ne"));
+  }
+
+  @Test
+  void listsPostsFromNewestToOldest() throws Exception {
+    createPost("Post mais antigo");
+    Thread.sleep(5);
+    createPost("Post mais recente");
+
+    mockMvc
+        .perform(get("/api/v1/posts").header("Authorization", "Bearer " + adminJwt))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].title").value("Post mais recente"))
+        .andExpect(jsonPath("$[1].title").value("Post mais antigo"));
+  }
+
+  private void createPost(String title) throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/posts")
+                .header("Authorization", "Bearer " + adminJwt)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "title": "%s",
+                      "body": "Conteúdo",
+                      "unitId": "matriz"
+                    }
+                    """
+                        .formatted(title)))
+        .andExpect(status().isCreated());
   }
 
   @Test

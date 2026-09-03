@@ -166,13 +166,18 @@ const badgeColors: Record<string, string> = {
 export function Badge({
   children,
   color = "slate",
+  className = "",
+  title,
 }: {
   children: ReactNode;
   color?: keyof typeof badgeColors;
+  className?: string;
+  title?: string;
 }) {
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColors[color]}`}
+      title={title}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColors[color]} ${className}`}
     >
       {children}
     </span>

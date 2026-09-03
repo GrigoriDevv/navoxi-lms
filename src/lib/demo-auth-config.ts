@@ -23,6 +23,13 @@ export function isDemoLoginAllowed(): boolean {
   );
 }
 
+export function resolveDemoLoginFallbackAllowed(
+  javaApiEnabled: boolean,
+  demoLoginAllowed: boolean
+): boolean {
+  return !javaApiEnabled && demoLoginAllowed;
+}
+
 /** @deprecated Use isDemoLoginAllowed() — alias para AUTH_DEMO_ENABLED legado */
 export function isDemoAuthEnabled(): boolean {
   return isDemoLoginAllowed();

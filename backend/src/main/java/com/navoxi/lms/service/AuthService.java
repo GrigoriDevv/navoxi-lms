@@ -9,6 +9,7 @@ import com.navoxi.lms.domain.enums.UserStatus;
 import com.navoxi.lms.repository.UserAccountRepository;
 import com.navoxi.lms.security.DemoSeedGuard;
 import com.navoxi.lms.security.JwtService;
+import com.navoxi.lms.web.ApiExceptionHandler.BadRequestException;
 import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
 import com.navoxi.lms.web.ApiExceptionHandler.UnauthorizedException;
 import com.navoxi.lms.web.dto.AuthSessionDto;
@@ -123,6 +124,25 @@ public class AuthService {
     return toSession(user, "microsoft");
   }
 
+  @Transactional
+  public void defineInitialPassword(UserAccount user, String password) {
+    UserAccount managed =
+        users.findById(user.getId()).orElseThrow(() -> new UnauthorizedException("Não autenticado"));
+    assertActive(managed);
+    if (!managed.isPasswordChangeRequired()) {
+      throw new BadRequestException("A senha inicial já foi definida");
+    }
+    if (password == null || password.length() < 10 || password.length() > 72) {
+      throw new BadRequestException("A senha deve ter entre 10 e 72 caracteres");
+    }
+    if (passwordEncoder.matches(password, managed.getPasswordHash())) {
+      throw new BadRequestException("A nova senha deve ser diferente da senha temporária");
+    }
+    managed.setPasswordHash(passwordEncoder.encode(password));
+    managed.setPasswordChangeRequired(false);
+    users.save(managed);
+  }
+
   private UserAccount provisionJitUser(String normalizedEmail, String name, String oid) {
     if (!jitAuth.isDomainAllowed(normalizedEmail)) {
       throw new ForbiddenException("Domínio de e-mail não autorizado para esta organização");
@@ -204,6 +224,7 @@ public class AuthService {
         user.getUnitId(),
         user.getAvatarColor(),
         provider,
-        jwtService.issue(user));
+        jwtService.issue(user),
+        user.isPasswordChangeRequired());
   }
 }

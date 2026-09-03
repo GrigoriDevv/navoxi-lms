@@ -73,14 +73,18 @@ export function QuickActions() {
     }, 600);
   };
 
-  const submitPost = (e: React.FormEvent) => {
+  const submitPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    addPost(postForm);
-    setSaved(true);
-    setTimeout(() => {
-      close();
-      router.push("/comunicacao");
-    }, 600);
+    try {
+      await addPost(postForm);
+      setSaved(true);
+      setTimeout(() => {
+        close();
+        router.push("/comunicacao");
+      }, 600);
+    } catch (error) {
+      console.error("[lms-api] createPost", error);
+    }
   };
 
   const assignableRoles: Role[] = isGlobal

@@ -6,6 +6,7 @@ import com.navoxi.lms.domain.enums.Role;
 import com.navoxi.lms.domain.enums.UnitId;
 import com.navoxi.lms.domain.enums.UserStatus;
 import com.navoxi.lms.repository.UserAccountRepository;
+import com.navoxi.lms.service.mail.EmailSender;
 import com.navoxi.lms.web.ApiExceptionHandler.BadRequestException;
 import com.navoxi.lms.web.ApiExceptionHandler.ConflictException;
 import com.navoxi.lms.web.ApiExceptionHandler.ForbiddenException;
@@ -13,9 +14,11 @@ import com.navoxi.lms.web.ApiExceptionHandler.NotFoundException;
 import com.navoxi.lms.web.dto.UserCreateRequest;
 import com.navoxi.lms.web.dto.UserDto;
 import com.navoxi.lms.web.dto.UserUpdateRequest;
+import java.security.SecureRandom;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,18 +29,30 @@ public class UserAdminService {
   private static final String[] AVATAR_COLORS = {
     "#2563eb", "#7c3aed", "#0ea5e9", "#059669", "#d97706", "#dc2626"
   };
+  private static final String PASSWORD_CHARS =
+      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
   private final UserAccountRepository users;
   private final PasswordEncoder passwordEncoder;
   private final DenormalizedLabelSync labelSync;
+  private final EmailSender emailSender;
+  private final boolean mailEnabled;
+  private final String publicAppUrl;
 
   public UserAdminService(
       UserAccountRepository users,
       PasswordEncoder passwordEncoder,
-      DenormalizedLabelSync labelSync) {
+      DenormalizedLabelSync labelSync,
+      EmailSender emailSender,
+      @Value("${lms.mail.enabled:false}") boolean mailEnabled,
+      @Value("${lms.public-app-url:http://localhost:3000}") String publicAppUrl) {
     this.users = users;
     this.passwordEncoder = passwordEncoder;
     this.labelSync = labelSync;
+    this.emailSender = emailSender;
+    this.mailEnabled = mailEnabled;
+    this.publicAppUrl = publicAppUrl;
   }
 
   @Transactional(readOnly = true)
@@ -89,15 +104,30 @@ public class UserAdminService {
     user.setAvatarColor(pickAvatarColor(email));
     user.setAuthProvider(provider);
 
+    String temporaryPassword = null;
+    boolean generatedPassword = false;
     if (provider == AuthProvider.local || provider == AuthProvider.both) {
-      String password = body.password();
-      if (password == null || password.length() < 8) {
+      temporaryPassword = body.password();
+      if (temporaryPassword == null || temporaryPassword.isBlank()) {
+        if (!mailEnabled) {
+          throw new BadRequestException(
+              "Envio de e-mail não configurado. Ative o SMTP para gerar a senha automaticamente");
+        }
+        temporaryPassword = generateTemporaryPassword();
+        generatedPassword = true;
+      }
+      if (temporaryPassword.length() < 8) {
         throw new BadRequestException("Senha obrigatória com no mínimo 8 caracteres");
       }
-      user.setPasswordHash(passwordEncoder.encode(password));
+      user.setPasswordHash(passwordEncoder.encode(temporaryPassword));
+      user.setPasswordChangeRequired(true);
     }
 
-    return CourseMapper.toDto(users.save(user));
+    UserAccount saved = users.save(user);
+    if (generatedPassword) {
+      sendFirstAccessEmail(saved, temporaryPassword);
+    }
+    return CourseMapper.toDto(saved);
   }
 
   @Transactional
@@ -193,5 +223,30 @@ public class UserAdminService {
   private static String pickAvatarColor(String email) {
     int idx = Math.floorMod(email.hashCode(), AVATAR_COLORS.length);
     return AVATAR_COLORS[idx];
+  }
+
+  private static String generateTemporaryPassword() {
+    StringBuilder password = new StringBuilder(16);
+    for (int i = 0; i < 16; i++) {
+      password.append(PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(PASSWORD_CHARS.length())));
+    }
+    return password.toString();
+  }
+
+  private void sendFirstAccessEmail(UserAccount user, String temporaryPassword) {
+    String loginUrl = publicAppUrl.replaceAll("/+$", "") + "/login";
+    emailSender.send(
+        user.getEmail(),
+        "Seu primeiro acesso ao Navoxi LMS",
+        "Olá, "
+            + user.getName()
+            + ",\n\nSua conta no Navoxi LMS foi criada.\n\nE-mail: "
+            + user.getEmail()
+            + "\nSenha temporária: "
+            + temporaryPassword
+            + "\nAcesso: "
+            + loginUrl
+            + "\n\nNo primeiro login, você deverá definir uma nova senha pessoal."
+            + "\nNão compartilhe esta credencial.");
   }
 }
